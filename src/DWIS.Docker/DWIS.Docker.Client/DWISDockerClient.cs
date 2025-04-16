@@ -3,6 +3,7 @@ using Docker.DotNet.Models;
 using DWIS.Container.Model;
 using Microsoft.Extensions.Logging;
 using System.Collections;
+using System.Globalization;
 using System.Xml.Linq;
 namespace DWIS.Docker.Client
 {
@@ -81,7 +82,52 @@ namespace DWIS.Docker.Client
             return containerData;
         }
 
-        public async void CreateBlackboardContainer(string name = "", bool useHub = true, string hubGroup = "default", string port = "48030")
+        public async Task<DWISContainer?> GetContainerPerName(string containerName)
+        {
+            var containers = await _client.Containers.ListContainersAsync(
+                   new ContainersListParameters()
+                   {
+                       All = true
+                   });
+            if (containers != null && containers.Count > 0)
+            {
+                var myContainers = containers.Where(c => c.Names.Contains(containerName));
+                if (myContainers!= null && myContainers.Any()) 
+                {
+                    var first = myContainers.First();
+                    DWISContainer container = CreateDWISContainer(first); 
+                    return container;
+                }
+            }
+            return null;
+        }
+
+        private static DWISContainer? CreateDWISContainer(ContainerListResponse? first)
+        {
+            if (first != null)
+            {
+                DWISContainer container = new DWISContainer() { ID = first.ID, Name = first.Names.First(), Image = first.Image, ImageID = first.ImageID, Started = first.State.ToLower() == "running" };
+                return container;
+            }
+            else return null;
+        }
+
+        public async Task<IEnumerable<DWISContainer?>?> GetContainersPerImage(string image)
+        {
+            var containers = await _client.Containers.ListContainersAsync(
+                   new ContainersListParameters()
+                   {
+                       All = true
+                   });
+            if (containers != null && containers.Count > 0)
+            {
+                var myContainers = containers.Where(c => c.Image == image);
+                return myContainers?.Select(c => CreateDWISContainer(c));
+            }
+            return null;
+        }
+
+        public async Task<string> CreateBlackboardContainer(string name = "", bool useHub = true, string hubGroup = "default", string port = "48030")
         {
             if (string.IsNullOrEmpty(name))
             {            
@@ -130,7 +176,7 @@ namespace DWIS.Docker.Client
                 Cmd = new List<string>() { "--useHub", useHub.ToString(), "--hubURL", "https://dwis.digiwells.no/blackboard/applications", "--hubGroup", hubGroup, "--port", port },
                 Labels = new Dictionary<string, string>() { { "port", port }, { "group", hubGroup } }
             });
-            
+            return name;
         }
 
         public async Task<bool> IsContainerNameInUse(string name)
