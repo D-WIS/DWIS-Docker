@@ -12,11 +12,18 @@ namespace DWIS.Docker.Clients
     {
         private DockerClient _client;
         private ILogger<DockerClient>? _logger;
+        private DWISDockerClientConfiguration? _configuration;
+
         public DWISDockerClient(DWISDockerClientConfiguration? configuration = null, ILogger<DockerClient>? logger = null)
         {
             _logger = logger;
+            _configuration = configuration;
+            CreateDockerClient();
+        }
 
-            string? uri = configuration != null ? configuration.DockerURI : null;
+        private void CreateDockerClient()
+        {
+            string? uri = _configuration != null ? _configuration.DockerURI : null;
 
             DockerClientConfiguration dockerConf =
                string.IsNullOrEmpty(uri) ?
@@ -24,6 +31,12 @@ namespace DWIS.Docker.Clients
                    new DockerClientConfiguration(new Uri(uri));
 
             _client = dockerConf.CreateClient();
+        }
+
+        public void UpdateConfiguration(DWISDockerClientConfiguration configuration)
+        {
+            _configuration = configuration;
+            CreateDockerClient();
         }
 
         public async Task StartContainer(string containerId)

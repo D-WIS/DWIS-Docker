@@ -9,12 +9,12 @@
 <MudExpansionPanel Dense Gutters="false">
     <TitleContent>
         <div class="d-flex">
-            <MudText Class="mt-1">@("Group name: " + GroupData.GroupName)</MudText>
+            <MudText Class="mt-1" >@("Group name: " + GroupData.GroupName)</MudText>
            <MudSpacer></MudSpacer>
             <MudBadge Content="@GroupData?.NumberOfConnections" Color="Color.Primary" Overlap="true" Class="d-flex ml-auto">
                 <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Default" />
             </MudBadge> 
-            <MudBadge  Content="@(GroupData?.GetContainerCount().runningContainers + "/" +GroupData?.GetContainerCount().containerCount)" Color="Color.Secondary" Overlap="true" Class="d-flex ml-6">
+            <MudBadge  Content="@(GroupData?.GetContainerCount().runningContainers + "/" +GroupData?.GetContainerCount().containerCount)" Color="Color.Secondary" Overlap="true" Class="d-flex ml-6 mr-6">
                 <MudIcon Icon="@Icons.Material.Filled.Dashboard" Color="Color.Default" />
             </MudBadge>
         </div>

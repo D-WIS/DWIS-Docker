@@ -17,8 +17,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.Desktop", "DWIS.Deskto
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.Desktop.Web", "DWIS.Desktop.Web\DWIS.Desktop.Web\DWIS.Desktop.Web.csproj", "{E328619E-9D64-4C7E-8C43-CDFC444747F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.Desktop.Web.Client", "DWIS.Desktop.Web\DWIS.Desktop.Web.Client\DWIS.Desktop.Web.Client.csproj", "{456DF705-554C-48D6-8DB3-70086D079259}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,10 +51,6 @@ Global
 		{E328619E-9D64-4C7E-8C43-CDFC444747F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E328619E-9D64-4C7E-8C43-CDFC444747F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E328619E-9D64-4C7E-8C43-CDFC444747F8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{456DF705-554C-48D6-8DB3-70086D079259}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{456DF705-554C-48D6-8DB3-70086D079259}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{456DF705-554C-48D6-8DB3-70086D079259}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{456DF705-554C-48D6-8DB3-70086D079259}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

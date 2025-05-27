@@ -1,0 +1,55 @@
+﻿@inject Docker.Clients.DWISDockerClient Client
+@inject Docker.Clients.DWISDockerClientConfiguration Configuration
+
+<MudBlazor.MudDialog>
+    <TitleContent>
+        Docker engine  end-point
+    </TitleContent>
+    <DialogContent>
+        <MudBlazor.MudCheckBox @bind-Value="_localClient">Use default settings</MudBlazor.MudCheckBox>
+
+        <MudBlazor.MudTextField @bind-Value="_engineUrl" Label="Disabled" Variant="MudBlazor.Variant.Text" Disabled="_localClient" />
+    </DialogContent>
+    <DialogActions>
+        <MudBlazor.MudIconButton OnClick="Update" Icon="@MudBlazor.Icons.Custom.FileFormats.FileCode">Update docker client</MudBlazor.MudIconButton>
+        <MudBlazor.MudIconButton OnClick="Cancel" Icon="@MudBlazor.Icons.Material.Filled.Cancel">Close</MudBlazor.MudIconButton>
+    </DialogActions>
+</MudBlazor.MudDialog>
+
+
+@code {
+    private bool _localClient = false;
+    private string _engineUrl = "http://localhost:2375";
+    [CascadingParameter]
+    private MudBlazor.IMudDialogInstance MudDialog { get; set; }
+    protected override Task OnInitializedAsync()
+    {
+        if (Configuration != null)
+        {
+            _localClient = string.IsNullOrEmpty(Configuration.DockerURI);
+        }
+
+        if (Configuration != null && !_localClient)
+        {
+            _engineUrl = Configuration.DockerURI;
+        }
+        return base.OnInitializedAsync();
+    }
+    private void Cancel() => MudDialog.Cancel();
+    private void Update()
+    {
+        string original = Configuration.DockerURI;
+        if (_localClient) { Configuration.DockerURI = string.Empty; }
+        else if (!string.IsNullOrEmpty(_engineUrl))
+        {
+            Configuration.DockerURI = _engineUrl;
+        }
+        if (original != Configuration.DockerURI)
+        {
+            Client.UpdateConfiguration(Configuration);
+        }
+
+        MudDialog.Close(dialogResult: MudBlazor.DialogResult.Ok(true));
+
+    }
+}

@@ -1,4 +1,4 @@
-using DWIS.Desktop.Web.Client.Pages;
+//using DWIS.Desktop.Web.Client.Pages;
 using DWIS.Desktop.Web.Components;
 using DWIS.Docker.Clients;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -7,6 +7,8 @@ using MudBlazor.Services;
 
 string HubAddress = "https://dwis.digiwells.no/blackboard/applications";
 string DWIS_HUB = "/dwishub";
+string dockerURI = "http://localhost:2375";
+
 
 HubConnectionBuilder connectionBuilder = new HubConnectionBuilder();
 var _connection = connectionBuilder
@@ -55,7 +57,7 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(DWIS.Desktop.Web.Client._Imports).Assembly);
+    .AddInteractiveWebAssemblyRenderMode();
+    //.AddAdditionalAssemblies(typeof(DWIS.Desktop.Web.Client._Imports).Assembly);
 
 app.Run();

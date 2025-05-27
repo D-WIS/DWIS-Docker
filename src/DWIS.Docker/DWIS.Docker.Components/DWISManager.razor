@@ -2,7 +2,8 @@
 @using DWIS.Docker.Clients
 @using DWIS.Docker.Models
 
-@inject HubGroupDataManager Manager;
+@inject HubGroupDataManager Manager
+@inject IDialogService DialogService
 
 @* Required *@
 <MudThemeProvider  />
@@ -48,7 +49,7 @@
     <MudSpacer></MudSpacer>
     @* <MudText Typo="Typo.caption">@("Docker: " + Manager.DockerURI)</MudText> *@
     <MudSpacer></MudSpacer>
-    <MudIconButton Icon="@Icons.Material.Filled.Settings" />
+    <MudIconButton Icon="@Icons.Material.Filled.Settings" OnClick="OpenSettingsDialogAsync" />
 </MudAppBar>
 
 @code {
@@ -97,6 +98,14 @@
         if (Maximized) { return Icons.Material.Outlined.Layers; }
         else return Icons.Material.Outlined.CropSquare;
     }
+
+     private Task OpenSettingsDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        return DialogService.ShowAsync<DockerClientEditor>("Docker engine", options);
+    }
+
 
     // private async void onQuitButtonClicked(MouseEventArgs args)
     // {
