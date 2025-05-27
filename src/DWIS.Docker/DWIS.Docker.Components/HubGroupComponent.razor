@@ -1,0 +1,165 @@
+﻿@using MudBlazor
+@using DWIS.Docker.Clients
+@using DWIS.Docker.Models
+
+@inject HubGroupDataManager Manager;
+
+
+
+<MudExpansionPanel Dense Gutters="false">
+    <TitleContent>
+        <div class="d-flex">
+            <MudText Class="mt-1">@("Group name: " + GroupData.GroupName)</MudText>
+           <MudSpacer></MudSpacer>
+            <MudBadge Content="@GroupData?.NumberOfConnections" Color="Color.Primary" Overlap="true" Class="d-flex ml-auto">
+                <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Default" />
+            </MudBadge> 
+            <MudBadge  Content="@(GroupData?.GetContainerCount().runningContainers + "/" +GroupData?.GetContainerCount().containerCount)" Color="Color.Secondary" Overlap="true" Class="d-flex ml-6">
+                <MudIcon Icon="@Icons.Material.Filled.Dashboard" Color="Color.Default" />
+            </MudBadge>
+        </div>
+    </TitleContent>
+    <ChildContent>
+        <MudGrid>
+            <MudItem xs="3">
+                <MudTextField @bind-Value="_newContainerName" Label="New container name" Variant="Variant.Filled"></MudTextField>
+            </MudItem>
+            <MudItem xs="3">
+                <MudTextField @bind-Value="_newContainerPort" Label="New container port" Variant="Variant.Filled"></MudTextField>
+            </MudItem>
+            <MudItem xs="3">
+                <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.LibraryAdd" Color="Color.Success" OnClick="CreateBlackBoardContainer">Create blackboard container</MudButton>
+            </MudItem>
+            <MudItem xs="3">
+                <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.ContentCopy" Color="Color.Success" OnClick="CopyDockerCommand">Copy docker command</MudButton>
+            </MudItem>
+        </MudGrid>
+        <hr />
+        <MudTable Items="GroupData.BlackboardContainers">
+            <HeaderContent>
+                <MudTh>Blackboard name</MudTh>
+                <MudTh>Blackboard port</MudTh>
+                <MudTh>Start</MudTh>
+                <MudTh>Stop</MudTh>
+                <MudTh>Delete</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Blackboard name">@context.ContainerName</MudTd>
+                <MudTd DataLabel="Blackboard port">@context.ContainerPort</MudTd>
+                <MudTd DataLabel="Start">
+                    <MudIconButton Icon="@Icons.Material.Outlined.PlayArrow" OnClick="() => StartContainer(context.ContainerID)" Disabled="context.ContainerStarted">
+                    </MudIconButton>
+                </MudTd>
+                <MudTd DataLabel="Stop">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Stop" OnClick="() => StopContainer(context.ContainerID)" Disabled="!context.ContainerStarted">
+                    </MudIconButton>
+                </MudTd>
+                <MudTd DataLabel="Delete">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteContainer(context.ContainerID)" Disabled="context.ContainerStarted">
+                    </MudIconButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+
+        <hr />
+
+        <MudGrid Class="mb-4">
+            <MudItem xs="3">
+                <MudTextField @bind-Value="_recordingFolder" Label="Recording folder" Variant="Variant.Filled"></MudTextField>
+            </MudItem>
+            <MudItem xs="3"> 
+                <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.BrowseGallery" Color="Color.Dark" OnClick="SelectRecordingFolder">Select recording folder</MudButton>
+            </MudItem>
+            <MudItem xs="3">
+                <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.LibraryAdd" Color="Color.Dark" OnClick="CreateBlackBoardContainer">Launch recorder container</MudButton>
+            </MudItem>
+            <MudItem xs="3">
+                <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.ContentCopy" Color="Color.Dark" OnClick="CopyDockerRecorderCommand">Copy docker command</MudButton>
+            </MudItem>
+        </MudGrid>
+
+
+    </ChildContent>
+</MudExpansionPanel>
+
+@code {
+    [Parameter]
+    public HubGroupData GroupData { get; set; }
+
+    [Parameter]
+    public Action<string>? CopyToClipBoard { get; set; }
+
+    [Parameter]
+    public Func<string>? SelectFolder { get; set; }
+
+    private string _newContainerName { get; set; } = "";
+    private string _newContainerPort { get; set; } = "";
+    private string _recordingFolder { get; set; } = "./";
+    // public delegate void CopyTextToClipBoard(string text);
+
+
+
+    protected override Task OnParametersSetAsync()
+    {
+        var suggestions = Manager.SuggestContainerData(GroupData.GroupName);
+        _newContainerName = suggestions?.containerName;
+        _newContainerPort = suggestions?.containerPort;
+        return base.OnParametersSetAsync();
+    }
+
+    private async void CreateBlackBoardContainer()
+    {
+        await Manager.CreateContainer(GroupData.GroupName, _newContainerName, _newContainerPort);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void StartContainer(string id)
+    {
+        await Manager.StartContainer(id);
+        await InvokeAsync(StateHasChanged);
+    }
+    private async void StopContainer(string id)
+    {
+        await Manager.StopContainer(id);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void DeleteContainer(string id)
+    {
+        await Manager.DeleteContainer(id);
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    private void CopyDockerCommand()
+    {
+        if (CopyToClipBoard != null) 
+        {
+            CopyToClipBoard(GetBlackBoardDockerCommand());
+        }
+    }
+    private void CopyDockerRecorderCommand()
+    {
+        if (CopyToClipBoard != null)
+        {
+            CopyToClipBoard(GetRecorderDockerCommand());
+        }
+    }
+    private void SelectRecordingFolder()
+    {
+        if (SelectFolder != null)
+        {
+            _recordingFolder = SelectFolder();
+        }
+    }
+
+    private string GetBlackBoardDockerCommand()
+    {
+        return $"docker run  -dit --name {_newContainerName} -P -p {_newContainerPort}:{_newContainerPort}/tcp --hostname localhost  digiwells/ddhubserver:latest --useHub --hubURL https://dwis.digiwells.no/blackboard/applications --hubGroup {GroupData.GroupName} --port {_newContainerPort}";
+    }
+
+    private string GetRecorderDockerCommand()
+    {
+        return $"docker run  -dit --name blackboard-recorder-{GroupData.GroupName} -P   digiwells/blackboardrecorder:latest  --hubURL https://dwis.digiwells.no/blackboard/applications --hubGroup {GroupData.GroupName}";
+    }
+}

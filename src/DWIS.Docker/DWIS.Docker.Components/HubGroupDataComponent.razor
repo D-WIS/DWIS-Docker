@@ -1,0 +1,52 @@
+﻿@using MudBlazor
+@using DWIS.Docker.Clients
+@using DWIS.Docker.Models
+
+@inject HubGroupDataManager Manager;
+
+
+
+<MudExpansionPanels>
+    <MudExpansionPanel Class="mb-6" >
+        <TitleContent>
+            <div class="d-flex">
+                <MudText Class="mt-1">Create new group</MudText>
+                <MudIcon Class="ml-4" Icon="@Icons.Material.Filled.AddLink" Color="Color.Success" />
+               
+            </div>
+        </TitleContent>
+            <ChildContent>
+            <MudGrid>
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="_newGroupName" Label="New group name" Variant="Variant.Filled"></MudTextField>
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Add" Color="Color.Success" OnClick="CreateGroup">Create group</MudButton>
+                </MudItem>
+            </MudGrid>
+                </ChildContent>
+    </MudExpansionPanel>
+    @foreach (var group in HubGroups.Values)
+    { 
+        <HubGroupComponent CopyToClipBoard="CopyToClipBoard" SelectFolder="SelectFolder" GroupData="@group"></HubGroupComponent>
+    }
+</MudExpansionPanels>
+
+@code {
+    [Parameter]
+    public Dictionary<string, HubGroupData> HubGroups { get; set; }
+
+    [Parameter]
+    public Func<string>? SelectFolder { get; set; }
+    
+    [Parameter]
+    public Action<string>? CopyToClipBoard { get; set; }
+    private string _newGroupName = "new-group";
+
+    private async void CreateGroup() 
+    {
+        await Manager.CreateGroup(_newGroupName);
+        await InvokeAsync(StateHasChanged);
+    }
+}

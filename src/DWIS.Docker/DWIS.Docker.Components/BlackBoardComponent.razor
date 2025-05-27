@@ -1,0 +1,73 @@
+﻿@using MudBlazor
+@using DWIS.Docker.Clients
+@using DWIS.Docker.Models
+
+@inject HubGroupDataManager Manager;
+
+<MudExpansionPanels>
+    @if (ContainersPerPort != null)
+    { 
+        foreach(var portData in ContainersPerPort)
+        {
+            <MudExpansionPanel Dense Gutters="false" Class="mb-6">
+                <TitleContent>
+                    <div class="d-flex">
+                        <MudText Class="mt-1">@("Port number: " + portData.Key)</MudText>
+                        <MudBadge Content="@portData.Value.Count().ToString()" Color="Color.Primary" Overlap="true" Class="d-flex ml-auto">
+                            <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Default" />
+                        </MudBadge>
+                    </div>
+                </TitleContent>
+                <ChildContent>
+                    <MudTable Items="portData.Value" Class="mb-4">
+                        <HeaderContent>
+                            <MudTh>Blackboard name</MudTh>
+                            <MudTh>Blackboard group</MudTh>
+                            <MudTh>Start</MudTh>
+                            <MudTh>Stop</MudTh>
+                            <MudTh>Delete</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Blackboard name">@context.ContainerName</MudTd>
+                            <MudTd DataLabel="Blackboard group">@context.ContainerGroup</MudTd>
+                            <MudTd DataLabel="Start">
+                                <MudIconButton Icon="@Icons.Material.Outlined.PlayArrow" OnClick="() => StartContainer(context.ContainerID)" Disabled="context.ContainerStarted">
+                                </MudIconButton>
+                            </MudTd>
+                            <MudTd DataLabel="Stop">
+                                <MudIconButton Icon="@Icons.Material.Outlined.Stop" OnClick="() => StopContainer(context.ContainerID)" Disabled="!context.ContainerStarted">
+                                </MudIconButton>
+                            </MudTd>
+                            <MudTd DataLabel="Delete">
+                                <MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteContainer(context.ContainerID)" Disabled="context.ContainerStarted">
+                                </MudIconButton>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </ChildContent>
+            </MudExpansionPanel>
+        }
+    }
+</MudExpansionPanels>
+
+@code {
+    [Parameter]
+    public Dictionary<string, IEnumerable<BlackboardContainerData>>? ContainersPerPort { get; set; }
+
+    private async void StartContainer(string id)
+    {
+        await Manager.StartContainer(id);
+        await InvokeAsync(StateHasChanged);
+    }
+    private async void StopContainer(string id)
+    {
+        await Manager.StopContainer(id);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void DeleteContainer(string id)
+    {
+        await Manager.DeleteContainer(id);
+        await InvokeAsync(StateHasChanged);
+    }
+}

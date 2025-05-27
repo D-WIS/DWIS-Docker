@@ -8,12 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DWIS.Container.Model\DWIS.Container.Model.csproj" />
+    <ProjectReference Include="..\..\..\..\DWIS-Blackboard-Server\src\DWIS.SignalR.DTO\DWIS.SignalR.DTO.csproj" />
     <ProjectReference Include="..\DWIS.Docker.Constants\DWIS.Docker.Constants.csproj" />
+    <ProjectReference Include="..\DWIS.Docker.Models\DWIS.Docker.Models.csproj" />
   </ItemGroup>
 
 </Project>

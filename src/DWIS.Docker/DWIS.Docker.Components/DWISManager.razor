@@ -1,0 +1,105 @@
+﻿@using MudBlazor
+@using DWIS.Docker.Clients
+@using DWIS.Docker.Models
+
+@inject HubGroupDataManager Manager;
+
+@* Required *@
+<MudThemeProvider  />
+<MudPopoverProvider />
+
+@* Needed for dialogs *@
+<MudDialogProvider />
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+
+<MudToolBar >
+
+    <MudImage Src="img/DWIS-Industry-Group-Logo-5-31-21.png" Height="70" Style="margin-top:30px"></MudImage>
+
+    <MudSpacer></MudSpacer>
+    <MudText Typo="Typo.h3" >D-WIS Desktop</MudText>
+    <MudSpacer></MudSpacer>
+
+    <MudIconButton Icon="@Icons.Material.Outlined.Refresh" OnClick="Refresh" />
+    @if (Desktop)
+    {
+        <MudIconButton Icon="@Icons.Material.Outlined.Settings" /> 
+
+        <MudDivider  Vertical="true"  />
+        <MudIconButton Icon="@Icons.Material.Outlined.Minimize" OnClick="OnMinimizeButtonClicked" />
+        <MudIconButton Icon="@GetIcon()" OnClick="OnMaximizeButtonClicked" />
+        <MudIconButton Icon="@Icons.Material.Outlined.Close" OnClick="OnQuitButtonClicked" /> 
+    }
+</MudToolBar>
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+    <MudTabPanel Text="Group view">
+        <HubGroupDataComponent CopyToClipBoard="CopyToClipBoard" SelectFolder="SelectFolder" HubGroups="Manager.HubMonitoringData.HubGroups"></HubGroupDataComponent>
+    </MudTabPanel>
+    <MudTabPanel Text="Container view">
+       <BlackBoardComponent ContainersPerPort="Manager.GetContainersPerPort()"></BlackBoardComponent>
+    </MudTabPanel>
+</MudTabs>
+
+<MudAppBar Color="Color.Info" Bottom="true">
+    <MudText Typo="Typo.caption">@("Hub: " + Manager.HubAddress)</MudText>
+    <MudSpacer></MudSpacer>
+    @* <MudText Typo="Typo.caption">@("Docker: " + Manager.DockerURI)</MudText> *@
+    <MudSpacer></MudSpacer>
+    <MudIconButton Icon="@Icons.Material.Filled.Settings" />
+</MudAppBar>
+
+@code {
+    protected async override void OnInitialized()
+    {
+        await Manager.UpdateManagerData();
+        //var cpp = Manager.GetContainersPerPort();
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        return base.OnParametersSetAsync();
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await Manager.UpdateManagerData();
+    }
+    [Parameter]
+    public bool Maximized { get; set; }
+
+    [Parameter]
+    public Action<string>? CopyToClipBoard { get; set; }
+
+    [Parameter]
+    public Func<string>? SelectFolder { get; set; }
+
+    [Parameter]
+    public EventCallback OnQuitButtonClicked { get; set; }
+    [Parameter]
+    public EventCallback OnMaximizeButtonClicked { get; set; }
+    [Parameter]
+    public EventCallback OnMinimizeButtonClicked { get; set; }
+
+    [Parameter]
+    public bool Desktop { get; set; }
+
+    private async void Refresh()
+    {
+        await Manager.UpdateManagerData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetIcon() 
+    {
+        if (Maximized) { return Icons.Material.Outlined.Layers; }
+        else return Icons.Material.Outlined.CropSquare;
+    }
+
+    // private async void onQuitButtonClicked(MouseEventArgs args)
+    // {
+    //     await OnQuitButtonClicked.InvokeAsync();
+    // }
+}
