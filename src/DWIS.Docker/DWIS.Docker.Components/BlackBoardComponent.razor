@@ -13,9 +13,11 @@
                 <TitleContent>
                     <div class="d-flex">
                         <MudText Class="mt-1">@("Port number: " + portData.Key)</MudText>
-                        <MudBadge Content="@portData.Value.Count().ToString()" Color="Color.Primary" Overlap="true" Class="d-flex ml-auto mr-6">
-                            <MudIcon Icon="@Icons.Material.Filled.Dashboard" Color="Color.Default" />
-                        </MudBadge>
+                        <MudTooltip Text="@GetToolTipText(portData.Key)" >
+                            <MudBadge Content="@portData.Value.Count().ToString()" Color="Color.Primary" Overlap="true" Class="d-flex ml-auto mr-6">
+                                <MudIcon Icon="@Icons.Material.Filled.Dashboard" Color="Color.Default" />
+                            </MudBadge>
+                        </MudTooltip>
                     </div>
                 </TitleContent>
                 <ChildContent>
@@ -53,6 +55,11 @@
 @code {
     [Parameter]
     public Dictionary<string, IEnumerable<BlackboardContainerData>>? ContainersPerPort { get; set; }
+
+    private string GetToolTipText(string port)
+    {
+        return  ContainersPerPort[port].Count().ToString() + " containers for port " + port;
+    }
 
     private async void StartContainer(string id)
     {

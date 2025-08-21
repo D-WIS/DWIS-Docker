@@ -11,12 +11,16 @@
         <div class="d-flex">
             <MudText Class="mt-1" >@("Group name: " + GroupData.GroupName)</MudText>
            <MudSpacer></MudSpacer>
+            <MudTooltip Text="@GetGroupToolTipText()" Color="Color.Primary">
             <MudBadge Content="@GroupData?.NumberOfConnections" Color="Color.Primary" Overlap="true" Class="d-flex ml-auto">
                 <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Default" />
-            </MudBadge> 
+            </MudBadge>
+            </MudTooltip>
+            <MudTooltip Text="@GetContainersToolTip()" Color="Color.Secondary">
             <MudBadge  Content="@(GroupData?.GetContainerCount().runningContainers + "/" +GroupData?.GetContainerCount().containerCount)" Color="Color.Secondary" Overlap="true" Class="d-flex ml-6 mr-6">
                 <MudIcon Icon="@Icons.Material.Filled.Dashboard" Color="Color.Default" />
             </MudBadge>
+            </MudTooltip>
         </div>
     </TitleContent>
     <ChildContent>
@@ -97,7 +101,16 @@
     private string _recordingFolder { get; set; } = "./";
     // public delegate void CopyTextToClipBoard(string text);
 
+    private string GetGroupToolTipText()
+    {
+        return GroupData?.NumberOfConnections.ToString()+ " blackboards in the group " + GroupData?.GroupName;        
+    }
 
+    private string GetContainersToolTip()
+    {
+        return "There are " + GroupData?.GetContainerCount().runningContainers.ToString() + " running containers, among the " + GroupData?.GetContainerCount().containerCount.ToString() + " containers.";
+
+    }
 
     protected override Task OnParametersSetAsync()
     {
