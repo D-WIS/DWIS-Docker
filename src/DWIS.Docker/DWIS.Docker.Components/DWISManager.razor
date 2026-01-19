@@ -36,11 +36,25 @@
 </MudToolBar>
 
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
-    <MudTabPanel Text="Group view">
+    
+    <MudTabPanel Text="Overview"></MudTabPanel>
+    <MudTabPanel Text="Blackboard Group view">
         <HubGroupDataComponent CopyToClipBoard="CopyToClipBoard" SelectFolder="SelectFolder" HubGroups="Manager.HubMonitoringData.HubGroups"></HubGroupDataComponent>
     </MudTabPanel>
-    <MudTabPanel Text="Container view">
+    <MudTabPanel Text="Blackboard Container view">
        <BlackBoardComponent ContainersPerPort="Manager.GetContainersPerPort()"></BlackBoardComponent>
+    </MudTabPanel>
+    <MudTabPanel Text="Microstates">
+        <MicrostatesComponent></MicrostatesComponent>
+    </MudTabPanel>
+    <MudTabPanel Text="Composer">
+        <ComposerComponent></ComposerComponent>
+    </MudTabPanel>
+    <MudTabPanel Text="Scheduler">
+        <SchedulerComponent></SchedulerComponent>
+    </MudTabPanel>    
+    <MudTabPanel Text="Bridges">
+        <SchedulerComponent></SchedulerComponent>
     </MudTabPanel>
 </MudTabs>
 

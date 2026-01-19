@@ -7,6 +7,8 @@ using System.ComponentModel;
 
 namespace DWIS.Docker.Clients
 {
+  
+
     public class HubGroupDataManager
     {
         private HubConnection? _connection;

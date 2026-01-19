@@ -81,7 +81,7 @@ namespace DWIS.Docker.Clients
                 },
                 Cmd = new List<string>() { "--useHub", "--hubURL", "https://dwis.digiwells.no/blackboard/applications", "--hubGroup", hubGroup, "--port", port },
                 Labels = new Dictionary<string, string>() { { "port", port }, { "group", hubGroup } }
-            });            
+            });
         }
 
         public async Task<IEnumerable<BlackboardContainerData>> GetBlackBoardContainers()
@@ -116,7 +116,7 @@ namespace DWIS.Docker.Clients
                                         string hubURL = argsList[idx + 1];
                                         string hubGroup = "default";
                                         string port = "48030";
-                                       
+
                                         idx = argsList.IndexOf("--hubGroup");
                                         if (idx != -1 && idx < argsList.Count - 1)
                                         {
@@ -146,12 +146,93 @@ namespace DWIS.Docker.Clients
 
         }
 
+        public async Task<string> CreateComposerContainer(string name = "advicecomposer")
+        {
+            var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
+            {
+                Name = name,
+                Image = ImageNames.ADVICE_COMPOSER,
+                HostConfig = new HostConfig
+                {
+                    Binds = new List<string>
+            {
+               DWISModulesConfigurationClient.COMPOSER_WINDOWS_LOCALPATH + ":" + DWISModulesConfigurationClient.COMPOSER_CONTAINERPATH// Format: host-path:container-path
+                // Add options like ":ro" for read-only if needed
+            }
+                }
+            });
+            return response.ID;
+        }
 
+        public async Task<IEnumerable<(string id, string name)>> GetComposerContainers()
+        {
+            var composerContainers = new List<(string id, string name)>();
+            var containers = await _client.Containers.ListContainersAsync(
+             new ContainersListParameters()
+             {
+                 All = true
+             });
+            if (containers != null && containers.Count > 0)
+            {
+                var myContainers = containers.Where(c => c.Image == ImageNames.ADVICE_COMPOSER);
+                foreach (var container in myContainers)
+                {
+                    composerContainers.Add((container.ID, container.Names.First()));
+                }
+            }
+            return composerContainers;
+        }
 
     }
 
     public class DWISDockerClientConfiguration
     {
         public string DockerURI { get; set; } = string.Empty;
+    }
+
+
+    public class DWISModulesConfigurationClient
+    {
+        public const string COMPOSER_LINUX_LOCALPATH = "home/Volumes/DWISAdviceComposerService";
+        public const string COMPOSER_WINDOWS_LOCALPATH = @"C:\Volumes\DWISAdviceComposerService";
+        public const string COMPOSER_CONTAINERPATH = @"/home";
+        public const string COMPOSER_CONFIGFILENAME = "config.json";
+
+
+        public ComposerConfig? GetComposerConfigFromFile()
+        {
+            string filePath = Path.Combine(COMPOSER_WINDOWS_LOCALPATH, COMPOSER_CONFIGFILENAME);
+
+
+            if (!File.Exists(filePath))
+            {
+                return null;
+            }
+            else
+            {
+                string json = System.IO.File.ReadAllText(filePath);
+                var config = System.Text.Json.JsonSerializer.Deserialize<ComposerConfig>(json);
+                return config;
+            }
+        }
+        
+        public void SaveComposerConfigToFile(string config)
+        {
+            if (!Directory.Exists(COMPOSER_WINDOWS_LOCALPATH))
+            {
+                Directory.CreateDirectory(COMPOSER_WINDOWS_LOCALPATH);
+            }
+            System.IO.File.WriteAllText(Path.Combine(COMPOSER_WINDOWS_LOCALPATH, COMPOSER_CONFIGFILENAME), config);
+        }
+
+        public class ComposerConfig
+        {
+            public TimeSpan LoopDuration { get; set; } = TimeSpan.FromSeconds(1.0);
+            public string? OPCUAURL { get; set; } = "opc.tcp://localhost:48030";
+            public TimeSpan ControllerObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
+            public TimeSpan ProcedureObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
+            public TimeSpan FaultDetectionIsolationAndRecoveryObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
+            public TimeSpan SafeOperatingEnvelopeObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
+        }
     }
 }

@@ -1,0 +1,148 @@
+﻿@using MudBlazor
+@using DWIS.Docker.Clients
+@using DWIS.Docker.Models
+@using BlazorMonaco
+@using BlazorMonaco.Editor
+@using BlazorMonaco.Languages
+@inject DWISModulesConfigurationClient ModulesConfigurationClient
+@inject DWISDockerClient DockerClient
+
+
+<MudExpansionPanels>
+    <MudExpansionPanel Dense Gutters="false">
+        <TitleContent>
+            <div class="d-flex">
+                <MudText Class="mt-1">Configuration</MudText>
+            </div>
+        </TitleContent>
+        <ChildContent>
+            <MudGrid>
+                @if (_jsonConfig == null)
+                {
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.LibraryAdd" Color="Color.Success" OnClick="CreateConfig">Create configuration</MudButton>
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem xs="3">
+                        <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Save" Color="Color.Tertiary" OnClick="SaveConfig">Save configuration</MudButton>
+
+                    </MudItem>
+                }
+
+                <MudItem xs="9">
+                    <JSonEditor @ref="_jsonEditor" InitialJson="@_jsonConfig" EditorID="composerconfigjson" OnModelChanged="onModelChanged"></JSonEditor>
+                </MudItem>
+            </MudGrid>
+        </ChildContent>
+    </MudExpansionPanel>
+
+    <MudExpansionPanel Dense Gutters="false" Class="mt-1" Text="Containers">
+        <TitleContent>
+            <div class="d-flex">
+                <MudText Class="mt-1">Containers</MudText>
+            </div>
+        </TitleContent>
+
+        <ChildContent>
+
+
+            <MudGrid>
+                <MudItem xs="3">
+                    <MudTextField @bind-Value="_newContainerName" Label="New container name" Variant="Variant.Filled"></MudTextField>
+                </MudItem>
+                <MudItem xs="3">
+                    <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.LibraryAdd" Color="Color.Success" OnClick="() => CreateComposerContainer()">Create blackboard container</MudButton>
+                </MudItem>
+            </MudGrid>
+
+            <MudTable Items="_containers">
+                <HeaderContent>
+                    <MudTh>Container Name</MudTh>
+                    <MudTh>Start</MudTh>
+                    <MudTh>Stop</MudTh>
+                    <MudTh>Delete</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Container Name">@context.name</MudTd>
+                    <MudTd DataLabel="Start">
+                        <MudIconButton Icon="@Icons.Material.Outlined.PlayArrow" OnClick="() => DockerClient.StartContainer(context.id)">
+                        </MudIconButton>
+                    </MudTd>
+                    <MudTd DataLabel="Stop">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Stop" OnClick="() => DockerClient.StopContainer(context.id)">
+                        </MudIconButton>
+                    </MudTd>
+                    <MudTd DataLabel="Delete">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteContainer(context.id)">
+                        </MudIconButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@code {
+
+    private List<(string id, string name)>? _containers;
+    private string _newContainerName { get; set; } = "advicecomposer";
+    private string _jsonConfig = "";
+    private JSonEditor _jsonEditor;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var en = await DockerClient.GetComposerContainers();
+        _containers = en.ToList();
+        var _composerConfig = ModulesConfigurationClient.GetComposerConfigFromFile();
+        _jsonConfig = GetComposerConfigAsString(_composerConfig);
+    }
+
+    private void onModelChanged(string args)
+    {
+        _jsonConfig = args;
+    }
+
+    private async void CreateComposerContainer()
+    {
+        await DockerClient.CreateComposerContainer(_newContainerName);
+        var en = await DockerClient.GetComposerContainers();
+        _containers = en.ToList();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DeleteContainer(string id)
+    {
+        await DockerClient.DeleteContainer(id);
+        var en = await DockerClient.GetComposerContainers();
+        _containers = en.ToList();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void CreateConfig()
+    {
+        DWISModulesConfigurationClient.ComposerConfig _composerConfig = new();
+        ModulesConfigurationClient.SaveComposerConfigToFile(System.Text.Json.JsonSerializer.Serialize(_composerConfig, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true }));
+        _jsonConfig = GetComposerConfigAsString(_composerConfig);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void SaveConfig()
+    {
+        if (_jsonConfig == null)
+        {
+            return;
+        }
+        ModulesConfigurationClient.SaveComposerConfigToFile(_jsonConfig);
+    }
+
+    private string GetComposerConfigAsString(DWISModulesConfigurationClient.ComposerConfig _composerConfig)
+    {
+        if (_composerConfig == null)
+        {
+            return "";
+        }
+        return System.Text.Json.JsonSerializer.Serialize(_composerConfig, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true });
+    }
+}

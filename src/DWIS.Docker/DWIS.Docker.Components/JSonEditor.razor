@@ -1,0 +1,87 @@
+﻿@using BlazorMonaco
+@using BlazorMonaco.Editor
+@using BlazorMonaco.Languages
+
+<StandaloneCodeEditor Id="@EditorID" CssClass="my-editor-class" OnKeyUp="(mcce => ModelChangedHandler(mcce))"  @ref=_editor ConstructionOptions="EditorConstructionOptions" />
+
+
+
+@code {
+
+    [Parameter]
+    public string InitialJson { get; set; }
+
+    [Parameter]
+    public string EditorID { get; 
+        set; }
+
+    [Parameter]
+    public EventCallback<string> OnModelChanged { get; 
+        set; }
+
+    StandaloneCodeEditor _editor;
+
+    private bool _editing = false;
+
+    private async void ModelChangedHandler(KeyboardEvent args)
+    {
+        if (_editing)
+        {
+            return;
+        }
+        var yaml = await _editor.GetValue();//   args .Model.GetValue();
+        
+        if (yaml != null)
+        {
+            await OnModelChanged.InvokeAsync(yaml);  
+        }
+    }
+
+
+    protected async override Task OnParametersSetAsync()
+    {
+        _editing = true;
+        if (_editor != null)
+        {
+            if (EditorID != null && _editor.Id == EditorID)
+            {
+                try
+                {
+                    await _editor.SetValue(InitialJson);
+                    await _editor.Layout(); // ensure editor redraws to new size
+                    await base.OnParametersSetAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error setting editor value: {ex.Message}");
+                }
+            }
+        }
+        _editing = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            try {
+                await _editor.Layout(); // ensure editor redraws to new size
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during OnAfterRenderAsync: {ex.Message}");
+            }
+        }
+    }
+
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            AutomaticLayout = true,
+            Language = "json",
+            Theme = "vs-dark",
+            Value = InitialJson,
+        };
+    }
+}
