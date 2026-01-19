@@ -1,5 +1,198 @@
-﻿<h3>BridgesComponent</h3>
+﻿@using MudBlazor;
+
+<MudTabs Outlined="true" Position="Position.Left" Border="true">
+
+       <MudTabPanel Text="@_bridges[0].tabName">
+          
+            <GenericModuleComponent 
+                TModuleConfig=DWIS.ADCSBridge.Generic.AutoDriller.Configuration
+                ConfigFileName="@_bridges[0].configFileName" 
+                ContainerConfigPath="@_bridges[0].containerConfigPath"
+                ImageName="@_bridges[0].imageName"
+                ImageTag="@_bridges[0].tag"  
+                LocalConfigPath="@_bridges[0].localFolder" 
+                _newContainerName="@_bridges[0].containerName" />
+       </MudTabPanel>
+  
+       
+       <MudTabPanel Text="@_bridges[1].tabName">
+          
+            <GenericModuleComponent 
+                TModuleConfig=DWIS.ADCSBridge.Generic.CirculationStartup.Configuration
+                ConfigFileName="@_bridges[1].configFileName" 
+                ContainerConfigPath="@_bridges[1].containerConfigPath"
+                ImageName="@_bridges[1].imageName"
+                ImageTag="@_bridges[1].tag"  
+                LocalConfigPath="@_bridges[1].localFolder" 
+                _newContainerName="@_bridges[1].containerName" />
+       </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[2].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.CirculationStop.Configuration
+                                ConfigFileName="@_bridges[2].configFileName"
+                                ContainerConfigPath="@_bridges[2].containerConfigPath"
+                                ImageName="@_bridges[2].imageName"
+                                ImageTag="@_bridges[2].tag"
+                                LocalConfigPath="@_bridges[2].localFolder"
+                                _newContainerName="@_bridges[2].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[3].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.FrictionTest.Configuration
+                                ConfigFileName="@_bridges[3].configFileName"
+                                ContainerConfigPath="@_bridges[3].containerConfigPath"
+                                ImageName="@_bridges[3].imageName"
+                                ImageTag="@_bridges[3].tag"
+                                LocalConfigPath="@_bridges[3].localFolder"
+                                _newContainerName="@_bridges[3].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[4].tabName">
+        <!--non existing-->
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.FrictionTest.Configuration
+                                ConfigFileName="@_bridges[4].configFileName"
+                                ContainerConfigPath="@_bridges[4].containerConfigPath"
+                                ImageName="@_bridges[4].imageName"
+                                ImageTag="@_bridges[4].tag"
+                                LocalConfigPath="@_bridges[4].localFolder"
+                                _newContainerName="@_bridges[4].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[5].tabName">
+        <!--non existing-->
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.FrictionTest.Configuration
+                                ConfigFileName="@_bridges[5].configFileName"
+                                ContainerConfigPath="@_bridges[5].containerConfigPath"
+                                ImageName="@_bridges[5].imageName"
+                                ImageTag="@_bridges[5].tag"
+                                LocalConfigPath="@_bridges[5].localFolder"
+                                _newContainerName="@_bridges[5].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[6].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.AutoDriller.Configuration
+                                ConfigFileName="@_bridges[6].configFileName"
+                                ContainerConfigPath="@_bridges[6].containerConfigPath"
+                                ImageName="@_bridges[6].imageName"
+                                ImageTag="@_bridges[6].tag"
+                                LocalConfigPath="@_bridges[6].localFolder"
+                                _newContainerName="@_bridges[6].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[7].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.AutoDriller.Configuration
+                                ConfigFileName="@_bridges[7].configFileName"
+                                ContainerConfigPath="@_bridges[7].containerConfigPath"
+                                ImageName="@_bridges[7].imageName"
+                                ImageTag="@_bridges[7].tag"
+                                LocalConfigPath="@_bridges[7].localFolder"
+                                _newContainerName="@_bridges[7].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[8].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.PickOffBottom.Configuration
+                                ConfigFileName="@_bridges[8].configFileName"
+                                ContainerConfigPath="@_bridges[8].containerConfigPath"
+                                ImageName="@_bridges[8].imageName"
+                                ImageTag="@_bridges[8].tag"
+                                LocalConfigPath="@_bridges[8].localFolder"
+                                _newContainerName="@_bridges[8].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[9].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.Reciprocation.Configuration
+                                ConfigFileName="@_bridges[9].configFileName"
+                                ContainerConfigPath="@_bridges[9].containerConfigPath"
+                                ImageName="@_bridges[9].imageName"
+                                ImageTag="@_bridges[9].tag"
+                                LocalConfigPath="@_bridges[9].localFolder"
+                                _newContainerName="@_bridges[9].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[10].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.RotationStartup.Configuration
+                                ConfigFileName="@_bridges[10].configFileName"
+                                ContainerConfigPath="@_bridges[10].containerConfigPath"
+                                ImageName="@_bridges[10].imageName"
+                                ImageTag="@_bridges[10].tag"
+                                LocalConfigPath="@_bridges[10].localFolder"
+                                _newContainerName="@_bridges[10].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[11].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.RotationStop.Configuration
+                                ConfigFileName="@_bridges[11].configFileName"
+                                ContainerConfigPath="@_bridges[11].containerConfigPath"
+                                ImageName="@_bridges[11].imageName"
+                                ImageTag="@_bridges[11].tag"
+                                LocalConfigPath="@_bridges[11].localFolder"
+                                _newContainerName="@_bridges[11].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[12].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.AutoDriller.Configuration
+                                ConfigFileName="@_bridges[12].configFileName"
+                                ContainerConfigPath="@_bridges[12].containerConfigPath"
+                                ImageName="@_bridges[12].imageName"
+                                ImageTag="@_bridges[12].tag"
+                                LocalConfigPath="@_bridges[12].localFolder"
+                                _newContainerName="@_bridges[12].containerName" />
+    </MudTabPanel>
+
+
+    <MudTabPanel Text="@_bridges[13].tabName">
+
+        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.TagBottom.Configuration
+                                ConfigFileName="@_bridges[13].configFileName"
+                                ContainerConfigPath="@_bridges[13].containerConfigPath"
+                                ImageName="@_bridges[13].imageName"
+                                ImageTag="@_bridges[13].tag"
+                                LocalConfigPath="@_bridges[13].localFolder"
+                                _newContainerName="@_bridges[13].containerName" />
+    </MudTabPanel>
+)
+
+</MudTabs>
 
 @code {
+    (string tabName, string containerName, string imageName, string tag, string localFolder, string configFileName, string containerConfigPath, Type? configType)[] _bridges = 
+    { 
+       ( "Auto-driller","adcsgenericautodriller", "digiwells/dwisadcsbridgegenericautodriller", "stable", @"C:\Volumes\DWISADCSBridgeGenericAutoDriller", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.AutoDriller.Configuration)),
+        ("Circulation startup", "adcsgenericcirculationstartup", "digiwells/dwisadcsbridgegenericcirculationstartup", "stable", @"C:\Volumes\DWISADCSBridgeGenericCirculationStartup", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.CirculationStartup.Configuration)),      
+        ("Circulation stop", "adcsgenericcirculationstop", "digiwells/dwisadcsbridgegenericcirculationstop", "stable", @"C:\Volumes\DWISADCSBridgeGenericCirculationStop", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.CirculationStop.Configuration)),      
+        ("Friction test", "adcsgenericfrictiontest", "digiwells/dwisadcsbridgegenericfrictiontest", "stable", @"C:\Volumes\DWISADCSBridgeGenericFrictionTest", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.FrictionTest.Configuration)),      
+        ("Max flowrate SOE", "adcsgenericmaxflowratesoe", "digiwells/dwisadcsbridgegenericmaxflowratesoe", "stable", @"C:\Volumes\DWISADCSBridgeGenericMaxFlowrateSOE", "", @"/home", null),
+        ("Over-pressure FDIR", "adcsgenericoverpressurefdir", "digiwells/dwisadcsbridgegenericoverpressurefdir", "stable", @"C:\Volumes\DWISADCSBridgeGenericOverPressureFDIR", "", @"/home", null),
+        ("Over torque FDIR", "adcsgenericovertorquefdir", "digiwells/dwisadcsbridgegenericovertorquefdir", "stable", @"C:\Volumes\DWISADCSBridgeGenericOverTorqueFDIR", "", @"/home", null),
+        ("Overpull underpull FDIR", "adcsgenericoverpullunderpullfdir", "digiwells/dwisadcsbridgegenericoverpullunderpullfdir", "stable", @"C:\Volumes\DWISADCSBridgeGenericOverpullUnderpullFDIR", "", @"/home", null),
+        ("Pick Off-bottom", "adcsgenericpickoffbottom", "digiwells/dwisadcsbridgegenericpickoffbottom", "stable", @"C:\Volumes\DWISADCSBridgeGenericPickOffBottom", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.PickOffBottom.Configuration)),   
+        ("Reciprocation", "adcsgenericreciprocation", "digiwells/dwisadcsbridgegenericreciprocation", "stable", @"C:\Volumes\DWISADCSBridgeGenericReciprocation", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.Reciprocation.Configuration)),           
+        ("Rotation startup", "adcsgenericrotationstartup", "digiwells/dwisadcsbridgegenericrotationstartup", "stable", @"C:\Volumes\DWISADCSBridgeGenericRotationStartup", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.RotationStartup.Configuration)),
+        ("Rotation stop", "adcsgenericrotationstop", "digiwells/dwisadcsbridgegenericrotationstop", "stable", @"C:\Volumes\DWISADCSBridgeGenericRotationStop", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.RotationStop.Configuration)),
+        ("Swab-surge SOE", "adcsgenericswabsurgesoe", "digiwells/dwisadcsbridgegenericswabsurgesoe", "stable", @"C:\Volumes\DWISADCSBridgeGenericSwabSurgeSOE", "", @"/home", null),
+        ("Tag bottom" ,"adcsgenerictagbottom", "digiwells/dwisadcsbridgegenerictagbottom", "stable", @"C:\Volumes\DWISADCSBridgeGenericTagBottom", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.TagBottom.Configuration))
+    };
+
+    Type GetType((string tabName, string containerName, string imageName, string tag, string localFolder, string configFileName, string containerConfigPath, Type? configType) input) { return input.configType; }
 
 }

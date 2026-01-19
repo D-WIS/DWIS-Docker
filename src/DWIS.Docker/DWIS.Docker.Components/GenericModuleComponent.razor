@@ -6,38 +6,40 @@
 @using BlazorMonaco.Languages
 @inject DWISModulesConfigurationClient ModulesConfigurationClient
 @inject DWISDockerClient DockerClient
-
+@typeparam TModuleConfig where TModuleConfig : class, new()
 
 <MudExpansionPanels>
-    <MudExpansionPanel Dense Gutters="false">
-        <TitleContent>
-            <div class="d-flex">
-                <MudText Class="mt-1">Configuration</MudText>
-            </div>
-        </TitleContent>
-        <ChildContent>
-            <MudGrid>
-                @if (_jsonConfig == null)
-                {
-                    <MudItem xs="12">
-                        <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.LibraryAdd" Color="Color.Success" OnClick="CreateConfig">Create configuration</MudButton>
+@if (!string.IsNullOrEmpty(ConfigFileName))
+    {
+        <MudExpansionPanel Dense Gutters="false">
+            <TitleContent>
+                <div class="d-flex">
+                    <MudText Class="mt-1">Configuration</MudText>
+                </div>
+            </TitleContent>
+            <ChildContent>
+                <MudGrid>
+                    @if (string.IsNullOrEmpty(_jsonConfig))
+                    {
+                        <MudItem xs="12">
+                            <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.LibraryAdd" Color="Color.Success" OnClick="CreateConfig">Create configuration</MudButton>
+                        </MudItem>
+                    }
+                    else
+                    {
+                        <MudItem xs="3">
+                            <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Save" Color="Color.Tertiary" OnClick="SaveConfig">Save configuration</MudButton>
+
+                        </MudItem>
+                    }
+
+                    <MudItem xs="9">
+                        <JSonEditor @ref="_jsonEditor" InitialJson="@_jsonConfig" EditorID="composerconfigjson" OnModelChanged="onModelChanged"></JSonEditor>
                     </MudItem>
-                }
-                else
-                {
-                    <MudItem xs="3">
-                        <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Save" Color="Color.Tertiary" OnClick="SaveConfig">Save configuration</MudButton>
-
-                    </MudItem>
-                }
-
-                <MudItem xs="9">
-                    <JSonEditor @ref="_jsonEditor" InitialJson="@_jsonConfig" EditorID="composerconfigjson" OnModelChanged="onModelChanged"></JSonEditor>
-                </MudItem>
-            </MudGrid>
-        </ChildContent>
-    </MudExpansionPanel>
-
+                </MudGrid>
+            </ChildContent>
+        </MudExpansionPanel>
+    }
     <MudExpansionPanel Dense Gutters="false" Class="mt-1" Text="Containers">
         <TitleContent>
             <div class="d-flex">
@@ -53,7 +55,7 @@
                     <MudTextField @bind-Value="_newContainerName" Label="New container name" Variant="Variant.Filled"></MudTextField>
                 </MudItem>
                 <MudItem xs="3">
-                    <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.LibraryAdd" Color="Color.Success" OnClick="() => CreateComposerContainer()">Create composer container</MudButton>
+                    <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.LibraryAdd" Color="Color.Success" OnClick="() => CreateContainer()">Create composer container</MudButton>
                 </MudItem>
             </MudGrid>
 
@@ -85,18 +87,34 @@
 </MudExpansionPanels>
 
 @code {
-
     private List<(string id, string name)>? _containers;
-    private string _newContainerName { get; set; } = "advicecomposer";
+
     private string _jsonConfig = "";
     private JSonEditor _jsonEditor;
 
+    [Parameter]
+    public string _newContainerName { get; set; }
+
+    [Parameter]
+    public string ImageName { get; set; }
+    [Parameter]
+    public string ImageTag { get; set; }
+
+    [Parameter]
+    public string LocalConfigPath { get; set; } 
+
+    [Parameter]
+    public string ContainerConfigPath { get; set; }     
+
+    [Parameter]
+    public string ConfigFileName { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
-        var en = await DockerClient.GetComposerContainers();
+        var en = await DockerClient.GetContainers(ImageName+":"+ImageTag);
         _containers = en.ToList();
-        var _composerConfig = ModulesConfigurationClient.GetComposerConfigFromFile();
-        _jsonConfig = GetComposerConfigAsString(_composerConfig);
+        var _composerConfig = ModulesConfigurationClient.GetConfigurationFromFile<TModuleConfig>(LocalConfigPath, ConfigFileName);
+        _jsonConfig = GetConfigAsString(_composerConfig);
     }
 
     private void onModelChanged(string args)
@@ -104,10 +122,10 @@
         _jsonConfig = args;
     }
 
-    private async void CreateComposerContainer()
+    private async void CreateContainer()
     {
-        await DockerClient.CreateComposerContainer(_newContainerName);
-        var en = await DockerClient.GetComposerContainers();
+        await DockerClient.CreateContainer(ImageName, ImageTag, LocalConfigPath, ContainerConfigPath,  _newContainerName);
+        var en = await DockerClient.GetContainers(ImageName + ":" + ImageTag);
         _containers = en.ToList();
         await InvokeAsync(StateHasChanged);
     }
@@ -115,16 +133,16 @@
     private async Task DeleteContainer(string id)
     {
         await DockerClient.DeleteContainer(id);
-        var en = await DockerClient.GetComposerContainers();
+        var en = await DockerClient.GetContainers(ImageName + ":" + ImageTag);
         _containers = en.ToList();
         await InvokeAsync(StateHasChanged);
     }
 
     private async void CreateConfig()
     {
-        DWISModulesConfigurationClient.ComposerConfig _composerConfig = new();
-        ModulesConfigurationClient.SaveComposerConfigToFile(System.Text.Json.JsonSerializer.Serialize(_composerConfig, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true }));
-        _jsonConfig = GetComposerConfigAsString(_composerConfig);
+        TModuleConfig _composerConfig = new();
+        ModulesConfigurationClient.SaveConfigToFile(System.Text.Json.JsonSerializer.Serialize(_composerConfig, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true }), LocalConfigPath, ConfigFileName);
+        _jsonConfig = GetConfigAsString(_composerConfig);
         await InvokeAsync(StateHasChanged);
     }
 
@@ -134,10 +152,10 @@
         {
             return;
         }
-        ModulesConfigurationClient.SaveComposerConfigToFile(_jsonConfig);
+        ModulesConfigurationClient.SaveConfigToFile(_jsonConfig, LocalConfigPath, ConfigFileName );
     }
 
-    private string GetComposerConfigAsString(DWISModulesConfigurationClient.ComposerConfig _composerConfig)
+    private string GetConfigAsString(TModuleConfig _composerConfig)
     {
         if (_composerConfig == null)
         {

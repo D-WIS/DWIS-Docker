@@ -62,6 +62,8 @@ namespace DWIS.Docker.Clients
 
         public async Task CreateBlackboardContainer(string hubGroup, string containerName, string port)
         {
+
+            bool exist = await CheckImageExist(ImageNames.BLACKBOARD_NOTAG, ImageNames.LATEST_TAG, true);
             var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
             {
                 Name = containerName,
@@ -146,8 +148,88 @@ namespace DWIS.Docker.Clients
 
         }
 
+
+        public async Task<bool> CheckImageExist(string imageName,string tag, bool loadIfNotExist = false)
+        {
+
+            var images = await _client.Images.ListImagesAsync(new ImagesListParameters()
+            {
+                Filters = new System.Collections.Generic.Dictionary<string, IDictionary<string, bool>>
+            {
+                { "reference", new Dictionary<string, bool> { { imageName, true } } }
+            }
+            });
+            if (images != null && images.Count > 0 )
+            {
+                return true;
+            }
+            else
+            {
+                if (loadIfNotExist)
+                {
+                    await _client.Images.CreateImageAsync(
+                        new ImagesCreateParameters()
+                        {
+                            FromImage = imageName,
+                            Tag = tag
+                        },
+                        null,
+                        new Progress<JSONMessage>());
+                    return true;
+                }
+                return false;
+            }
+        }
+
+
+        public async Task<string> CreateSchedulerContainer(string name = "scheduler")
+        {
+            bool exist = await CheckImageExist(ImageNames.SCHEDULER_NOTAG,"stable", true); 
+
+
+            var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
+            {
+                Name = name,
+                Image = ImageNames.SCHEDULER
+            });
+            return response.ID;
+        }
+
+
+
+        public async Task<string> CreateContainer(string imageNameNoTag, string tag, string localConfigPath, string containerConfigPath, string containerName)
+        {
+            bool exist = await CheckImageExist(imageNameNoTag, tag, true);
+
+            var ccp = new CreateContainerParameters()
+            {
+                Name = containerName,
+                Image = imageNameNoTag + ":" + tag
+            };
+
+            if(!string.IsNullOrEmpty(localConfigPath) && !string.IsNullOrEmpty(containerConfigPath))
+            {
+                ccp.HostConfig = new HostConfig
+                {
+                    Binds = new List<string>
+                    {
+                        localConfigPath + ":" + containerConfigPath// Format: host-path:container-path
+                        // Add options like ":ro" for read-only if needed
+                    }
+                };
+            }
+
+
+
+            var response = await _client.Containers.CreateContainerAsync(ccp);
+            return response.ID;
+        }
+
+
         public async Task<string> CreateComposerContainer(string name = "advicecomposer")
         {
+            bool exist = await CheckImageExist(ImageNames.ADVICE_COMPOSER_NOTAG,ImageNames.STABLE_TAG, true);
+
             var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
             {
                 Name = name,
@@ -183,6 +265,45 @@ namespace DWIS.Docker.Clients
             return composerContainers;
         }
 
+        public async Task<IEnumerable<(string id, string name)>> GetContainers(string imageName)
+        {
+            var composerContainers = new List<(string id, string name)>();
+            var containers = await _client.Containers.ListContainersAsync(
+             new ContainersListParameters()
+             {
+                 All = true
+             });
+            if (containers != null && containers.Count > 0)
+            {
+                var myContainers = containers.Where(c => c.Image == imageName);
+                foreach (var container in myContainers)
+                {
+                    composerContainers.Add((container.ID, container.Names.First()));
+                }
+            }
+            return composerContainers;
+        }
+
+
+
+        public async Task<IEnumerable<(string id, string name)>> GetSchedulerContainers()
+        {
+            var composerContainers = new List<(string id, string name)>();
+            var containers = await _client.Containers.ListContainersAsync(
+             new ContainersListParameters()
+             {
+                 All = true
+             });
+            if (containers != null && containers.Count > 0)
+            {
+                var myContainers = containers.Where(c => c.Image == ImageNames.SCHEDULER);
+                foreach (var container in myContainers)
+                {
+                    composerContainers.Add((container.ID, container.Names.First()));
+                }
+            }
+            return composerContainers;
+        }
     }
 
     public class DWISDockerClientConfiguration
@@ -203,7 +324,6 @@ namespace DWIS.Docker.Clients
         {
             string filePath = Path.Combine(COMPOSER_WINDOWS_LOCALPATH, COMPOSER_CONFIGFILENAME);
 
-
             if (!File.Exists(filePath))
             {
                 return null;
@@ -216,6 +336,22 @@ namespace DWIS.Docker.Clients
             }
         }
         
+        public ConfigType? GetConfigurationFromFile<ConfigType>(string localPath, string fileName) where ConfigType : class
+        {
+            string filePath = Path.Combine(localPath, fileName);
+            if (!File.Exists(filePath))
+            {
+                return null;
+            }
+            else
+            {
+                string json = System.IO.File.ReadAllText(filePath);
+                var config = System.Text.Json.JsonSerializer.Deserialize<ConfigType>(json);
+                return config;
+            }
+        }
+
+
         public void SaveComposerConfigToFile(string config)
         {
             if (!Directory.Exists(COMPOSER_WINDOWS_LOCALPATH))
@@ -224,6 +360,17 @@ namespace DWIS.Docker.Clients
             }
             System.IO.File.WriteAllText(Path.Combine(COMPOSER_WINDOWS_LOCALPATH, COMPOSER_CONFIGFILENAME), config);
         }
+
+        public void SaveConfigToFile(string config, string localPath, string fileName)
+        {
+            if (!Directory.Exists(localPath))
+            {
+                Directory.CreateDirectory(localPath);
+            }
+            System.IO.File.WriteAllText(Path.Combine(localPath, fileName), config);
+        }
+
+
 
         public class ComposerConfig
         {
