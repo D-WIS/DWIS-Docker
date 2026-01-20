@@ -149,7 +149,7 @@ namespace DWIS.Docker.Clients
         }
 
 
-        public async Task<bool> CheckImageExist(string imageName,string tag, bool loadIfNotExist = false)
+        public async Task<bool> CheckImageExist(string imageName, string tag, bool loadIfNotExist = false)
         {
 
             var images = await _client.Images.ListImagesAsync(new ImagesListParameters()
@@ -159,7 +159,7 @@ namespace DWIS.Docker.Clients
                 { "reference", new Dictionary<string, bool> { { imageName, true } } }
             }
             });
-            if (images != null && images.Count > 0 )
+            if (images != null && images.Count > 0)
             {
                 return true;
             }
@@ -184,7 +184,7 @@ namespace DWIS.Docker.Clients
 
         public async Task<string> CreateSchedulerContainer(string name = "scheduler")
         {
-            bool exist = await CheckImageExist(ImageNames.SCHEDULER_NOTAG,"stable", true); 
+            bool exist = await CheckImageExist(ImageNames.SCHEDULER_NOTAG, "stable", true);
 
 
             var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
@@ -207,7 +207,7 @@ namespace DWIS.Docker.Clients
                 Image = imageNameNoTag + ":" + tag
             };
 
-            if(!string.IsNullOrEmpty(localConfigPath) && !string.IsNullOrEmpty(containerConfigPath))
+            if (!string.IsNullOrEmpty(localConfigPath) && !string.IsNullOrEmpty(containerConfigPath))
             {
                 ccp.HostConfig = new HostConfig
                 {
@@ -228,7 +228,7 @@ namespace DWIS.Docker.Clients
 
         public async Task<string> CreateComposerContainer(string name = "advicecomposer")
         {
-            bool exist = await CheckImageExist(ImageNames.ADVICE_COMPOSER_NOTAG,ImageNames.STABLE_TAG, true);
+            bool exist = await CheckImageExist(ImageNames.ADVICE_COMPOSER_NOTAG, ImageNames.STABLE_TAG, true);
 
             var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
             {
@@ -238,7 +238,7 @@ namespace DWIS.Docker.Clients
                 {
                     Binds = new List<string>
             {
-               DWISModulesConfigurationClient.COMPOSER_WINDOWS_LOCALPATH + ":" + DWISModulesConfigurationClient.COMPOSER_CONTAINERPATH// Format: host-path:container-path
+               ImageNames.COMPOSER_WINDOWS_LOCALPATH + ":" + ImageNames.COMPOSER_CONTAINERPATH// Format: host-path:container-path
                 // Add options like ":ro" for read-only if needed
             }
                 }
@@ -304,82 +304,77 @@ namespace DWIS.Docker.Clients
             }
             return composerContainers;
         }
+
+
+        public async Task UpdateStandardSetupStatus(StandardSetUp standardSetUp)
+        {
+            var bbs = await GetBlackBoardContainers();          
+
+            foreach (var item in standardSetUp.Items)
+            {
+                if (item.ModuleGroup != StandardSetUpItem.BlackBoardGroup)
+                {
+                    if (item.ModuleName == "Default Blackboard")
+                    {
+                        var dbb = bbs.Where(b => b.ContainerGroup == standardSetUp.HubGroup && b.ContainerPort == "48030");
+                        if (dbb != null && dbb.Count() > 0)
+                        {
+                            item.ContainerCreated = true;
+                            item.RunningContainers = dbb.Select(c => (c.ContainerName, c.ContainerID, c.ContainerStarted)).ToList();
+                        }
+                        else
+                        {
+                            item.ContainerCreated = false;
+                            item.RunningContainers.Clear();
+                        }
+                    }
+                    else
+                    {
+                        var dbb = bbs.Where(b => b.ContainerPort == "48031");
+                        if (dbb != null && dbb.Count() > 0)
+                        {
+                            item.ContainerCreated = true;
+                            item.RunningContainers = dbb.Select(c => (c.ContainerName, c.ContainerID, c.ContainerStarted)).ToList();
+                        }
+                        else
+                        {
+                            item.ContainerCreated = false;
+                            item.RunningContainers.Clear();
+                        }
+                    }
+                }
+                else
+                {
+                    var containers = await GetContainers(item.ImageName + ":" + item.ImageTag);
+                    if (containers != null && containers.Count() > 0)
+                    {
+                        item.ContainerCreated = true;
+                        item.RunningContainers = containers.Select(c => (c.name, c.id, _client.Containers.InspectContainerAsync(c.id).Result.State.Running)).ToList();
+                    }
+                    else
+                    {
+                        item.ContainerCreated = false;
+                        item.RunningContainers.Clear();
+                    }
+
+                    if (item.ConfigurationRequired)
+                    {
+                        if (System.IO.File.Exists(Path.Combine(  item.ConfigLocalPath, item.ConfigFileName)))
+                        {
+                            item.ConfigurationExists = true;
+                        }
+                        else
+                        {
+                            item.ConfigurationExists = false;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public class DWISDockerClientConfiguration
     {
         public string DockerURI { get; set; } = string.Empty;
-    }
-
-
-    public class DWISModulesConfigurationClient
-    {
-        public const string COMPOSER_LINUX_LOCALPATH = "home/Volumes/DWISAdviceComposerService";
-        public const string COMPOSER_WINDOWS_LOCALPATH = @"C:\Volumes\DWISAdviceComposerService";
-        public const string COMPOSER_CONTAINERPATH = @"/home";
-        public const string COMPOSER_CONFIGFILENAME = "config.json";
-
-
-        public ComposerConfig? GetComposerConfigFromFile()
-        {
-            string filePath = Path.Combine(COMPOSER_WINDOWS_LOCALPATH, COMPOSER_CONFIGFILENAME);
-
-            if (!File.Exists(filePath))
-            {
-                return null;
-            }
-            else
-            {
-                string json = System.IO.File.ReadAllText(filePath);
-                var config = System.Text.Json.JsonSerializer.Deserialize<ComposerConfig>(json);
-                return config;
-            }
-        }
-        
-        public ConfigType? GetConfigurationFromFile<ConfigType>(string localPath, string fileName) where ConfigType : class
-        {
-            string filePath = Path.Combine(localPath, fileName);
-            if (!File.Exists(filePath))
-            {
-                return null;
-            }
-            else
-            {
-                string json = System.IO.File.ReadAllText(filePath);
-                var config = System.Text.Json.JsonSerializer.Deserialize<ConfigType>(json);
-                return config;
-            }
-        }
-
-
-        public void SaveComposerConfigToFile(string config)
-        {
-            if (!Directory.Exists(COMPOSER_WINDOWS_LOCALPATH))
-            {
-                Directory.CreateDirectory(COMPOSER_WINDOWS_LOCALPATH);
-            }
-            System.IO.File.WriteAllText(Path.Combine(COMPOSER_WINDOWS_LOCALPATH, COMPOSER_CONFIGFILENAME), config);
-        }
-
-        public void SaveConfigToFile(string config, string localPath, string fileName)
-        {
-            if (!Directory.Exists(localPath))
-            {
-                Directory.CreateDirectory(localPath);
-            }
-            System.IO.File.WriteAllText(Path.Combine(localPath, fileName), config);
-        }
-
-
-
-        public class ComposerConfig
-        {
-            public TimeSpan LoopDuration { get; set; } = TimeSpan.FromSeconds(1.0);
-            public string? OPCUAURL { get; set; } = "opc.tcp://localhost:48030";
-            public TimeSpan ControllerObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
-            public TimeSpan ProcedureObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
-            public TimeSpan FaultDetectionIsolationAndRecoveryObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
-            public TimeSpan SafeOperatingEnvelopeObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
-        }
     }
 }

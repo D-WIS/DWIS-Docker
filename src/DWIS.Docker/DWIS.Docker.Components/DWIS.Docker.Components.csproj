@@ -31,6 +31,8 @@
     <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.RotationStop\DWIS.ADCSBridge.Generic.RotationStop.csproj" />
     <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.SwabSurgeSOE\DWIS.ADCSBridge.Generic.SwabSurgeSOE.csproj" />
     <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.TagBottom\DWIS.ADCSBridge.Generic.TagBottom.csproj" />
+    <ProjectReference Include="..\..\..\..\MicroStateEngine\DWIS.MicroState.InterpretationEngine\DWIS.MicroState.InterpretationEngine.csproj" />
+    <ProjectReference Include="..\..\..\..\MicroStateEngine\DWIS.MicroState.ThresholdsServer\DWIS.MicroState.ThresholdsServer.csproj" />
     <ProjectReference Include="..\DWIS.Docker.Clients\DWIS.Docker.Clients.csproj" />
   </ItemGroup>
 

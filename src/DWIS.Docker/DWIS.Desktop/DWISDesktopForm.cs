@@ -1,5 +1,6 @@
 using DWIS.Docker.Clients;
 using DWIS.Docker.Components;
+using DWIS.Docker.Models;
 using Microsoft.AspNetCore.Components.WebView.WindowsForms;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,7 @@ namespace DWIS.Desktop
             services.AddSingleton<DWISDockerClientConfiguration>();
             services.AddSingleton<DWISDockerClient>();
             services.AddSingleton<HubGroupDataManager>();
+            services.AddSingleton<StandardSetUp>();
             services.AddWindowsFormsBlazorWebView();
             //services.AddBlazorBootstrap();
             services.AddMudServices();

@@ -30,6 +30,10 @@ a, .btn-link {
 .my-editor-class { /* applies to all editor instances with this class */
     height: 300px;
 }
+
+
+
+
 #blazor-error-ui {
     background: lightyellow;
     bottom: 0;

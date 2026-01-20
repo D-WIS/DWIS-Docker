@@ -3,7 +3,6 @@
 <MudTabs Outlined="true" Position="Position.Left" Border="true">
 
        <MudTabPanel Text="@_bridges[0].tabName">
-          
             <GenericModuleComponent 
                 TModuleConfig=DWIS.ADCSBridge.Generic.AutoDriller.Configuration
                 ConfigFileName="@_bridges[0].configFileName" 
@@ -11,9 +10,9 @@
                 ImageName="@_bridges[0].imageName"
                 ImageTag="@_bridges[0].tag"  
                 LocalConfigPath="@_bridges[0].localFolder" 
-                _newContainerName="@_bridges[0].containerName" />
+                                    _newContainerName="@_bridges[0].containerName" />
+       
        </MudTabPanel>
-  
        
        <MudTabPanel Text="@_bridges[1].tabName">
           

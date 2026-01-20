@@ -1,0 +1,46 @@
+﻿@using MudBlazor;
+@using DWIS.Docker.Models;
+@inject StandardSetUp SetUp;
+
+<MudTable Hover="true" Breakpoint="Breakpoint.Sm" Height="500px" FixedHeader="true"
+          Items="@SetUp.Items"
+          GroupBy="@_groupDefinition"
+          GroupHeaderStyle="background-color:var(--mud-palette-background-gray)"
+          GroupFooterClass="mb-4"
+          Dense="true"
+          @ref="_tableRef">
+
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Container</MudTh>
+        <MudTh>Config ok</MudTh>
+        <MudTh>Start/stop</MudTh>
+    </HeaderContent>
+
+    <GroupHeaderTemplate>
+        <MudTh Class="mud-table-cell-custom-group" colspan="5">@($"{context.GroupName}: {context.Key}") </MudTh>
+    </GroupHeaderTemplate>
+    <RowTemplate>
+        <MudTd DataLabel="Nr">@context.ModuleName</MudTd>
+        <MudTd DataLabel="Sign">@context.ConfigContainerPath</MudTd>
+        <MudTd DataLabel="Name">@context.ConfigFileName</MudTd>
+        <MudTd DataLabel="Position">@context.ConfigFileName</MudTd>
+    </RowTemplate>
+      </MudTable>
+
+
+@code {
+
+   MudTable<StandardSetUpItem> _tableRef;
+
+    private TableGroupDefinition<StandardSetUpItem> _groupDefinition = new()
+    {
+        GroupName = "Group",
+        Indentation = false,
+        Expandable = true,
+        IsInitiallyExpanded = false,
+        Selector = (e) => e.ModuleGroup
+    };
+
+
+}

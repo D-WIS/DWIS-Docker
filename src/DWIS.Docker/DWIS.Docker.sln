@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11222.15 d18.0
+VisualStudioVersion = 18.0.11222.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.Docker.Constants", "DWIS.Docker.Constants\DWIS.Docker.Constants.csproj", "{513F0348-F3E3-482D-ACE2-4F609F215A32}"
 EndProject
@@ -48,6 +48,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.ADCSBridge.Generic.Model", "..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.Model\DWIS.ADCSBridge.Generic.Model.csproj", "{48B13F1B-F43D-851E-286C-8BE421A131E7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Imports", "Imports", "{56717B56-3B4F-46CF-8054-4D83BC3FBC30}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.MicroState.InterpretationEngine", "..\..\..\MicroStateEngine\DWIS.MicroState.InterpretationEngine\DWIS.MicroState.InterpretationEngine.csproj", "{E38BDAA9-575E-83C5-BE43-2C4D244681E3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.MicroState.ThresholdsServer", "..\..\..\MicroStateEngine\DWIS.MicroState.ThresholdsServer\DWIS.MicroState.ThresholdsServer.csproj", "{01D9C88A-9CD4-66A1-1BB0-65F464813AA3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -143,6 +147,14 @@ Global
 		{48B13F1B-F43D-851E-286C-8BE421A131E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48B13F1B-F43D-851E-286C-8BE421A131E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48B13F1B-F43D-851E-286C-8BE421A131E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E38BDAA9-575E-83C5-BE43-2C4D244681E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E38BDAA9-575E-83C5-BE43-2C4D244681E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E38BDAA9-575E-83C5-BE43-2C4D244681E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E38BDAA9-575E-83C5-BE43-2C4D244681E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01D9C88A-9CD4-66A1-1BB0-65F464813AA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01D9C88A-9CD4-66A1-1BB0-65F464813AA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01D9C88A-9CD4-66A1-1BB0-65F464813AA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01D9C88A-9CD4-66A1-1BB0-65F464813AA3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -164,6 +176,8 @@ Global
 		{E0C3F040-5BBF-67CF-6187-CADCA2F484CB} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
 		{3B5C50C7-1A66-04FB-DC82-7A0C7FF7492C} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
 		{48B13F1B-F43D-851E-286C-8BE421A131E7} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
+		{E38BDAA9-575E-83C5-BE43-2C4D244681E3} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
+		{01D9C88A-9CD4-66A1-1BB0-65F464813AA3} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59773EF1-0260-40C7-BB4E-B625700B5232}

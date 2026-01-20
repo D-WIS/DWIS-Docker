@@ -8,6 +8,9 @@
 @inject DWISDockerClient DockerClient
 @typeparam TModuleConfig where TModuleConfig : class, new()
 
+            <div class="ml-4" style="width:100%">
+
+
 <MudExpansionPanels>
 @if (!string.IsNullOrEmpty(ConfigFileName))
     {
@@ -85,6 +88,7 @@
         </ChildContent>
     </MudExpansionPanel>
 </MudExpansionPanels>
+</div>
 
 @code {
     private List<(string id, string name)>? _containers;
