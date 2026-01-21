@@ -21,6 +21,9 @@
     <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.RotationStop\DWIS.ADCSBridge.Generic.RotationStop.csproj" />
     <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.SwabSurgeSOE\DWIS.ADCSBridge.Generic.SwabSurgeSOE.csproj" />
     <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.TagBottom\DWIS.ADCSBridge.Generic.TagBottom.csproj" />
+    <ProjectReference Include="..\..\..\..\AdviceComposer\DWIS.AdviceComposer.Service\DWIS.AdviceComposer.Service.csproj" />
+    <ProjectReference Include="..\..\..\..\MicroStateEngine\DWIS.MicroState.InterpretationEngine\DWIS.MicroState.InterpretationEngine.csproj" />
+    <ProjectReference Include="..\..\..\..\MicroStateEngine\DWIS.MicroState.ThresholdsServer\DWIS.MicroState.ThresholdsServer.csproj" />
   </ItemGroup>
 
 </Project>

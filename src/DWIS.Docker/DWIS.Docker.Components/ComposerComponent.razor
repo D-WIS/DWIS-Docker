@@ -122,7 +122,7 @@
 
     private async void CreateConfig()
     {
-        DWISModulesConfigurationClient.ComposerConfig _composerConfig = new();
+        DWIS.AdviceComposer.Service.Configuration _composerConfig = new();
         ModulesConfigurationClient.SaveComposerConfigToFile(System.Text.Json.JsonSerializer.Serialize(_composerConfig, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true }));
         _jsonConfig = GetComposerConfigAsString(_composerConfig);
         await InvokeAsync(StateHasChanged);
@@ -137,7 +137,7 @@
         ModulesConfigurationClient.SaveComposerConfigToFile(_jsonConfig);
     }
 
-    private string GetComposerConfigAsString(DWISModulesConfigurationClient.ComposerConfig _composerConfig)
+    private string GetComposerConfigAsString(DWIS.AdviceComposer.Service.Configuration _composerConfig)
     {
         if (_composerConfig == null)
         {

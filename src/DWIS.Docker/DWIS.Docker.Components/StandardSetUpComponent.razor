@@ -1,46 +1,108 @@
 ﻿@using MudBlazor;
 @using DWIS.Docker.Models;
+@using DWIS.Docker.Clients;
 @inject StandardSetUp SetUp;
+@inject DWISDockerClient _client;
+@inject DWISModulesConfigurationClient _modulesConfigClient;
 
-<MudTable Hover="true" Breakpoint="Breakpoint.Sm" Height="500px" FixedHeader="true"
-          Items="@SetUp.Items"
+<style>
+    .mud-table-cell-custom-group {
+        font-weight: 700;text-align:left
+    }
+
+    .mud-table-cell-custom-group-footer {
+        padding-bottom: 50px;
+        text-align: right;
+    }
+</style>
+
+
+<MudToolBar>
+    <MudSpacer />
+        <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers"> Create missing containers  </MudButton>      
+        <MudButton StartIcon="@Icons.Material.Filled.Start" IconColor="Color.Success" OnClick="() => StartContainers()">Start all</MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()">Stop all</MudButton> 
+    <MudSpacer />
+</MudToolBar>
+
+@if(_status != null)
+{
+<MudTable Class="mt-4" Hover="true" Breakpoint="Breakpoint.Sm" Height="1000px" FixedHeader="true"
+          Items="@_status.Items"
           GroupBy="@_groupDefinition"
           GroupHeaderStyle="background-color:var(--mud-palette-background-gray)"
           GroupFooterClass="mb-4"
-          Dense="true"
+          Dense="true"         
           @ref="_tableRef">
 
     <HeaderContent>
         <MudTh>Name</MudTh>
         <MudTh>Container</MudTh>
         <MudTh>Config ok</MudTh>
-        <MudTh>Start/stop</MudTh>
+        <MudTh>Start/stop/Create</MudTh>
     </HeaderContent>
 
     <GroupHeaderTemplate>
-        <MudTh Class="mud-table-cell-custom-group" colspan="5">@($"{context.GroupName}: {context.Key}") </MudTh>
+        <MudTh Class="mud-table-cell-custom-group" colspan="4" >@($"{context.Key}") </MudTh>
+      
     </GroupHeaderTemplate>
     <RowTemplate>
-        <MudTd DataLabel="Nr">@context.ModuleName</MudTd>
-        <MudTd DataLabel="Sign">@context.ConfigContainerPath</MudTd>
-        <MudTd DataLabel="Name">@context.ConfigFileName</MudTd>
-        <MudTd DataLabel="Position">@context.ConfigFileName</MudTd>
+        <MudTd DataLabel="Nr">@context.SetUpItem.ModuleName</MudTd>
+        <MudTd DataLabel="Sign">@context.ContainerName</MudTd>
+        <MudTd DataLabel="Name">@context.ConfigurationStatus()</MudTd>
+        <MudTd DataLabel="Start/stop">
+                @if (context.Started)
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.Stop" OnClick="() => _client.StopContainer(context.ID)">Stop</MudButton>
+                }
+                else if (!string.IsNullOrEmpty(context.ContainerName))
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.Start" OnClick="() => _client.StartContainer(context.ID)">Start</MudButton>
+                }
+                else
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.NewLabel" OnClick="async () => 
+                            {_modulesConfigClient.SaveStandardConfigToFile(context.SetUpItem); 
+                                await _client.CreateStandardItemContainer(context.SetUpItem);}">
+                                    Create
+                    </MudButton>
+                }
+            </MudTd>
     </RowTemplate>
       </MudTable>
-
+}
 
 @code {
 
-   MudTable<StandardSetUpItem> _tableRef;
+    private MudTable<StandardSetUpStatusItem> _tableRef;
+    private StandardSetUpStatus _status;
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        RefreshStatus();
+    }
 
-    private TableGroupDefinition<StandardSetUpItem> _groupDefinition = new()
+
+
+    private async void RefreshStatus()
+    {
+        _status = await _client.UpdateStandardSetupStatus(SetUp);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private TableGroupDefinition<StandardSetUpStatusItem> _groupDefinition = new()
     {
         GroupName = "Group",
         Indentation = false,
         Expandable = true,
-        IsInitiallyExpanded = false,
-        Selector = (e) => e.ModuleGroup
+        IsInitiallyExpanded = true,
+        Selector = (e) => e.SetUpItem.ModuleGroup
     };
 
+
+
+    private Task StartContainers() { return Task.CompletedTask; }
+    private Task StopContainers() { return Task.CompletedTask;}
+    private Task CreateContainers() { return Task.CompletedTask;}
 
 }

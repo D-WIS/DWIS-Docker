@@ -53,6 +53,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.MicroState.Interpretat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.MicroState.ThresholdsServer", "..\..\..\MicroStateEngine\DWIS.MicroState.ThresholdsServer\DWIS.MicroState.ThresholdsServer.csproj", "{01D9C88A-9CD4-66A1-1BB0-65F464813AA3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.AdviceComposer.Service", "..\..\..\AdviceComposer\DWIS.AdviceComposer.Service\DWIS.AdviceComposer.Service.csproj", "{7FF20A4B-2A79-9EAC-29AA-1490A40E5F36}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.AdviceComposer.Model", "..\..\..\AdviceComposer\DWIS.AdviceComposer.Model\DWIS.AdviceComposer.Model.csproj", "{45302CAF-4199-1D3B-8802-4526E45170B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -155,6 +159,14 @@ Global
 		{01D9C88A-9CD4-66A1-1BB0-65F464813AA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01D9C88A-9CD4-66A1-1BB0-65F464813AA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01D9C88A-9CD4-66A1-1BB0-65F464813AA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FF20A4B-2A79-9EAC-29AA-1490A40E5F36}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FF20A4B-2A79-9EAC-29AA-1490A40E5F36}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FF20A4B-2A79-9EAC-29AA-1490A40E5F36}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FF20A4B-2A79-9EAC-29AA-1490A40E5F36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45302CAF-4199-1D3B-8802-4526E45170B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45302CAF-4199-1D3B-8802-4526E45170B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45302CAF-4199-1D3B-8802-4526E45170B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45302CAF-4199-1D3B-8802-4526E45170B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -178,6 +190,8 @@ Global
 		{48B13F1B-F43D-851E-286C-8BE421A131E7} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
 		{E38BDAA9-575E-83C5-BE43-2C4D244681E3} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
 		{01D9C88A-9CD4-66A1-1BB0-65F464813AA3} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
+		{7FF20A4B-2A79-9EAC-29AA-1490A40E5F36} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
+		{45302CAF-4199-1D3B-8802-4526E45170B5} = {56717B56-3B4F-46CF-8054-4D83BC3FBC30}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59773EF1-0260-40C7-BB4E-B625700B5232}

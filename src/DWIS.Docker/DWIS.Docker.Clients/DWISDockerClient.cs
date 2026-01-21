@@ -196,6 +196,12 @@ namespace DWIS.Docker.Clients
         }
 
 
+        public async Task<string> CreateStandardItemContainer(StandardSetUpItem item) 
+        {
+        return await CreateContainer(item.ImageName, item.ImageTag, item.ConfigLocalPath, item.ConfigContainerPath, item.DefaultContainerName);
+        }
+
+
 
         public async Task<string> CreateContainer(string imageNameNoTag, string tag, string localConfigPath, string containerConfigPath, string containerName)
         {
@@ -265,9 +271,9 @@ namespace DWIS.Docker.Clients
             return composerContainers;
         }
 
-        public async Task<IEnumerable<(string id, string name)>> GetContainers(string imageName)
+        public async Task<IEnumerable<(string id, string name, bool running)>> GetContainers(string imageName)
         {
-            var composerContainers = new List<(string id, string name)>();
+            var composerContainers = new List<(string id, string name, bool running)>();
             var containers = await _client.Containers.ListContainersAsync(
              new ContainersListParameters()
              {
@@ -278,7 +284,7 @@ namespace DWIS.Docker.Clients
                 var myContainers = containers.Where(c => c.Image == imageName);
                 foreach (var container in myContainers)
                 {
-                    composerContainers.Add((container.ID, container.Names.First()));
+                    composerContainers.Add((container.ID, container.Names.First(), container.State.ToLower() == "running"));
                 }
             }
             return composerContainers;
@@ -306,40 +312,44 @@ namespace DWIS.Docker.Clients
         }
 
 
-        public async Task UpdateStandardSetupStatus(StandardSetUp standardSetUp)
+        public async Task<StandardSetUpStatus> UpdateStandardSetupStatus(StandardSetUp standardSetUp)
         {
             var bbs = await GetBlackBoardContainers();          
+            
+            StandardSetUpStatus status = new StandardSetUpStatus();
+
 
             foreach (var item in standardSetUp.Items)
             {
-                if (item.ModuleGroup != StandardSetUpItem.BlackBoardGroup)
+                if (item.ModuleGroup == StandardSetUpItem.BlackBoardGroup)
                 {
                     if (item.ModuleName == "Default Blackboard")
                     {
                         var dbb = bbs.Where(b => b.ContainerGroup == standardSetUp.HubGroup && b.ContainerPort == "48030");
                         if (dbb != null && dbb.Count() > 0)
                         {
-                            item.ContainerCreated = true;
-                            item.RunningContainers = dbb.Select(c => (c.ContainerName, c.ContainerID, c.ContainerStarted)).ToList();
-                        }
-                        else
-                        {
-                            item.ContainerCreated = false;
-                            item.RunningContainers.Clear();
+                            foreach (var container in dbb)
+                            {
+                                StandardSetUpStatusItem statusItem = new StandardSetUpStatusItem();
+                                statusItem.SetUpItem = item;
+                                statusItem.ContainerName = container.ContainerName;
+                                statusItem.ID = container.ContainerID;
+                                statusItem.Started = container.ContainerStarted;
+                                status.Items.Add(statusItem);
+                            }
                         }
                     }
                     else
                     {
                         var dbb = bbs.Where(b => b.ContainerPort == "48031");
-                        if (dbb != null && dbb.Count() > 0)
+                        foreach (var container in dbb)
                         {
-                            item.ContainerCreated = true;
-                            item.RunningContainers = dbb.Select(c => (c.ContainerName, c.ContainerID, c.ContainerStarted)).ToList();
-                        }
-                        else
-                        {
-                            item.ContainerCreated = false;
-                            item.RunningContainers.Clear();
+                            StandardSetUpStatusItem statusItem = new StandardSetUpStatusItem();
+                            statusItem.SetUpItem = item;
+                            statusItem.ContainerName = container.ContainerName;
+                            statusItem.ID = container.ContainerID;
+                            statusItem.Started = container.ContainerStarted;
+                            status.Items.Add(statusItem);
                         }
                     }
                 }
@@ -348,28 +358,52 @@ namespace DWIS.Docker.Clients
                     var containers = await GetContainers(item.ImageName + ":" + item.ImageTag);
                     if (containers != null && containers.Count() > 0)
                     {
-                        item.ContainerCreated = true;
-                        item.RunningContainers = containers.Select(c => (c.name, c.id, _client.Containers.InspectContainerAsync(c.id).Result.State.Running)).ToList();
-                    }
-                    else
-                    {
-                        item.ContainerCreated = false;
-                        item.RunningContainers.Clear();
+                        foreach (var container in containers)
+                        {
+                            StandardSetUpStatusItem statusItem = new StandardSetUpStatusItem();
+                            statusItem.SetUpItem = item;
+                            statusItem.ContainerName = container.name;
+                            statusItem.ID = container.id;
+                            statusItem.Started = container.running;
+                            status.Items.Add(statusItem);
+                        }
                     }
 
-                    if (item.ConfigurationRequired)
+                
+                }
+            }
+
+           foreach(var standardItem in standardSetUp.Items)
+           {
+                var existingStatusItems = status.Items.Where(i => i.SetUpItem == standardItem);
+                if (existingStatusItems == null || existingStatusItems.Count() == 0)
+                {
+                    StandardSetUpStatusItem statusItem = new StandardSetUpStatusItem();
+                    statusItem.SetUpItem = standardItem;
+                    statusItem.ContainerName = string.Empty;
+                    statusItem.ID = string.Empty;
+                    statusItem.Started = false;
+                    statusItem.ConfigurationExists = false;
+                    status.Items.Add(statusItem);
+                }
+           }
+
+            foreach (var item in standardSetUp.Items)
+            {
+                if (item.ConfigurationRequired)
+                {
+                    if (System.IO.File.Exists(Path.Combine(item.ConfigLocalPath, item.ConfigFileName)))
                     {
-                        if (System.IO.File.Exists(Path.Combine(  item.ConfigLocalPath, item.ConfigFileName)))
+                        foreach (var statusItem in status.Items.Where(i => i.SetUpItem == item))
                         {
-                            item.ConfigurationExists = true;
-                        }
-                        else
-                        {
-                            item.ConfigurationExists = false;
+                            statusItem.ConfigurationExists = true;
                         }
                     }
                 }
             }
+
+
+            return status;
         }
     }
 

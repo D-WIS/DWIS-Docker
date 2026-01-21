@@ -8,6 +8,36 @@ using System.Threading.Tasks;
 
 namespace DWIS.Docker.Models
 {
+    public class StandardSetUpStatus
+    {
+        public List<StandardSetUpStatusItem> Items { get; set; } = new List<StandardSetUpStatusItem>();
+    }
+    public class StandardSetUpStatusItem
+    {
+        public StandardSetUpItem SetUpItem { get; set; }
+        public string ContainerName { get; set; }
+        public bool Started { get; set; }
+        public string ID { get; set; }
+        public bool ConfigurationExists { get; set; }
+
+
+        public string ConfigurationStatus() 
+        {
+        if(SetUpItem != null && SetUpItem.ConfigurationRequired)
+            {
+                if (ConfigurationExists)
+                    return "Exists";
+                else
+                    return "Missing";
+            }
+        else
+            {
+                return "Not required";
+            }
+        }
+    }
+
+
     public class StandardSetUp
     {
         public string HubGroup { get; set; } = "default";
@@ -32,22 +62,21 @@ namespace DWIS.Docker.Models
 
 
 
-        public List<(string containerName, string containerID, bool running)> RunningContainers { get; set; } = new List<(string containerName, string containerID, bool running)>();
+       // public List<(string containerName, string containerID, bool running)> RunningContainers { get; set; } = new List<(string containerName, string containerID, bool running)>();
 
         public string ModuleName { get; set; }
         public string ModuleGroup { get; set; }
         public string ImageName { get; set; }
         public string ImageTag { get; set; }
-        public string ContainerName { get; set; }
+        public string DefaultContainerName { get; set; }
         public string ConfigFileName { get; set; }
         public string ConfigLocalPath { get; set; }
         public string ConfigContainerPath { get; set; }
 
-        public bool ContainerCreated { get; set; }
-        public bool ConfigurationExists { get; set; } 
+        public string DefaultConfigContent { get; set; }
         public bool ConfigurationRequired { get; set; }
 
-        public bool Started => RunningContainers.Any(c => c.running);
+       // public bool Started => RunningContainers.Any(c => c.running);
 
         public string BlackBoardPort { get; set; } = "48030";
 
@@ -64,12 +93,7 @@ namespace DWIS.Docker.Models
                 ModuleGroup = BlackBoardGroup,
                 ImageName = DWIS.Docker.Constants.ImageNames.BLACKBOARD_NOTAG,
                 ImageTag = DWIS.Docker.Constants.ImageNames.LATEST_TAG,
-                ContainerName = "blackboard",
-                //ConfigFileName = "blackboards_config.json",
-                //ConfigLocalPath = "./config/blackboards/blackboards_config.json",
-                //ConfigContainerPath = "/app/config/blackboards_config.json",
-                ContainerCreated = false,
-                ConfigurationExists = false,
+                DefaultContainerName = "blackboard",
                 ConfigurationRequired = false
             });
 
@@ -79,13 +103,8 @@ namespace DWIS.Docker.Models
                 ModuleGroup = BlackBoardGroup,
                 ImageName = DWIS.Docker.Constants.ImageNames.BLACKBOARD_NOTAG,
                 ImageTag = DWIS.Docker.Constants.ImageNames.LATEST_TAG,
-                ContainerName = "local-blackboard",
+                DefaultContainerName = "local-blackboard",
                 BlackBoardPort = "48031",
-                //ConfigFileName = "blackboards_config.json",
-                //ConfigLocalPath = "./config/blackboards/blackboards_config.json",
-                //ConfigContainerPath = "/app/config/blackboards_config.json",
-                ContainerCreated = false,
-                ConfigurationExists = false,
                 ConfigurationRequired = false
             });
 
@@ -96,12 +115,7 @@ namespace DWIS.Docker.Models
                 ModuleGroup = SchedulerGroup,
                 ImageName = DWIS.Docker.Constants.ImageNames.SCHEDULER_NOTAG,
                 ImageTag = DWIS.Docker.Constants.ImageNames.STABLE_TAG,
-                ContainerName = "dwis-scheduler",
-                //ConfigFileName = "blackboards_config.json",
-                //ConfigLocalPath = "./config/blackboards/blackboards_config.json",
-                //ConfigContainerPath = "/app/config/blackboards_config.json",
-                ContainerCreated = false,
-                ConfigurationExists = false,
+                DefaultContainerName = "dwis-scheduler",
                 ConfigurationRequired = false
             });
             //microstates
@@ -111,13 +125,14 @@ namespace DWIS.Docker.Models
                 ModuleGroup = MicrostateGroup,
                 ImageName = DWIS.Docker.Constants.ImageNames.MICROSTATES_INTERPRETATION_ENGINE_NOTAG,
                 ImageTag = DWIS.Docker.Constants.ImageNames.STABLE_TAG,
-                ContainerName = "dwis-microstate-engine",
+                DefaultContainerName = "dwis-microstate-engine",
                 ConfigFileName = ImageNames.MICROSTATE_INTERPRETATION_ENGINE_CONFIGFILENAME,
                 ConfigLocalPath = ImageNames.MICROSTATE_INTERPRETATION_ENGINE_WINDOWS_LOCALPATH,
                 ConfigContainerPath = ImageNames.MICROSTATE_INTERPRETATION_ENGINE_CONTAINERPATH,
-                ContainerCreated = false,
-                ConfigurationExists = false,
-                ConfigurationRequired = true
+                ConfigurationRequired = true,
+                DefaultConfigContent = System.Text.Json.JsonSerializer.Serialize(
+                    new DWIS.MicroState.InterpretationEngine.Configuration(),
+                    new System.Text.Json.JsonSerializerOptions() { WriteIndented = true })
             });
             standardSetUpItems.Add(new StandardSetUpItem
             {
@@ -125,13 +140,14 @@ namespace DWIS.Docker.Models
                 ModuleGroup = MicrostateGroup,
                 ImageName = DWIS.Docker.Constants.ImageNames.MICROSTATES_THRESHOLDS_NOTAG,
                 ImageTag = DWIS.Docker.Constants.ImageNames.STABLE_TAG,
-                ContainerName = "dwis-thresholds-engine",
+                DefaultContainerName = "dwis-thresholds-engine",
                 ConfigFileName = ImageNames.MICROSTATE_GENERATOR_CONFIGFILENAME,
                 ConfigLocalPath = ImageNames.MICROSTATE_GENERATOR_WINDOWS_LOCALPATH,
                 ConfigContainerPath = ImageNames.MICROSTATE_GENERATOR_CONTAINERPATH,
-                ContainerCreated = false,
-                ConfigurationExists = false,
-                ConfigurationRequired = true
+                ConfigurationRequired = true,
+                DefaultConfigContent = System.Text.Json.JsonSerializer.Serialize(
+                    new DWIS.MicroState.ThresholdsServer.Configuration(),
+                    new System.Text.Json.JsonSerializerOptions() { WriteIndented = true })
             });
             //composer
             standardSetUpItems.Add(new StandardSetUpItem
@@ -140,14 +156,16 @@ namespace DWIS.Docker.Models
                 ModuleGroup = ComposerGroup,
                 ImageName = DWIS.Docker.Constants.ImageNames.ADVICE_COMPOSER_NOTAG,
                 ImageTag = DWIS.Docker.Constants.ImageNames.STABLE_TAG,
-                ContainerName = "dwis-composer",
+                DefaultContainerName = "dwis-composer",
                 ConfigFileName = ImageNames.COMPOSER_CONFIGFILENAME,
                 ConfigLocalPath = ImageNames.COMPOSER_WINDOWS_LOCALPATH,
                 ConfigContainerPath = ImageNames.COMPOSER_CONTAINERPATH,
-                ContainerCreated = false,
-                ConfigurationExists = false,
-                ConfigurationRequired = true
+                ConfigurationRequired = true,
+                DefaultConfigContent = System.Text.Json.JsonSerializer.Serialize(
+                    new DWIS.AdviceComposer.Service.Configuration(),
+                    new System.Text.Json.JsonSerializerOptions() { WriteIndented = true })
             });
+        
             //bridges
             (string tabName, string containerName, string imageName, string tag, string localFolder, string configFileName, string containerConfigPath, Type? configType)[] _bridges =
 {
@@ -176,13 +194,14 @@ namespace DWIS.Docker.Models
                     ModuleGroup = BridgeGroup,
                     ImageName = bridge.imageName,
                     ImageTag = bridge.tag,
-                    ContainerName = bridge.containerName,
+                    DefaultContainerName = bridge.containerName,
                     ConfigFileName = bridge.configFileName,
                     ConfigLocalPath = bridge.localFolder,
                     ConfigContainerPath = bridge.containerConfigPath,
-                    ContainerCreated = false,
-                    ConfigurationExists = false,
-                    ConfigurationRequired = bridge.configType != null
+                    ConfigurationRequired = bridge.configType != null,
+                    DefaultConfigContent = bridge.configType != null ? System.Text.Json.JsonSerializer.Serialize(
+                        Activator.CreateInstance(bridge.configType!),
+                        new System.Text.Json.JsonSerializerOptions() { WriteIndented = true }) : ""
                 });
             }
 
