@@ -18,22 +18,35 @@
 
 
 <MudToolBar>
+            <MudButton StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="RefreshStatus"> Refresh  </MudButton>  
     <MudSpacer />
-        <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers"> Create missing containers  </MudButton>      
-        <MudButton StartIcon="@Icons.Material.Filled.Start" IconColor="Color.Success" OnClick="() => StartContainers()">Start all</MudButton>
-        <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()">Stop all</MudButton> 
+        <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers" Disabled="@_shouldNotCreateContainers"> Create missing containers  </MudButton>      
+        <MudButton StartIcon="@Icons.Material.Filled.Start" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start all</MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop all</MudButton> 
     <MudSpacer />
+    <MudCheckBox @bind-Value="@SetUp.DuplicationEnabled">Duplication enabled</MudCheckBox>
+     <MudTextField Class="ml-4" @bind-Value="@SetUp.HubGroup" Label="Duplication group" Variant="Variant.Text"></MudTextField>
 </MudToolBar>
+
+
+
 
 @if(_status != null)
 {
-<MudTable Class="mt-4" Hover="true" Breakpoint="Breakpoint.Sm" Height="1000px" FixedHeader="true"
+<MudTable Class="mt-4"
+          Hover="true" 
+          Breakpoint="Breakpoint.Sm" 
+          Height="1000px" 
+          FixedHeader="true"
           Items="@_status.Items"
           GroupBy="@_groupDefinition"
           GroupHeaderStyle="background-color:var(--mud-palette-background-gray)"
           GroupFooterClass="mb-4"
-          Dense="true"         
-          @ref="_tableRef">
+          Dense="true"        
+          MultiSelection="true"
+          @ref="_tableRef"
+          T="StandardSetUpStatusItem"
+          SelectedItemsChanged="SelectionChanged">
 
     <HeaderContent>
         <MudTh>Name</MudTh>
@@ -47,7 +60,7 @@
       
     </GroupHeaderTemplate>
     <RowTemplate>
-        <MudTd DataLabel="Nr">@context.SetUpItem.ModuleName</MudTd>
+        <MudTd DataLabel="Nr">@context.SetUpItem.ModuleDisplayName</MudTd>
         <MudTd DataLabel="Sign">@context.ContainerName</MudTd>
         <MudTd DataLabel="Name">@context.ConfigurationStatus()</MudTd>
         <MudTd DataLabel="Start/stop">
@@ -74,8 +87,39 @@
 
 @code {
 
+
+    
+
     private MudTable<StandardSetUpStatusItem> _tableRef;
     private StandardSetUpStatus _status;
+
+    private bool _shouldNotCreateContainers = false;
+    private bool _canNotStartSelection = false;
+    private bool _canNotStopSelection = false;
+
+    private HashSet<StandardSetUpStatusItem>? _currentSelection;
+
+    private HashSet<StandardSetUpStatusItem> selectedItems = new HashSet<StandardSetUpStatusItem>();
+
+    private IEnumerable<string> SelectedContainers => selectedItems.Select(i => i.ID);
+
+    private TableGroupDefinition<StandardSetUpStatusItem> _groupDefinition = new()
+    {
+        GroupName = "Group",
+        Indentation = false,
+        Expandable = true,
+        IsInitiallyExpanded = true,
+        Selector = (e) => e.SetUpItem.ModuleGroup
+    };
+
+    private void SelectionChanged(HashSet<StandardSetUpStatusItem> selectedItems)
+    {
+        _currentSelection = selectedItems;
+        _canNotStartSelection = ! CheckCanStartSelection();
+        _shouldNotCreateContainers = ! CheckShouldCreateContainers();
+        _canNotStopSelection = ! CheckCanStopSelection();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -87,22 +131,122 @@
     private async void RefreshStatus()
     {
         _status = await _client.UpdateStandardSetupStatus(SetUp);
+
         await InvokeAsync(StateHasChanged);
     }
 
-    private TableGroupDefinition<StandardSetUpStatusItem> _groupDefinition = new()
+
+    private bool CheckShouldCreateContainers()
     {
-        GroupName = "Group",
-        Indentation = false,
-        Expandable = true,
-        IsInitiallyExpanded = true,
-        Selector = (e) => e.SetUpItem.ModuleGroup
-    };
+        var groups = _status.Items.GroupBy(i => i.SetUpItem.ModuleDisplayName);
+
+        //too many selected from same group
+        if(groups.Any(g => g.Count()==0))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private bool CheckCanStartSelection()
+    {
+        if(_currentSelection != null && _currentSelection.Count > 0)
+        {
+            if (_currentSelection.Any(i => string.IsNullOrEmpty( i.ID)))
+            {
+                return false;    
+            }
 
 
+            var groups = _status.Items.GroupBy(i => i.SetUpItem.ModuleDisplayName);
 
-    private Task StartContainers() { return Task.CompletedTask; }
-    private Task StopContainers() { return Task.CompletedTask;}
-    private Task CreateContainers() { return Task.CompletedTask;}
+            //too many selected from same group
+            if(groups.Any(g => g.Count()>1))
+            {
+                return false;
+            }
 
+            if(_currentSelection.All(s => s.Started))
+            {
+                return false;
+            }
+
+
+            return true;
+        }
+
+        return false;    
+    }
+
+    private bool CheckCanStopSelection()
+    {
+        if(_currentSelection != null && _currentSelection.Count > 0)
+        {      
+
+            if(_currentSelection.All(s => !s.Started))
+            {
+                return false;
+            }
+
+
+            return true;
+        }
+
+
+        return false;
+    }
+
+
+    private async Task StartContainers() {
+
+        if(_currentSelection != null)
+        {
+            foreach(var item in _currentSelection)
+            {
+                if(!string.IsNullOrEmpty(item.ID) && !item.Started)
+                {
+                    await  _client.StartContainer(item.ID);
+                }
+            }
+        }
+        RefreshStatus();
+        return; 
+    }
+    private async Task StopContainers() {   if(_currentSelection != null)
+        {
+            foreach(var item in _currentSelection)
+            {
+                if(!string.IsNullOrEmpty(item.ID) && item.Started)
+                {
+                    await  _client.StopContainer(item.ID);
+                }
+            }
+        }
+        RefreshStatus();
+        return;
+    }
+    private async Task CreateContainers()
+    {
+        var toCreate = _status.Items.Where(i => string.IsNullOrEmpty(i.ID));
+
+        foreach (var item in toCreate)
+        {
+            if (item.SetUpItem.ConfigurationRequired)
+            {
+                _modulesConfigClient.SaveStandardConfigToFile(item.SetUpItem);
+            }
+            if (item.SetUpItem.ModuleDisplayName == "Default Blackboard")
+            {
+                await _client.CreateBlackboardContainer(SetUp.HubGroup, item.SetUpItem.DefaultContainerName, item.SetUpItem.BlackBoardPort);
+
+            }else if (item.SetUpItem.ModuleDisplayName == "Local Blackboard")
+            {
+                await _client.CreateBlackboardContainer("", item.SetUpItem.DefaultContainerName, item.SetUpItem.BlackBoardPort);
+
+            }
+            else await _client.CreateStandardItemContainer(item.SetUpItem);
+        
+        }   
+        RefreshStatus();
+    }
 }

@@ -8,24 +8,24 @@
 
       
         <GenericModuleComponent TModuleConfig=DWIS.MicroState.InterpretationEngine.Configuration
-                                ConfigFileName="@ImageNames.MICROSTATE_INTERPRETATION_ENGINE_CONFIGFILENAME"
-                                ContainerConfigPath="@ImageNames.MICROSTATE_INTERPRETATION_ENGINE_CONTAINERPATH"
-                                ImageName="@ImageNames.MICROSTATES_INTERPRETATION_ENGINE_NOTAG"
-                                ImageTag="@ImageNames.STABLE_TAG"
-                                LocalConfigPath="@ImageNames.MICROSTATE_INTERPRETATION_ENGINE_WINDOWS_LOCALPATH"
-                                    _newContainerName="microstatesengine" />
+                                ConfigFileName="@Names.MICROSTATE_INTERPRETATION_ENGINE_CONFIGFILENAME"
+                                ContainerConfigPath="@Names.MICROSTATE_INTERPRETATION_ENGINE_CONTAINERPATH"
+                                ImageName="@Names.MICROSTATES_INTERPRETATION_ENGINE_NOTAG"
+                                ImageTag="@Names.STABLE_TAG"
+                                LocalConfigPath="@Names.MICROSTATE_INTERPRETATION_ENGINE_LOCALPATH"
+                                    _newContainerName=@Names.MICROSTATE_INTERPRETATION_ENGINE_CONTAINER_NAME />
       
     </MudTabPanel>
 
     <MudTabPanel Text="Threshold generator" >
         
         <GenericModuleComponent TModuleConfig=DWIS.MicroState.ThresholdsServer.Configuration
-                                ConfigFileName="@ImageNames.MICROSTATE_GENERATOR_CONFIGFILENAME"
-                                ContainerConfigPath="@ImageNames.MICROSTATE_GENERATOR_CONTAINERPATH"
-                                ImageName="@ImageNames.MICROSTATES_THRESHOLDS_NOTAG"
-                                ImageTag="@ImageNames.STABLE_TAG"
-                                LocalConfigPath="@ImageNames.MICROSTATE_GENERATOR_WINDOWS_LOCALPATH"
-                                      _newContainerName="microstatesthresholdgenerator" />
+                                ConfigFileName="@Names.MICROSTATE_GENERATOR_CONFIGFILENAME"
+                                ContainerConfigPath="@Names.MICROSTATE_GENERATOR_CONTAINERPATH"
+                                ImageName="@Names.MICROSTATES_THRESHOLDS_NOTAG"
+                                ImageTag="@Names.STABLE_TAG"
+                                LocalConfigPath="@Names.MICROSTATE_GENERATOR_LOCALPATH"
+                                      _newContainerName=@Names.MICROSTATE_THRESHOLDS_CONTAINER_NAME />
        
     </MudTabPanel>
 </MudTabs>

@@ -40,6 +40,7 @@ namespace DWIS.Docker.Models
 
     public class StandardSetUp
     {
+        public bool DuplicationEnabled { get; set; } = true;
         public string HubGroup { get; set; } = "default";
         public List<StandardSetUpItem> Items { get; set; }
         public StandardSetUp()
@@ -64,7 +65,7 @@ namespace DWIS.Docker.Models
 
        // public List<(string containerName, string containerID, bool running)> RunningContainers { get; set; } = new List<(string containerName, string containerID, bool running)>();
 
-        public string ModuleName { get; set; }
+        public string ModuleDisplayName { get; set; }
         public string ModuleGroup { get; set; }
         public string ImageName { get; set; }
         public string ImageTag { get; set; }
@@ -89,21 +90,21 @@ namespace DWIS.Docker.Models
             //blackboards
             standardSetUpItems.Add(new StandardSetUpItem
             {
-                ModuleName = "Default Blackboard",
+                ModuleDisplayName = "Default Blackboard",
                 ModuleGroup = BlackBoardGroup,
-                ImageName = DWIS.Docker.Constants.ImageNames.BLACKBOARD_NOTAG,
-                ImageTag = DWIS.Docker.Constants.ImageNames.LATEST_TAG,
-                DefaultContainerName = "blackboard",
+                ImageName = DWIS.Docker.Constants.Names.BLACKBOARD_NOTAG,
+                ImageTag = DWIS.Docker.Constants.Names.LATEST_TAG,
+                DefaultContainerName = Names.BLACKBOARD_CONTAINER_NAME,
                 ConfigurationRequired = false
             });
 
             standardSetUpItems.Add(new StandardSetUpItem
             {
-                ModuleName = "Local Blackboard",
+                ModuleDisplayName = "Local Blackboard",
                 ModuleGroup = BlackBoardGroup,
-                ImageName = DWIS.Docker.Constants.ImageNames.BLACKBOARD_NOTAG,
-                ImageTag = DWIS.Docker.Constants.ImageNames.LATEST_TAG,
-                DefaultContainerName = "local-blackboard",
+                ImageName = DWIS.Docker.Constants.Names.BLACKBOARD_NOTAG,
+                ImageTag = DWIS.Docker.Constants.Names.LATEST_TAG,
+                DefaultContainerName = Names.LOCAL_BLACKBOARD_CONTAINER_NAME,
                 BlackBoardPort = "48031",
                 ConfigurationRequired = false
             });
@@ -111,24 +112,24 @@ namespace DWIS.Docker.Models
             //scheduler
             standardSetUpItems.Add(new StandardSetUpItem
             {
-                ModuleName = "Scheduler",
+                ModuleDisplayName = "Scheduler",
                 ModuleGroup = SchedulerGroup,
-                ImageName = DWIS.Docker.Constants.ImageNames.SCHEDULER_NOTAG,
-                ImageTag = DWIS.Docker.Constants.ImageNames.STABLE_TAG,
-                DefaultContainerName = "dwis-scheduler",
+                ImageName = DWIS.Docker.Constants.Names.SCHEDULER_NOTAG,
+                ImageTag = DWIS.Docker.Constants.Names.STABLE_TAG,
+                DefaultContainerName = Names.SCHEDULER_CONTAINER_NAME,
                 ConfigurationRequired = false
             });
             //microstates
             standardSetUpItems.Add(new StandardSetUpItem
             {
-                ModuleName = "Microstate engine",
+                ModuleDisplayName = "Microstate engine",
                 ModuleGroup = MicrostateGroup,
-                ImageName = DWIS.Docker.Constants.ImageNames.MICROSTATES_INTERPRETATION_ENGINE_NOTAG,
-                ImageTag = DWIS.Docker.Constants.ImageNames.STABLE_TAG,
-                DefaultContainerName = "dwis-microstate-engine",
-                ConfigFileName = ImageNames.MICROSTATE_INTERPRETATION_ENGINE_CONFIGFILENAME,
-                ConfigLocalPath = ImageNames.MICROSTATE_INTERPRETATION_ENGINE_WINDOWS_LOCALPATH,
-                ConfigContainerPath = ImageNames.MICROSTATE_INTERPRETATION_ENGINE_CONTAINERPATH,
+                ImageName = DWIS.Docker.Constants.Names.MICROSTATES_INTERPRETATION_ENGINE_NOTAG,
+                ImageTag = DWIS.Docker.Constants.Names.STABLE_TAG,
+                DefaultContainerName = Names.MICROSTATE_INTERPRETATION_ENGINE_CONTAINER_NAME,
+                ConfigFileName = Names.MICROSTATE_INTERPRETATION_ENGINE_CONFIGFILENAME,
+                ConfigLocalPath = Names.MICROSTATE_INTERPRETATION_ENGINE_LOCALPATH,
+                ConfigContainerPath = Names.MICROSTATE_INTERPRETATION_ENGINE_CONTAINERPATH,
                 ConfigurationRequired = true,
                 DefaultConfigContent = System.Text.Json.JsonSerializer.Serialize(
                     new DWIS.MicroState.InterpretationEngine.Configuration(),
@@ -136,14 +137,14 @@ namespace DWIS.Docker.Models
             });
             standardSetUpItems.Add(new StandardSetUpItem
             {
-                ModuleName = "Microstate thresholds",
+                ModuleDisplayName = "Microstate thresholds",
                 ModuleGroup = MicrostateGroup,
-                ImageName = DWIS.Docker.Constants.ImageNames.MICROSTATES_THRESHOLDS_NOTAG,
-                ImageTag = DWIS.Docker.Constants.ImageNames.STABLE_TAG,
-                DefaultContainerName = "dwis-thresholds-engine",
-                ConfigFileName = ImageNames.MICROSTATE_GENERATOR_CONFIGFILENAME,
-                ConfigLocalPath = ImageNames.MICROSTATE_GENERATOR_WINDOWS_LOCALPATH,
-                ConfigContainerPath = ImageNames.MICROSTATE_GENERATOR_CONTAINERPATH,
+                ImageName = DWIS.Docker.Constants.Names.MICROSTATES_THRESHOLDS_NOTAG,
+                ImageTag = DWIS.Docker.Constants.Names.STABLE_TAG,
+                DefaultContainerName =Names.MICROSTATE_THRESHOLDS_CONTAINER_NAME,
+                ConfigFileName = Names.MICROSTATE_GENERATOR_CONFIGFILENAME,
+                ConfigLocalPath = Names.MICROSTATE_GENERATOR_LOCALPATH,
+                ConfigContainerPath = Names.MICROSTATE_GENERATOR_CONTAINERPATH,
                 ConfigurationRequired = true,
                 DefaultConfigContent = System.Text.Json.JsonSerializer.Serialize(
                     new DWIS.MicroState.ThresholdsServer.Configuration(),
@@ -152,45 +153,28 @@ namespace DWIS.Docker.Models
             //composer
             standardSetUpItems.Add(new StandardSetUpItem
             {
-                ModuleName = "Composer",
+                ModuleDisplayName = "Composer",
                 ModuleGroup = ComposerGroup,
-                ImageName = DWIS.Docker.Constants.ImageNames.ADVICE_COMPOSER_NOTAG,
-                ImageTag = DWIS.Docker.Constants.ImageNames.STABLE_TAG,
-                DefaultContainerName = "dwis-composer",
-                ConfigFileName = ImageNames.COMPOSER_CONFIGFILENAME,
-                ConfigLocalPath = ImageNames.COMPOSER_WINDOWS_LOCALPATH,
-                ConfigContainerPath = ImageNames.COMPOSER_CONTAINERPATH,
+                ImageName = DWIS.Docker.Constants.Names.ADVICE_COMPOSER_NOTAG,
+                ImageTag = DWIS.Docker.Constants.Names.STABLE_TAG,
+                DefaultContainerName = Names.ADVICE_COMPOSER_CONTAINER_NAME,
+                ConfigFileName = Names.COMPOSER_CONFIGFILENAME,
+                ConfigLocalPath = Names.COMPOSER_LOCALPATH,
+                ConfigContainerPath = Names.COMPOSER_CONTAINERPATH,
                 ConfigurationRequired = true,
                 DefaultConfigContent = System.Text.Json.JsonSerializer.Serialize(
                     new DWIS.AdviceComposer.Service.Configuration(),
                     new System.Text.Json.JsonSerializerOptions() { WriteIndented = true })
             });
-        
-            //bridges
-            (string tabName, string containerName, string imageName, string tag, string localFolder, string configFileName, string containerConfigPath, Type? configType)[] _bridges =
-{
-       ( "Auto-driller","adcsgenericautodriller", "digiwells/dwisadcsbridgegenericautodriller", "stable", @"C:\Volumes\DWISADCSBridgeGenericAutoDriller", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.AutoDriller.Configuration)),
-        ("Circulation startup", "adcsgenericcirculationstartup", "digiwells/dwisadcsbridgegenericcirculationstartup", "stable", @"C:\Volumes\DWISADCSBridgeGenericCirculationStartup", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.CirculationStartup.Configuration)),
-        ("Circulation stop", "adcsgenericcirculationstop", "digiwells/dwisadcsbridgegenericcirculationstop", "stable", @"C:\Volumes\DWISADCSBridgeGenericCirculationStop", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.CirculationStop.Configuration)),
-        ("Friction test", "adcsgenericfrictiontest", "digiwells/dwisadcsbridgegenericfrictiontest", "stable", @"C:\Volumes\DWISADCSBridgeGenericFrictionTest", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.FrictionTest.Configuration)),
-        ("Max flowrate SOE", "adcsgenericmaxflowratesoe", "digiwells/dwisadcsbridgegenericmaxflowratesoe", "stable", @"C:\Volumes\DWISADCSBridgeGenericMaxFlowrateSOE", "", @"/home", null),
-        ("Over-pressure FDIR", "adcsgenericoverpressurefdir", "digiwells/dwisadcsbridgegenericoverpressurefdir", "stable", @"C:\Volumes\DWISADCSBridgeGenericOverPressureFDIR", "", @"/home", null),
-        ("Over torque FDIR", "adcsgenericovertorquefdir", "digiwells/dwisadcsbridgegenericovertorquefdir", "stable", @"C:\Volumes\DWISADCSBridgeGenericOverTorqueFDIR", "", @"/home", null),
-        ("Overpull underpull FDIR", "adcsgenericoverpullunderpullfdir", "digiwells/dwisadcsbridgegenericoverpullunderpullfdir", "stable", @"C:\Volumes\DWISADCSBridgeGenericOverpullUnderpullFDIR", "", @"/home", null),
-        ("Pick Off-bottom", "adcsgenericpickoffbottom", "digiwells/dwisadcsbridgegenericpickoffbottom", "stable", @"C:\Volumes\DWISADCSBridgeGenericPickOffBottom", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.PickOffBottom.Configuration)),
-        ("Reciprocation", "adcsgenericreciprocation", "digiwells/dwisadcsbridgegenericreciprocation", "stable", @"C:\Volumes\DWISADCSBridgeGenericReciprocation", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.Reciprocation.Configuration)),
-        ("Rotation startup", "adcsgenericrotationstartup", "digiwells/dwisadcsbridgegenericrotationstartup", "stable", @"C:\Volumes\DWISADCSBridgeGenericRotationStartup", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.RotationStartup.Configuration)),
-        ("Rotation stop", "adcsgenericrotationstop", "digiwells/dwisadcsbridgegenericrotationstop", "stable", @"C:\Volumes\DWISADCSBridgeGenericRotationStop", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.RotationStop.Configuration)),
-        ("Swab-surge SOE", "adcsgenericswabsurgesoe", "digiwells/dwisadcsbridgegenericswabsurgesoe", "stable", @"C:\Volumes\DWISADCSBridgeGenericSwabSurgeSOE", "", @"/home", null),
-        ("Tag bottom" ,"adcsgenerictagbottom", "digiwells/dwisadcsbridgegenerictagbottom", "stable", @"C:\Volumes\DWISADCSBridgeGenericTagBottom", "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.TagBottom.Configuration))
-    };
 
 
-            foreach(var bridge in _bridges)
+
+
+            foreach(var bridge in Names.BridgeData)
             {
                 standardSetUpItems.Add(new StandardSetUpItem
                 {
-                    ModuleName = bridge.tabName,
+                    ModuleDisplayName = bridge.moduleName,
                     ModuleGroup = BridgeGroup,
                     ImageName = bridge.imageName,
                     ImageTag = bridge.tag,

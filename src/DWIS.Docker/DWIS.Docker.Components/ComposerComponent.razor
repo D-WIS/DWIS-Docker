@@ -1,6 +1,7 @@
 ﻿@using MudBlazor
 @using DWIS.Docker.Clients
 @using DWIS.Docker.Models
+@using DWIS.Docker.Constants
 @using BlazorMonaco
 @using BlazorMonaco.Editor
 @using BlazorMonaco.Languages
@@ -8,7 +9,18 @@
 @inject DWISDockerClient DockerClient
 
 
-<MudExpansionPanels>
+<GenericModuleComponent
+    TModuleConfig="DWIS.AdviceComposer.Service.Configuration"
+    ConfigFileName="@Names.COMPOSER_CONFIGFILENAME"
+    ContainerConfigPath="@Names.COMPOSER_CONTAINERPATH"
+    ImageName="@Names.ADVICE_COMPOSER_NOTAG" 
+    ImageTag="@Names.STABLE_TAG"
+    LocalConfigPath="@Names.COMPOSER_LOCALPATH" 
+    _newContainerName="@Names.ADVICE_COMPOSER_CONTAINER_NAME" />
+
+
+
+@* <MudExpansionPanels>
     <MudExpansionPanel Dense Gutters="false">
         <TitleContent>
             <div class="d-flex">
@@ -82,67 +94,67 @@
             </MudTable>
         </ChildContent>
     </MudExpansionPanel>
-</MudExpansionPanels>
+</MudExpansionPanels> *@
 
 @code {
 
-    private List<(string id, string name)>? _containers;
-    private string _newContainerName { get; set; } = "advicecomposer";
-    private string _jsonConfig = "";
-    private JSonEditor _jsonEditor;
+    // private List<(string id, string name)>? _containers;
+    // private string _newContainerName { get; set; } = "advicecomposer";
+    // private string _jsonConfig = "";
+    // private JSonEditor _jsonEditor;
 
-    protected override async Task OnInitializedAsync()
-    {
-        var en = await DockerClient.GetComposerContainers();
-        _containers = en.ToList();
-        var _composerConfig = ModulesConfigurationClient.GetComposerConfigFromFile();
-        _jsonConfig = GetComposerConfigAsString(_composerConfig);
-    }
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     var en = await DockerClient.GetComposerContainers();
+    //     _containers = en.ToList();
+    //     var _composerConfig = ModulesConfigurationClient.GetComposerConfigFromFile();
+    //     _jsonConfig = GetComposerConfigAsString(_composerConfig);
+    // }
 
-    private void onModelChanged(string args)
-    {
-        _jsonConfig = args;
-    }
+    // private void onModelChanged(string args)
+    // {
+    //     _jsonConfig = args;
+    // }
 
-    private async void CreateComposerContainer()
-    {
-        await DockerClient.CreateComposerContainer(_newContainerName);
-        var en = await DockerClient.GetComposerContainers();
-        _containers = en.ToList();
-        await InvokeAsync(StateHasChanged);
-    }
+    // private async void CreateComposerContainer()
+    // {
+    //     await DockerClient.CreateComposerContainer(_newContainerName);
+    //     var en = await DockerClient.GetComposerContainers();
+    //     _containers = en.ToList();
+    //     await InvokeAsync(StateHasChanged);
+    // }
 
-    private async Task DeleteContainer(string id)
-    {
-        await DockerClient.DeleteContainer(id);
-        var en = await DockerClient.GetComposerContainers();
-        _containers = en.ToList();
-        await InvokeAsync(StateHasChanged);
-    }
+    // private async Task DeleteContainer(string id)
+    // {
+    //     await DockerClient.DeleteContainer(id);
+    //     var en = await DockerClient.GetComposerContainers();
+    //     _containers = en.ToList();
+    //     await InvokeAsync(StateHasChanged);
+    // }
 
-    private async void CreateConfig()
-    {
-        DWIS.AdviceComposer.Service.Configuration _composerConfig = new();
-        ModulesConfigurationClient.SaveComposerConfigToFile(System.Text.Json.JsonSerializer.Serialize(_composerConfig, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true }));
-        _jsonConfig = GetComposerConfigAsString(_composerConfig);
-        await InvokeAsync(StateHasChanged);
-    }
+    // private async void CreateConfig()
+    // {
+    //     DWIS.AdviceComposer.Service.Configuration _composerConfig = new();
+    //     ModulesConfigurationClient.SaveComposerConfigToFile(System.Text.Json.JsonSerializer.Serialize(_composerConfig, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true }));
+    //     _jsonConfig = GetComposerConfigAsString(_composerConfig);
+    //     await InvokeAsync(StateHasChanged);
+    // }
 
-    private async void SaveConfig()
-    {
-        if (_jsonConfig == null)
-        {
-            return;
-        }
-        ModulesConfigurationClient.SaveComposerConfigToFile(_jsonConfig);
-    }
+    // private async void SaveConfig()
+    // {
+    //     if (_jsonConfig == null)
+    //     {
+    //         return;
+    //     }
+    //     ModulesConfigurationClient.SaveComposerConfigToFile(_jsonConfig);
+    // }
 
-    private string GetComposerConfigAsString(DWIS.AdviceComposer.Service.Configuration _composerConfig)
-    {
-        if (_composerConfig == null)
-        {
-            return "";
-        }
-        return System.Text.Json.JsonSerializer.Serialize(_composerConfig, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true });
-    }
+    // private string GetComposerConfigAsString(DWIS.AdviceComposer.Service.Configuration _composerConfig)
+    // {
+    //     if (_composerConfig == null)
+    //     {
+    //         return "";
+    //     }
+    //     return System.Text.Json.JsonSerializer.Serialize(_composerConfig, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true });
+    // }
 }

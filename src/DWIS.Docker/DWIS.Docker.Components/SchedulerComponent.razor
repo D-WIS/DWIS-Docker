@@ -4,11 +4,23 @@
 @using BlazorMonaco
 @using BlazorMonaco.Editor
 @using BlazorMonaco.Languages
+@using DWIS.Docker.Constants;
 @inject DWISModulesConfigurationClient ModulesConfigurationClient
 @inject DWISDockerClient DockerClient
 
 
-<MudExpansionPanels>
+
+<GenericModuleComponent TModuleConfig=DWIS.MicroState.InterpretationEngine.Configuration
+                        ConfigFileName=""
+                        ContainerConfigPath=""
+                        ImageName="@Names.SCHEDULER_NOTAG"
+                        ImageTag="@Names.STABLE_TAG"
+                        LocalConfigPath=""
+                        _newContainerName=@Names.SCHEDULER_CONTAINER_NAME />
+
+
+
+@* <MudExpansionPanels>
 
     <MudExpansionPanel Dense Gutters="false" Class="mt-1" Text="Containers">
         <TitleContent>
@@ -54,37 +66,37 @@
             </MudTable>
         </ChildContent>
     </MudExpansionPanel>
-</MudExpansionPanels>
+</MudExpansionPanels> *@
 
 @code {
 
-    private List<(string id, string name)>? _containers;
-    private string _newContainerName { get; set; } = "scheduler";
+    // private List<(string id, string name)>? _containers;
+    // private string _newContainerName { get; set; } = "scheduler";
 
 
-    protected override async Task OnInitializedAsync()
-    {
-        var en = await DockerClient.GetSchedulerContainers();
-        _containers = en.ToList();
-    }
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     var en = await DockerClient.GetSchedulerContainers();
+    //     _containers = en.ToList();
+    // }
 
    
 
-    private async void CreateSchedulerContainer()
-    {
-        await DockerClient.CreateSchedulerContainer(_newContainerName);
-        var en = await DockerClient.GetSchedulerContainers();
-        _containers = en.ToList();
-        await InvokeAsync(StateHasChanged);
-    }
+    // private async void CreateSchedulerContainer()
+    // {
+    //     await DockerClient.CreateSchedulerContainer(_newContainerName);
+    //     var en = await DockerClient.GetSchedulerContainers();
+    //     _containers = en.ToList();
+    //     await InvokeAsync(StateHasChanged);
+    // }
 
-    private async Task DeleteContainer(string id)
-    {
-        await DockerClient.DeleteContainer(id);
-        var en = await DockerClient.GetSchedulerContainers();
-        _containers = en.ToList();
-        await InvokeAsync(StateHasChanged);
-    }
+    // private async Task DeleteContainer(string id)
+    // {
+    //     await DockerClient.DeleteContainer(id);
+    //     var en = await DockerClient.GetSchedulerContainers();
+    //     _containers = en.ToList();
+    //     await InvokeAsync(StateHasChanged);
+    // }
 
 
 }

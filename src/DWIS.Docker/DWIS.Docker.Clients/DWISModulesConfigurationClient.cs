@@ -11,7 +11,7 @@ namespace DWIS.Docker.Clients
 
         public DWIS.AdviceComposer.Service.Configuration? GetComposerConfigFromFile()
         {
-            string filePath = Path.Combine(ImageNames.COMPOSER_WINDOWS_LOCALPATH, ImageNames.COMPOSER_CONFIGFILENAME);
+            string filePath = Path.Combine(Names.COMPOSER_LOCALPATH, Names.COMPOSER_CONFIGFILENAME);
 
             if (!File.Exists(filePath))
             {
@@ -43,11 +43,11 @@ namespace DWIS.Docker.Clients
 
         public void SaveComposerConfigToFile(string config)
         {
-            if (!Directory.Exists(ImageNames.COMPOSER_WINDOWS_LOCALPATH))
+            if (!Directory.Exists(Names.COMPOSER_LOCALPATH))
             {
-                Directory.CreateDirectory(ImageNames.COMPOSER_WINDOWS_LOCALPATH);
+                Directory.CreateDirectory(Names.COMPOSER_LOCALPATH);
             }
-            System.IO.File.WriteAllText(Path.Combine(ImageNames.COMPOSER_WINDOWS_LOCALPATH, ImageNames.COMPOSER_CONFIGFILENAME), config);
+            System.IO.File.WriteAllText(Path.Combine(Names.COMPOSER_LOCALPATH, Names.COMPOSER_CONFIGFILENAME), config);
         }
 
         public void SaveConfigToFile(string config, string localPath, string fileName)

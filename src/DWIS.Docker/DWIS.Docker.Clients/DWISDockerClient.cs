@@ -63,11 +63,20 @@ namespace DWIS.Docker.Clients
         public async Task CreateBlackboardContainer(string hubGroup, string containerName, string port)
         {
 
-            bool exist = await CheckImageExist(ImageNames.BLACKBOARD_NOTAG, ImageNames.LATEST_TAG, true);
+            bool exist = await CheckImageExist(Names.BLACKBOARD_NOTAG, Names.LATEST_TAG, true);
+
+            List<string> cmd;
+            if (!string.IsNullOrEmpty(hubGroup))
+            {
+                cmd = new List<string>() { "--useHub", "--hubURL", "https://dwis.digiwells.no/blackboard/applications", "--hubGroup", hubGroup, "--port", port };
+            }
+            else { cmd = new List<string>() { "--port", port }; }
+
+
             var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
             {
                 Name = containerName,
-                Image = ImageNames.BLACKBOARD,
+                Image = Names.BLACKBOARD,
                 Hostname = "localhost",
                 ExposedPorts = new Dictionary<string, EmptyStruct>
                 {
@@ -76,12 +85,12 @@ namespace DWIS.Docker.Clients
                 HostConfig = new HostConfig
                 {
                     PortBindings = new Dictionary<string, IList<PortBinding>>
-            {
-                {port, new List<PortBinding> {new PortBinding {HostPort = port}}}
-            },
+                    {
+                        {port, new List<PortBinding> {new PortBinding {HostPort = port}}}
+                    },
                     PublishAllPorts = true
                 },
-                Cmd = new List<string>() { "--useHub", "--hubURL", "https://dwis.digiwells.no/blackboard/applications", "--hubGroup", hubGroup, "--port", port },
+                Cmd = cmd,
                 Labels = new Dictionary<string, string>() { { "port", port }, { "group", hubGroup } }
             });
         }
@@ -108,6 +117,7 @@ namespace DWIS.Docker.Clients
                         {
                             var argsList = args.ToList();
                             int idx = argsList.IndexOf("--useHub");
+                            bool useHub = false;
                             if (idx != -1)
                             {
                                 if (idx == argsList.Count - 1 || argsList[idx + 1] != "false")
@@ -115,6 +125,7 @@ namespace DWIS.Docker.Clients
                                     idx = argsList.IndexOf("--hubURL");
                                     if (idx != -1 && idx < argsList.Count - 1)
                                     {
+                                        useHub = true;
                                         string hubURL = argsList[idx + 1];
                                         string hubGroup = "default";
                                         string port = "48030";
@@ -139,6 +150,25 @@ namespace DWIS.Docker.Clients
                                         blackBoardContainers.Add(containerData);
                                     }
                                 }
+                            }
+                            if (!useHub) 
+                            {
+                                string port = "48030";
+
+                                
+                                idx = argsList.IndexOf("--port");
+                                if (idx != -1 && idx < argsList.Count - 1)
+                                {
+                                    port = argsList[idx + 1];
+                                }
+
+                                BlackboardContainerData containerData = new BlackboardContainerData();
+                                containerData.ContainerID = container.ID;
+                                containerData.ContainerName = container.Names.First();
+                                containerData.ContainerPort = port;
+                                containerData.ContainerGroup = "";
+                                containerData.ContainerStarted = container.State.ToLower() == "running";
+                                blackBoardContainers.Add(containerData);
                             }
                         }
                     }
@@ -167,15 +197,21 @@ namespace DWIS.Docker.Clients
             {
                 if (loadIfNotExist)
                 {
-                    await _client.Images.CreateImageAsync(
-                        new ImagesCreateParameters()
-                        {
-                            FromImage = imageName,
-                            Tag = tag
-                        },
-                        null,
-                        new Progress<JSONMessage>());
-                    return true;
+                    try
+                    {
+                        await _client.Images.CreateImageAsync(
+                            new ImagesCreateParameters()
+                            {
+                                FromImage = imageName,
+                                Tag = tag
+                            },
+                            null,
+                            new Progress<JSONMessage>());
+                        return true;
+                    }
+                    catch (Exception ex) {                         
+                        _logger?.LogError("Error loading image {imageName}:{tag} - {message}", imageName, tag, ex.Message);
+                    }
                 }
                 return false;
             }
@@ -184,13 +220,13 @@ namespace DWIS.Docker.Clients
 
         public async Task<string> CreateSchedulerContainer(string name = "scheduler")
         {
-            bool exist = await CheckImageExist(ImageNames.SCHEDULER_NOTAG, "stable", true);
+            bool exist = await CheckImageExist(Names.SCHEDULER_NOTAG, "stable", true);
 
 
             var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
             {
                 Name = name,
-                Image = ImageNames.SCHEDULER
+                Image = Names.SCHEDULER
             });
             return response.ID;
         }
@@ -206,45 +242,48 @@ namespace DWIS.Docker.Clients
         public async Task<string> CreateContainer(string imageNameNoTag, string tag, string localConfigPath, string containerConfigPath, string containerName)
         {
             bool exist = await CheckImageExist(imageNameNoTag, tag, true);
-
-            var ccp = new CreateContainerParameters()
+            if (exist)
             {
-                Name = containerName,
-                Image = imageNameNoTag + ":" + tag
-            };
-
-            if (!string.IsNullOrEmpty(localConfigPath) && !string.IsNullOrEmpty(containerConfigPath))
-            {
-                ccp.HostConfig = new HostConfig
+                var ccp = new CreateContainerParameters()
                 {
-                    Binds = new List<string>
+                    Name = containerName,
+                    Image = imageNameNoTag + ":" + tag
+                };
+
+                if (!string.IsNullOrEmpty(localConfigPath) && !string.IsNullOrEmpty(containerConfigPath))
+                {
+                    ccp.HostConfig = new HostConfig
+                    {
+                        Binds = new List<string>
                     {
                         localConfigPath + ":" + containerConfigPath// Format: host-path:container-path
                         // Add options like ":ro" for read-only if needed
                     }
-                };
+                    };
+                }
+
+
+
+                var response = await _client.Containers.CreateContainerAsync(ccp);
+                return response.ID;
             }
-
-
-
-            var response = await _client.Containers.CreateContainerAsync(ccp);
-            return response.ID;
+            else { return string.Empty; }
         }
 
 
         public async Task<string> CreateComposerContainer(string name = "advicecomposer")
         {
-            bool exist = await CheckImageExist(ImageNames.ADVICE_COMPOSER_NOTAG, ImageNames.STABLE_TAG, true);
+            bool exist = await CheckImageExist(Names.ADVICE_COMPOSER_NOTAG, Names.STABLE_TAG, true);
 
             var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
             {
                 Name = name,
-                Image = ImageNames.ADVICE_COMPOSER,
+                Image = Names.ADVICE_COMPOSER,
                 HostConfig = new HostConfig
                 {
                     Binds = new List<string>
             {
-               ImageNames.COMPOSER_WINDOWS_LOCALPATH + ":" + ImageNames.COMPOSER_CONTAINERPATH// Format: host-path:container-path
+               Names.COMPOSER_LOCALPATH + ":" + Names.COMPOSER_CONTAINERPATH// Format: host-path:container-path
                 // Add options like ":ro" for read-only if needed
             }
                 }
@@ -262,7 +301,7 @@ namespace DWIS.Docker.Clients
              });
             if (containers != null && containers.Count > 0)
             {
-                var myContainers = containers.Where(c => c.Image == ImageNames.ADVICE_COMPOSER);
+                var myContainers = containers.Where(c => c.Image == Names.ADVICE_COMPOSER);
                 foreach (var container in myContainers)
                 {
                     composerContainers.Add((container.ID, container.Names.First()));
@@ -302,7 +341,7 @@ namespace DWIS.Docker.Clients
              });
             if (containers != null && containers.Count > 0)
             {
-                var myContainers = containers.Where(c => c.Image == ImageNames.SCHEDULER);
+                var myContainers = containers.Where(c => c.Image == Names.SCHEDULER);
                 foreach (var container in myContainers)
                 {
                     composerContainers.Add((container.ID, container.Names.First()));
@@ -323,7 +362,7 @@ namespace DWIS.Docker.Clients
             {
                 if (item.ModuleGroup == StandardSetUpItem.BlackBoardGroup)
                 {
-                    if (item.ModuleName == "Default Blackboard")
+                    if (item.ModuleDisplayName == "Default Blackboard")
                     {
                         var dbb = bbs.Where(b => b.ContainerGroup == standardSetUp.HubGroup && b.ContainerPort == "48030");
                         if (dbb != null && dbb.Count() > 0)

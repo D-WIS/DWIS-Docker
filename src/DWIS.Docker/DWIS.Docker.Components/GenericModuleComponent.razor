@@ -37,7 +37,7 @@
                     }
 
                     <MudItem xs="9">
-                        <JSonEditor @ref="_jsonEditor" InitialJson="@_jsonConfig" EditorID="composerconfigjson" OnModelChanged="onModelChanged"></JSonEditor>
+                        <JSonEditor @ref="_jsonEditor" InitialJson="@_jsonConfig" EditorID="@_id" OnModelChanged="onModelChanged"></JSonEditor>
                     </MudItem>
                 </MudGrid>
             </ChildContent>
@@ -91,6 +91,8 @@
 </div>
 
 @code {
+
+    private string _id = Guid.NewGuid().ToString();
     private List<(string id, string name, bool started)>? _containers;
 
     private string _jsonConfig = "";
