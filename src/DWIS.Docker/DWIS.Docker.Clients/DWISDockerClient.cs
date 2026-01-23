@@ -362,9 +362,11 @@ namespace DWIS.Docker.Clients
             {
                 if (item.ModuleGroup == StandardSetUpItem.BlackBoardGroup)
                 {
-                    if (item.ModuleDisplayName == "Default Blackboard")
-                    {
-                        var dbb = bbs.Where(b => b.ContainerGroup == standardSetUp.HubGroup && b.ContainerPort == "48030");
+                    if (item.ModuleDisplayName == "Default Blackboard")                    {
+
+                        var dbb = bbs.Where(b =>
+                        ((string.IsNullOrEmpty(b.ContainerGroup) && !standardSetUp.DuplicationEnabled) 
+                        || b.ContainerGroup == standardSetUp.HubGroup)  &&  b.ContainerPort == item.BlackBoardPort);
                         if (dbb != null && dbb.Count() > 0)
                         {
                             foreach (var container in dbb)
@@ -380,7 +382,7 @@ namespace DWIS.Docker.Clients
                     }
                     else
                     {
-                        var dbb = bbs.Where(b => b.ContainerPort == "48031");
+                        var dbb = bbs.Where(b => b.ContainerPort == item.BlackBoardPort);
                         foreach (var container in dbb)
                         {
                             StandardSetUpStatusItem statusItem = new StandardSetUpStatusItem();
