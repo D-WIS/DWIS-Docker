@@ -21,8 +21,8 @@
             <MudButton StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="RefreshStatus"> Refresh  </MudButton>  
     <MudSpacer />
         <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers" Disabled="@_shouldNotCreateContainers"> Create missing containers  </MudButton>      
-        <MudButton StartIcon="@Icons.Material.Filled.Start" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start all</MudButton>
-        <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop all</MudButton> 
+        <MudButton StartIcon="@Icons.Material.Filled.Start" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop selection</MudButton> 
     <MudSpacer />
     <MudCheckBox @bind-Value="@SetUp.DuplicationEnabled">Duplication enabled</MudCheckBox>
      <MudTextField Class="ml-4" @bind-Value="@SetUp.HubGroup" Label="Duplication group" Variant="Variant.Text"></MudTextField>
@@ -141,7 +141,7 @@
         var groups = _status.Items.GroupBy(i => i.SetUpItem.ModuleDisplayName);
 
         //too many selected from same group
-        if(groups.Any(g => g.Count()==0))
+        if(groups.Any(g => g.Count()==0 || (g.Count() == 1 && string.IsNullOrEmpty( g.First().ContainerName))))
         {
             return true;
         }

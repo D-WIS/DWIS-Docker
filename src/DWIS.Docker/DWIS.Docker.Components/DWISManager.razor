@@ -35,7 +35,48 @@
     }
 </MudToolBar>
 
-<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2" Centered>
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2"  Border  Color="Color.Primary" >
+     <MudSpacer />
+    <MudTabPanel Text="Standard set-up">
+        <StandardSetUpComponent></StandardSetUpComponent>
+    </MudTabPanel>
+    <MudTabPanel Text="Blackboards">
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2" Centered>
+            <MudTabPanel Text="Blackboard Group view">
+                <HubGroupDataComponent CopyToClipBoard="CopyToClipBoard" SelectFolder="SelectFolder" HubGroups="Manager.HubMonitoringData.HubGroups"></HubGroupDataComponent>
+            </MudTabPanel>
+            <MudTabPanel Text="Blackboard Container view">
+                <BlackBoardComponent ContainersPerPort="Manager.GetContainersPerPort()"></BlackBoardComponent>
+            </MudTabPanel>
+        </MudTabs>
+    </MudTabPanel>
+     <MudTabPanel Text="DWIS Modules">
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2" Centered>
+            <MudTabPanel Text="Microstates">
+                <MicrostatesComponent></MicrostatesComponent>
+            </MudTabPanel>
+            <MudTabPanel Text="Composer">
+                <ComposerComponent></ComposerComponent>
+            </MudTabPanel>
+            <MudTabPanel Text="Scheduler">
+                <SchedulerComponent></SchedulerComponent>
+            </MudTabPanel>
+            <MudTabPanel Text="Bridges">
+                <BridgesComponent></BridgesComponent>
+            </MudTabPanel>
+        </MudTabs>
+    </MudTabPanel>
+    <MudTabPanel Text="Clients"></MudTabPanel>
+    <MudTabPanel Text="Advisors"></MudTabPanel>
+    <MudTabPanel Text="ADCS"></MudTabPanel>
+    <MudSpacer />
+
+</MudTabs>
+
+
+
+
+@* <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2" Centered>
     
     <MudTabPanel Text="Standard set-up">
        <StandardSetUpComponent></StandardSetUpComponent>
@@ -59,7 +100,7 @@
     <MudTabPanel Text="Bridges">
         <BridgesComponent></BridgesComponent>
     </MudTabPanel>
-</MudTabs>
+</MudTabs> *@
 
 <MudAppBar Color="Color.Info" Bottom="true">
     <MudText Typo="Typo.caption">@("Hub: " + Manager.HubAddress)</MudText>
