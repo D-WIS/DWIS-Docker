@@ -232,14 +232,25 @@ namespace DWIS.Docker.Clients
         }
 
 
-        public async Task<string> CreateStandardItemContainer(StandardSetUpItem item) 
+        public async Task<string> CreateStandardItemContainer(StandardSetUpItem item, string? mainBlackBoardIP = null)
         {
-        return await CreateContainer(item.ImageName, item.ImageTag, item.ConfigLocalPath, item.ConfigContainerPath, item.DefaultContainerName);
+            if (mainBlackBoardIP == null)
+            {
+                return await CreateContainer(item.ImageName, item.ImageTag, item.ConfigLocalPath, item.ConfigContainerPath, item.DefaultContainerName);
+            }
+            else             
+            {
+                var envVariables = new List<(string key, string val)>
+                {
+                    (DWIS.Client.ReferenceImplementation.IDWISClientConfiguration.BLACKBOARD_IP_ENVIRONMENT_VARIABLE, mainBlackBoardIP)
+                };
+                return await CreateContainer(item.ImageName, item.ImageTag, item.ConfigLocalPath, item.ConfigContainerPath, item.DefaultContainerName, envVariables);
+            }
         }
 
 
 
-        public async Task<string> CreateContainer(string imageNameNoTag, string tag, string localConfigPath, string containerConfigPath, string containerName)
+        public async Task<string> CreateContainer(string imageNameNoTag, string tag, string localConfigPath, string containerConfigPath, string containerName, IEnumerable<(string key, string val)>? envVariables = null)
         {
             bool exist = await CheckImageExist(imageNameNoTag, tag, true);
             if (exist)
@@ -247,8 +258,19 @@ namespace DWIS.Docker.Clients
                 var ccp = new CreateContainerParameters()
                 {
                     Name = containerName,
-                    Image = imageNameNoTag + ":" + tag
+                    Image = imageNameNoTag + ":" + tag,
+                    
                 };
+
+                if(envVariables != null)
+                {
+                    List<string> envs = new List<string>();
+                    foreach (var env in envVariables)
+                    {
+                        envs.Add(env.key + "=" + env.val);
+                    }
+                    ccp.Env = envs;
+                }
 
                 if (!string.IsNullOrEmpty(localConfigPath) && !string.IsNullOrEmpty(containerConfigPath))
                 {
@@ -271,44 +293,7 @@ namespace DWIS.Docker.Clients
         }
 
 
-        public async Task<string> CreateComposerContainer(string name = "advicecomposer")
-        {
-            bool exist = await CheckImageExist(Names.ADVICE_COMPOSER_NOTAG, Names.STABLE_TAG, true);
-
-            var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
-            {
-                Name = name,
-                Image = Names.ADVICE_COMPOSER,
-                HostConfig = new HostConfig
-                {
-                    Binds = new List<string>
-            {
-               Names.COMPOSER_LOCALPATH + ":" + Names.COMPOSER_CONTAINERPATH// Format: host-path:container-path
-                // Add options like ":ro" for read-only if needed
-            }
-                }
-            });
-            return response.ID;
-        }
-
-        public async Task<IEnumerable<(string id, string name)>> GetComposerContainers()
-        {
-            var composerContainers = new List<(string id, string name)>();
-            var containers = await _client.Containers.ListContainersAsync(
-             new ContainersListParameters()
-             {
-                 All = true
-             });
-            if (containers != null && containers.Count > 0)
-            {
-                var myContainers = containers.Where(c => c.Image == Names.ADVICE_COMPOSER);
-                foreach (var container in myContainers)
-                {
-                    composerContainers.Add((container.ID, container.Names.First()));
-                }
-            }
-            return composerContainers;
-        }
+        
 
         public async Task<IEnumerable<(string id, string name, bool running)>> GetContainers(string imageName)
         {
@@ -331,27 +316,9 @@ namespace DWIS.Docker.Clients
 
 
 
-        public async Task<IEnumerable<(string id, string name)>> GetSchedulerContainers()
-        {
-            var composerContainers = new List<(string id, string name)>();
-            var containers = await _client.Containers.ListContainersAsync(
-             new ContainersListParameters()
-             {
-                 All = true
-             });
-            if (containers != null && containers.Count > 0)
-            {
-                var myContainers = containers.Where(c => c.Image == Names.SCHEDULER);
-                foreach (var container in myContainers)
-                {
-                    composerContainers.Add((container.ID, container.Names.First()));
-                }
-            }
-            return composerContainers;
-        }
 
 
-        public async Task<StandardSetUpStatus> UpdateStandardSetupStatus(StandardSetUp standardSetUp)
+        public async Task<StandardSetUpStatus> UpdateStandardSetupStatus(StandardSetUp standardSetUp, bool replicationEnabled, string hubGroup)
         {
             var bbs = await GetBlackBoardContainers();          
             
@@ -365,8 +332,8 @@ namespace DWIS.Docker.Clients
                     if (item.ModuleDisplayName == "Default Blackboard")                    {
 
                         var dbb = bbs.Where(b =>
-                        ((string.IsNullOrEmpty(b.ContainerGroup) && !standardSetUp.DuplicationEnabled) 
-                        || b.ContainerGroup == standardSetUp.HubGroup)  &&  b.ContainerPort == item.BlackBoardPort);
+                        ((string.IsNullOrEmpty(b.ContainerGroup) && !replicationEnabled) 
+                        || b.ContainerGroup == hubGroup)  &&  b.ContainerPort == item.BlackBoardPort);
                         if (dbb != null && dbb.Count() > 0)
                         {
                             foreach (var container in dbb)
@@ -374,7 +341,7 @@ namespace DWIS.Docker.Clients
                                 StandardSetUpStatusItem statusItem = new StandardSetUpStatusItem();
                                 statusItem.SetUpItem = item;
                                 statusItem.ContainerName = container.ContainerName;
-                                statusItem.ID = container.ContainerID;
+                                statusItem.ContainerID = container.ContainerID;
                                 statusItem.Started = container.ContainerStarted;
                                 status.Items.Add(statusItem);
                             }
@@ -388,7 +355,7 @@ namespace DWIS.Docker.Clients
                             StandardSetUpStatusItem statusItem = new StandardSetUpStatusItem();
                             statusItem.SetUpItem = item;
                             statusItem.ContainerName = container.ContainerName;
-                            statusItem.ID = container.ContainerID;
+                            statusItem.ContainerID = container.ContainerID;
                             statusItem.Started = container.ContainerStarted;
                             status.Items.Add(statusItem);
                         }
@@ -404,7 +371,7 @@ namespace DWIS.Docker.Clients
                             StandardSetUpStatusItem statusItem = new StandardSetUpStatusItem();
                             statusItem.SetUpItem = item;
                             statusItem.ContainerName = container.name;
-                            statusItem.ID = container.id;
+                            statusItem.ContainerID = container.id;
                             statusItem.Started = container.running;
                             status.Items.Add(statusItem);
                         }
@@ -422,7 +389,7 @@ namespace DWIS.Docker.Clients
                     StandardSetUpStatusItem statusItem = new StandardSetUpStatusItem();
                     statusItem.SetUpItem = standardItem;
                     statusItem.ContainerName = string.Empty;
-                    statusItem.ID = string.Empty;
+                    statusItem.ContainerID = string.Empty;
                     statusItem.Started = false;
                     statusItem.ConfigurationExists = false;
                     status.Items.Add(statusItem);

@@ -8,6 +8,16 @@ using System.Threading.Tasks;
 
 namespace DWIS.Docker.Models
 {
+    public class DWISProject 
+    {
+        public bool ReplicationEnabled { get; set; }
+        public string HubGroup { get; set; } = "default";
+        public string BlackBoardHostIP { get; set; }
+        public StandardSetUpStatus? Status { get; set; }
+    }
+
+
+
     public class StandardSetUpStatus
     {
         public List<StandardSetUpStatusItem> Items { get; set; } = new List<StandardSetUpStatusItem>();
@@ -17,7 +27,7 @@ namespace DWIS.Docker.Models
         public StandardSetUpItem SetUpItem { get; set; }
         public string ContainerName { get; set; }
         public bool Started { get; set; }
-        public string ID { get; set; }
+        public string ContainerID { get; set; }
         public bool ConfigurationExists { get; set; }
 
 
@@ -40,8 +50,8 @@ namespace DWIS.Docker.Models
 
     public class StandardSetUp
     {
-        public bool DuplicationEnabled { get; set; } = true;
-        public string HubGroup { get; set; } = "default";
+        //public bool DuplicationEnabled { get; set; } = true;
+        //public string HubGroup { get; set; } = "default";
         public List<StandardSetUpItem> Items { get; set; }
         public StandardSetUp()
         {

@@ -4,7 +4,7 @@
 
 @inject HubGroupDataManager Manager
 @inject IDialogService DialogService
-
+@inject DWISProject Project
 @* Required *@
 <MudThemeProvider  />
 <MudPopoverProvider />
@@ -38,7 +38,7 @@
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2"  Border  Color="Color.Primary" >
      <MudSpacer />
     <MudTabPanel Text="Standard set-up">
-        <StandardSetUpComponent></StandardSetUpComponent>
+        <StandardSetUpComponent Project="Project"></StandardSetUpComponent>
     </MudTabPanel>
     <MudTabPanel Text="Blackboards">
         <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2" Centered>
@@ -126,6 +126,7 @@
     {
         await Manager.UpdateManagerData();
     }
+
     [Parameter]
     public bool Maximized { get; set; }
 

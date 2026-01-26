@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using System.Data.Common;
+using System.Net;
+using System.Net.Sockets;
 
 namespace DWIS.Desktop
 {
@@ -16,6 +18,24 @@ namespace DWIS.Desktop
 
         public DWISDesktopForm()
         {
+            string hostName = Dns.GetHostName();
+            Console.WriteLine($"Local Machine Host Name: {hostName}");
+
+            IPHostEntry ipEntry = Dns.GetHostEntry(hostName);
+            IPAddress[] addresses = ipEntry.AddressList;
+
+
+            string localIP = addresses.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork)?.ToString() ?? "Not found";
+
+            Console.WriteLine("IPv4 Addresses:");
+            foreach (IPAddress ip in addresses.Where(ip => ip.AddressFamily == AddressFamily.InterNetwork))
+            {
+                Console.WriteLine(ip.ToString());
+            }
+
+
+
+
             InitializeComponent();
 
             HubConnectionBuilder connectionBuilder = new HubConnectionBuilder();
@@ -26,6 +46,7 @@ namespace DWIS.Desktop
             .Build();
 
 
+
             //HubGroupDataManager
             var services = new ServiceCollection();
             services.AddSingleton<DWISModulesConfigurationClient>();
@@ -34,6 +55,7 @@ namespace DWIS.Desktop
             services.AddSingleton<DWISDockerClient>();
             services.AddSingleton<HubGroupDataManager>();
             services.AddSingleton<StandardSetUp>();
+            services.AddSingleton<DWISProject>(new DWISProject() { BlackBoardHostIP = localIP });
             services.AddWindowsFormsBlazorWebView();
             //services.AddBlazorBootstrap();
             services.AddMudServices();
@@ -42,6 +64,7 @@ namespace DWIS.Desktop
 
             blazorWebView.RootComponents.Add<DWISManager>("#app", new Dictionary<string, object?>
             {
+              
                 { nameof(DWISManager.OnQuitButtonClicked), new Microsoft.AspNetCore.Components.EventCallback(null, () => Quit())},
                 { nameof(DWISManager.OnMinimizeButtonClicked), new Microsoft.AspNetCore.Components.EventCallback(null, () => Minimize())},
                 { nameof(DWISManager.OnMaximizeButtonClicked), new Microsoft.AspNetCore.Components.EventCallback(null, () => Maximize())},
