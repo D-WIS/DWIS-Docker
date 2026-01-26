@@ -37,6 +37,9 @@
         <MudButton StartIcon="@Icons.Material.Filled.Start" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
         <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop selection</MudButton> 
         <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteContainers()" Disabled="_canNotDeleteContainers">Delete selection</MudButton> 
+            <MudSpacer />
+        <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
+        <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
     <MudSpacer />
 
 </MudToolBar>
@@ -66,10 +69,11 @@
         <MudTh>Container</MudTh>
         <MudTh>Config ok</MudTh>
         <MudTh>Start/stop/Create</MudTh>
+        <MudTh>Image status</MudTh>
     </HeaderContent>
 
     <GroupHeaderTemplate>
-        <MudTh Class="mud-table-cell-custom-group" colspan="4" >@($"{context.Key}") </MudTh>
+        <MudTh Class="mud-table-cell-custom-group" colspan="5" >@($"{context.Key}") </MudTh>
       
     </GroupHeaderTemplate>
     <RowTemplate>
@@ -92,6 +96,20 @@
                                 await _client.CreateStandardItemContainer(context.SetUpItem);}">
                                     Create
                     </MudButton>
+                }
+            </MudTd>
+            <MudTd DataLabel="Image statis">
+                @if(context.CurrentImageStatus == StandardSetUpStatusItem.ImageStatus.Updated)
+                {
+                    <MudBadge Color="Color.Success" Variant="Variant.Filled">Updated</MudBadge>
+                }
+                else if(context.CurrentImageStatus == StandardSetUpStatusItem.ImageStatus.Outdated)
+                {
+                    <MudBadge Color="Color.Warning" Variant="Variant.Filled">Outdated</MudBadge>
+                }
+                else
+                {
+                    <MudBadge Color="Color.Default" Variant="Variant.Filled">Unknown</MudBadge>
                 }
             </MudTd>
     </RowTemplate>
@@ -133,12 +151,16 @@
         _canNotStartSelection = ! CheckCanStartSelection();
         _shouldNotCreateContainers = ! CheckShouldCreateContainers();
         _canNotStopSelection = ! CheckCanStopSelection();
-       _canNotDeleteContainers = ! CheckCanDeleteSelection();
+        _canNotDeleteContainers = ! CheckCanDeleteSelection();
     }
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        if (_client != null && SetUp != null)
+        {
+            await  _client.UpdateStandardSetupImageDates(SetUp);
+        }
         RefreshStatus();
     }
 
@@ -147,7 +169,6 @@
     private async void RefreshStatus()
     {
         Project.Status = await _client.UpdateStandardSetupStatus(SetUp, Project.ReplicationEnabled, Project.HubGroup);
-
         await InvokeAsync(StateHasChanged);
     }
 
@@ -279,7 +300,7 @@
 
             }
             else await _client.CreateStandardItemContainer(item.SetUpItem);
-        
+
         }   
         RefreshStatus();
     }
@@ -298,5 +319,26 @@
         RefreshStatus();
         return; 
     }
+    private async Task CheckForUpdates() {
 
+
+        await _client.UpdateStandardSetupImageDates(SetUp);
+         RefreshStatus();       
+    }
+
+
+     private async Task UpdateSelection() {
+        if(_currentSelection != null)
+        {
+            foreach(var item in _currentSelection)
+            {
+                if(!string.IsNullOrEmpty(item.ContainerID))
+                {
+                    await  _client.DeleteContainer(item.ContainerID);
+                }
+            }
+        }
+        RefreshStatus();
+        return; 
+    }
 }

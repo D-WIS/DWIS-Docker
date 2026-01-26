@@ -30,6 +30,15 @@ namespace DWIS.Docker.Models
         public string ContainerID { get; set; }
         public bool ConfigurationExists { get; set; }
 
+        public ImageStatus CurrentImageStatus { get; set; } = ImageStatus.Unknown;
+
+        public enum ImageStatus 
+        {
+            Unknown,
+            Outdated,
+            Updated
+        }
+
 
         public string ConfigurationStatus() 
         {
@@ -92,6 +101,7 @@ namespace DWIS.Docker.Models
         public string BlackBoardPort { get; set; } = "48030";
 
         public string ExtraArgs { get; set; }
+        public DateTime ImageRepoTimeStamp { get; set; } = DateTime.MinValue;
 
         public static List<StandardSetUpItem> GetStandardSetUp()
         {

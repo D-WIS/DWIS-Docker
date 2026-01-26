@@ -1,11 +1,14 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
+using Docker.Registry.DotNet;
 using DWIS.Docker.Constants;
 using DWIS.Docker.Models;
 using Microsoft.Extensions.Logging;
 using System.Collections;
+using System.ComponentModel;
 using System.Globalization;
 using System.Xml.Linq;
+using DRD = Docker.Registry.DotNet;
 namespace DWIS.Docker.Clients
 {
     public class DWISDockerClient
@@ -151,11 +154,11 @@ namespace DWIS.Docker.Clients
                                     }
                                 }
                             }
-                            if (!useHub) 
+                            if (!useHub)
                             {
                                 string port = "48030";
 
-                                
+
                                 idx = argsList.IndexOf("--port");
                                 if (idx != -1 && idx < argsList.Count - 1)
                                 {
@@ -177,6 +180,28 @@ namespace DWIS.Docker.Clients
             return blackBoardContainers;
 
         }
+
+
+
+        public async Task UpdateStandardSetupImageDates(StandardSetUp setup)
+        {
+            var configuration = new DRD.RegistryClientConfiguration("https://hub.docker.com");
+
+            using var client = configuration.CreateClient();
+
+
+            foreach (var item in setup.Items)
+            {
+                var tags = await client.Repository.ListRepositoryTags("digiwells", item.ImageName.Remove(0, "digiwells/".Length));
+                var tagItem = tags.Tags.FirstOrDefault(t => t.Name == item.ImageTag);
+                if (tagItem != null)
+                {
+                    item.ImageRepoTimeStamp = tagItem.LastUpdated;
+                }
+            }
+        }
+
+
 
 
         public async Task<bool> CheckImageExist(string imageName, string tag, bool loadIfNotExist = false)
@@ -209,7 +234,8 @@ namespace DWIS.Docker.Clients
                             new Progress<JSONMessage>());
                         return true;
                     }
-                    catch (Exception ex) {                         
+                    catch (Exception ex)
+                    {
                         _logger?.LogError("Error loading image {imageName}:{tag} - {message}", imageName, tag, ex.Message);
                     }
                 }
@@ -238,7 +264,7 @@ namespace DWIS.Docker.Clients
             {
                 return await CreateContainer(item.ImageName, item.ImageTag, item.ConfigLocalPath, item.ConfigContainerPath, item.DefaultContainerName);
             }
-            else             
+            else
             {
                 var envVariables = new List<(string key, string val)>
                 {
@@ -259,10 +285,10 @@ namespace DWIS.Docker.Clients
                 {
                     Name = containerName,
                     Image = imageNameNoTag + ":" + tag,
-                    
+
                 };
 
-                if(envVariables != null)
+                if (envVariables != null)
                 {
                     List<string> envs = new List<string>();
                     foreach (var env in envVariables)
@@ -293,7 +319,7 @@ namespace DWIS.Docker.Clients
         }
 
 
-        
+
 
         public async Task<IEnumerable<(string id, string name, bool running)>> GetContainers(string imageName)
         {
@@ -320,8 +346,8 @@ namespace DWIS.Docker.Clients
 
         public async Task<StandardSetUpStatus> UpdateStandardSetupStatus(StandardSetUp standardSetUp, bool replicationEnabled, string hubGroup)
         {
-            var bbs = await GetBlackBoardContainers();          
-            
+            var bbs = await GetBlackBoardContainers();
+
             StandardSetUpStatus status = new StandardSetUpStatus();
 
 
@@ -329,11 +355,12 @@ namespace DWIS.Docker.Clients
             {
                 if (item.ModuleGroup == StandardSetUpItem.BlackBoardGroup)
                 {
-                    if (item.ModuleDisplayName == "Default Blackboard")                    {
+                    if (item.ModuleDisplayName == "Default Blackboard")
+                    {
 
                         var dbb = bbs.Where(b =>
-                        ((string.IsNullOrEmpty(b.ContainerGroup) && !replicationEnabled) 
-                        || b.ContainerGroup == hubGroup)  &&  b.ContainerPort == item.BlackBoardPort);
+                        ((string.IsNullOrEmpty(b.ContainerGroup) && !replicationEnabled)
+                        || b.ContainerGroup == hubGroup) && b.ContainerPort == item.BlackBoardPort);
                         if (dbb != null && dbb.Count() > 0)
                         {
                             foreach (var container in dbb)
@@ -377,12 +404,12 @@ namespace DWIS.Docker.Clients
                         }
                     }
 
-                
+
                 }
             }
 
-           foreach(var standardItem in standardSetUp.Items)
-           {
+            foreach (var standardItem in standardSetUp.Items)
+            {
                 var existingStatusItems = status.Items.Where(i => i.SetUpItem == standardItem);
                 if (existingStatusItems == null || existingStatusItems.Count() == 0)
                 {
@@ -394,7 +421,7 @@ namespace DWIS.Docker.Clients
                     statusItem.ConfigurationExists = false;
                     status.Items.Add(statusItem);
                 }
-           }
+            }
 
             foreach (var item in standardSetUp.Items)
             {
@@ -411,8 +438,70 @@ namespace DWIS.Docker.Clients
             }
 
 
+            foreach (var item in status.Items)
+            {
+                DateTime imageDate = DateTime.MinValue;
+
+                if (!string.IsNullOrEmpty(item.ContainerID))
+                {
+                    var container = await _client.Containers.InspectContainerAsync(item.ContainerID);
+                    var imageID = container.Image;
+                    var image = await _client.Images.InspectImageAsync(imageID);
+
+                    imageDate = image.Created;
+                }
+
+                if (imageDate != DateTime.MinValue && item.SetUpItem.ImageRepoTimeStamp != DateTime.MinValue)
+                {
+                    if (item.SetUpItem.ImageRepoTimeStamp > imageDate + TimeSpan.FromMinutes(1))
+                    {
+                        item.CurrentImageStatus = StandardSetUpStatusItem.ImageStatus.Outdated;
+                    }
+                    else
+                    {
+                        item.CurrentImageStatus = StandardSetUpStatusItem.ImageStatus.Updated;
+                    }
+                }
+                else
+                {
+                    item.CurrentImageStatus = StandardSetUpStatusItem.ImageStatus.Unknown;
+                }
+
+            }
+
             return status;
         }
+
+
+        public async Task<(DateTime localTime, DateTime repoTime)> GetUpdateInfo(string containerID, string imageName, string tag)
+        {
+            var configuration = new DRD.RegistryClientConfiguration("https://hub.docker.com");
+
+            using var client = configuration.CreateClient();
+
+            // List tags for a specific repository
+            var tags = await client.Repository.ListRepositoryTags("digiwells", imageName.Remove(0, "digiwells/".Length));
+
+            var tagItem = tags.Tags.FirstOrDefault(t => t.Name == tag);
+
+
+            DateTime imageDate = DateTime.MinValue;
+            if (!string.IsNullOrEmpty(containerID))
+            {
+                var container = await _client.Containers.InspectContainerAsync(containerID);
+                var imageID = container.Image;
+                var image = await _client.Images.InspectImageAsync(imageID);
+
+                imageDate = image.Created;
+            }
+            if (tagItem != null)
+            {
+                return (imageDate, tagItem.LastUpdated);
+            }
+            else return (imageDate, DateTime.MinValue);
+        }
+
+
     }
 
     public class DWISDockerClientConfiguration
