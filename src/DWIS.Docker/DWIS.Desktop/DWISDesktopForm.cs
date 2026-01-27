@@ -56,6 +56,12 @@ namespace DWIS.Desktop
             services.AddSingleton<HubGroupDataManager>();
             services.AddSingleton<StandardSetUp>();
             services.AddSingleton<DWISProject>(new DWISProject() { BlackBoardHostIP = localIP });
+
+
+            services.AddHttpContextAccessor();
+            
+
+
             services.AddWindowsFormsBlazorWebView();
             //services.AddBlazorBootstrap();
             services.AddMudServices();

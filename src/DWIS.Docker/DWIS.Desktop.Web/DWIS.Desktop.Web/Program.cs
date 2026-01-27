@@ -27,13 +27,14 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
-
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<DWISModulesConfigurationClient>();
 builder.Services.AddSingleton<HubConnection>(_connection);
 builder.Services.AddSingleton<DWISDockerClientConfiguration>();
 builder.Services.AddSingleton<DWISDockerClient>();
 builder.Services.AddSingleton<HubGroupDataManager>();
 builder.Services.AddSingleton<StandardSetUp>();
+builder.Services.AddSingleton<DWISProject>(new DWISProject());
 //services.AddBlazorBootstrap();
 builder.Services.AddMudServices();
 

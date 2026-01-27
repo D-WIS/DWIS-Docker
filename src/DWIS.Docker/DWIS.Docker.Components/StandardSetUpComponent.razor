@@ -276,7 +276,7 @@
     }
     private async Task StopContainers() {   if(_currentSelection != null)
         {
-        _thinking = true;
+            _thinking = true;
             foreach(var item in _currentSelection)
             {
                 if(!string.IsNullOrEmpty(item.ContainerID) && item.Started)
@@ -302,7 +302,8 @@
             }
             if (item.SetUpItem.ModuleDisplayName == "Default Blackboard")
             {
-                await _client.CreateBlackboardContainer(Project.HubGroup, item.SetUpItem.DefaultContainerName, item.SetUpItem.BlackBoardPort);
+                string name = Project.ReplicationEnabled ? item.SetUpItem.DefaultContainerName + "-" + Project.HubGroup : item.SetUpItem.DefaultContainerName;
+                await _client.CreateBlackboardContainer(Project.HubGroup, name, item.SetUpItem.BlackBoardPort);
 
             }
             else if (item.SetUpItem.ModuleDisplayName == "Local Blackboard")

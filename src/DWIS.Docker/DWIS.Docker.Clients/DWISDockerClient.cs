@@ -311,9 +311,10 @@ namespace DWIS.Docker.Clients
                 {
                     Name = containerName,
                     Image = imageNameNoTag + ":" + tag,
-
+                   
                 };
-
+                ccp.Tty = true;
+                ccp.OpenStdin = true;
                 if (envVariables != null)
                 {
                     List<string> envs = new List<string>();
@@ -322,12 +323,13 @@ namespace DWIS.Docker.Clients
                         envs.Add(env.key + "=" + env.val);
                     }
                     ccp.Env = envs;
+                   
                 }
 
                 if (!string.IsNullOrEmpty(localConfigPath) && !string.IsNullOrEmpty(containerConfigPath))
                 {
                     ccp.HostConfig = new HostConfig
-                    {
+                    { 
                         Binds = new List<string>
                     {
                         localConfigPath + ":" + containerConfigPath// Format: host-path:container-path
