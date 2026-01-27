@@ -1,4 +1,5 @@
 ﻿using DWIS.Docker.Constants;
+using DWIS.Docker.ModuleConfigurations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -89,7 +90,7 @@ namespace DWIS.Docker.Models
                 ConfigContainerPath = Names.MICROSTATE_INTERPRETATION_ENGINE_CONTAINERPATH,
                 ConfigurationRequired = true,
                 DefaultConfigContent = System.Text.Json.JsonSerializer.Serialize(
-                    new DWIS.MicroState.InterpretationEngine.Configuration(),
+                    new MicroStateInterpretationConfiguration(),
                     new System.Text.Json.JsonSerializerOptions() { WriteIndented = true })
             });
             standardSetUpItems.Add(new StandardSetUpItem
@@ -104,7 +105,7 @@ namespace DWIS.Docker.Models
                 ConfigContainerPath = Names.MICROSTATE_GENERATOR_CONTAINERPATH,
                 ConfigurationRequired = true,
                 DefaultConfigContent = System.Text.Json.JsonSerializer.Serialize(
-                    new DWIS.MicroState.ThresholdsServer.Configuration(),
+                    new MicroStateThresholdsConfiguration(),
                     new System.Text.Json.JsonSerializerOptions() { WriteIndented = true })
             });
             //composer
@@ -120,7 +121,7 @@ namespace DWIS.Docker.Models
                 ConfigContainerPath = Names.COMPOSER_CONTAINERPATH,
                 ConfigurationRequired = true,
                 DefaultConfigContent = System.Text.Json.JsonSerializer.Serialize(
-                    new DWIS.AdviceComposer.Service.Configuration(),
+                    new ComposerConfiguration(),
                     new System.Text.Json.JsonSerializerOptions() { WriteIndented = true })
             });
 

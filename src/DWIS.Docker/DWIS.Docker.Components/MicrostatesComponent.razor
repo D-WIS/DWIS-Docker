@@ -1,13 +1,14 @@
 ﻿@using MudBlazor;
 @using DWIS.Docker.Constants;
 @using DWIS.Docker.Clients;
+@using DWIS.Docker.ModuleConfigurations;
 
 <MudTabs Outlined="true" Position="Position.Left" Border="true">
 
     <MudTabPanel Text="Interpretation engine"  >
 
       
-        <GenericModuleComponent TModuleConfig=DWIS.MicroState.InterpretationEngine.Configuration
+        <GenericModuleComponent TModuleConfig=MicroStateInterpretationConfiguration
                                 ConfigFileName="@Names.MICROSTATE_INTERPRETATION_ENGINE_CONFIGFILENAME"
                                 ContainerConfigPath="@Names.MICROSTATE_INTERPRETATION_ENGINE_CONTAINERPATH"
                                 ImageName="@Names.MICROSTATES_INTERPRETATION_ENGINE_NOTAG"
@@ -19,7 +20,7 @@
 
     <MudTabPanel Text="Threshold generator" >
         
-        <GenericModuleComponent TModuleConfig=DWIS.MicroState.ThresholdsServer.Configuration
+        <GenericModuleComponent TModuleConfig=MicroStateThresholdsConfiguration
                                 ConfigFileName="@Names.MICROSTATE_GENERATOR_CONFIGFILENAME"
                                 ContainerConfigPath="@Names.MICROSTATE_GENERATOR_CONTAINERPATH"
                                 ImageName="@Names.MICROSTATES_THRESHOLDS_NOTAG"

@@ -1,13 +1,8 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
-using Docker.Registry.DotNet;
 using DWIS.Docker.Constants;
 using DWIS.Docker.Models;
 using Microsoft.Extensions.Logging;
-using System.Collections;
-using System.ComponentModel;
-using System.Globalization;
-using System.Xml.Linq;
 using DRD = Docker.Registry.DotNet;
 namespace DWIS.Docker.Clients
 {

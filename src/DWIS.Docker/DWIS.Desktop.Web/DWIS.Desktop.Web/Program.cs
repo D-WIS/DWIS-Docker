@@ -2,10 +2,8 @@
 using DWIS.Desktop.Web.Components;
 using DWIS.Docker.Clients;
 using DWIS.Docker.Models;
-using MathNet.Numerics;
 using Microsoft.AspNetCore.SignalR.Client;
 using MudBlazor.Services;
-using System.Data.Common;
 
 string HubAddress = "https://dwis.digiwells.no/blackboard/applications";
 string DWIS_HUB = "/dwishub";

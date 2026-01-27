@@ -2,6 +2,7 @@
 @using DWIS.Docker.Clients
 @using DWIS.Docker.Models
 @using DWIS.Docker.Constants
+@using DWIS.Docker.ModuleConfigurations
 @using BlazorMonaco
 @using BlazorMonaco.Editor
 @using BlazorMonaco.Languages
@@ -10,7 +11,7 @@
 
 
 <GenericModuleComponent
-    TModuleConfig="DWIS.AdviceComposer.Service.Configuration"
+    TModuleConfig="ComposerConfiguration"
     ConfigFileName="@Names.COMPOSER_CONFIGFILENAME"
     ContainerConfigPath="@Names.COMPOSER_CONTAINERPATH"
     ImageName="@Names.ADVICE_COMPOSER_NOTAG" 

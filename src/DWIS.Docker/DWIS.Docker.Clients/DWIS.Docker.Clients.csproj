@@ -15,7 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\DWIS-Blackboard-Server\src\DWIS.SignalR.DTO\DWIS.SignalR.DTO.csproj" />
     <ProjectReference Include="..\DWIS.Docker.Constants\DWIS.Docker.Constants.csproj" />
     <ProjectReference Include="..\DWIS.Docker.Models\DWIS.Docker.Models.csproj" />
   </ItemGroup>

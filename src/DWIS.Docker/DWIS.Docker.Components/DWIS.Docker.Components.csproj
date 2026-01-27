@@ -17,22 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.AutoDriller\DWIS.ADCSBridge.Generic.AutoDriller.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.CirculationStartup\DWIS.ADCSBridge.Generic.CirculationStartup.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.CirculationStop\DWIS.ADCSBridge.Generic.CirculationStop.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.FrictionTest\DWIS.ADCSBridge.Generic.FrictionTest.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.MaxFlowrateSOE\DWIS.ADCSBridge.Generic.MaxFlowrateSOE.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.OverPressureFDIR\DWIS.ADCSBridge.Generic.OverPressureFDIR.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.OverpullUnderpullFDIR\DWIS.ADCSBridge.Generic.OverpullUnderpullFDIR.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.OverTorqueFDIR\DWIS.ADCSBridge.Generic.OverTorqueFDIR.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.PickOffBottom\DWIS.ADCSBridge.Generic.PickOffBottom.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.Reciprocation\DWIS.ADCSBridge.Generic.Reciprocation.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.RotationStartup\DWIS.ADCSBridge.Generic.RotationStartup.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.RotationStop\DWIS.ADCSBridge.Generic.RotationStop.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.SwabSurgeSOE\DWIS.ADCSBridge.Generic.SwabSurgeSOE.csproj" />
-    <ProjectReference Include="..\..\..\..\ADCSBridgeGeneric\DWIS.ADCSBridge.Generic.TagBottom\DWIS.ADCSBridge.Generic.TagBottom.csproj" />
-    <ProjectReference Include="..\..\..\..\MicroStateEngine\DWIS.MicroState.InterpretationEngine\DWIS.MicroState.InterpretationEngine.csproj" />
-    <ProjectReference Include="..\..\..\..\MicroStateEngine\DWIS.MicroState.ThresholdsServer\DWIS.MicroState.ThresholdsServer.csproj" />
     <ProjectReference Include="..\DWIS.Docker.Clients\DWIS.Docker.Clients.csproj" />
   </ItemGroup>
 

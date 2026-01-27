@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DWIS.Docker.ModuleConfigurations;
 
 namespace DWIS.Docker.Constants
 {
@@ -70,20 +66,20 @@ MICROSTATE_GENERATOR_WINDOWS_LOCALPATH;
 
         public static  (string moduleName, string containerName, string imageName, string tag, string localFolder, string configFileName, string containerConfigPath, Type? configType)[] BridgeData =
 {
-       ( "Auto-driller","adcsgenericautodriller", "digiwells/dwisadcsbridgegenericautodriller", "stable", GetLocalPath("DWISADCSBridgeGenericAutoDriller"), "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.AutoDriller.Configuration)),
-        ("Circulation startup", "adcsgenericcirculationstartup", "digiwells/dwisadcsbridgegenericcirculationstartup", "stable", GetLocalPath("DWISADCSBridgeGenericCirculationStartup"), "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.CirculationStartup.Configuration)),
-        ("Circulation stop", "adcsgenericcirculationstop", "digiwells/dwisadcsbridgegenericcirculationstop", "stable",GetLocalPath("DWISADCSBridgeGenericCirculationStop"), "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.CirculationStop.Configuration)),
-        ("Friction test", "adcsgenericfrictiontest", "digiwells/dwisadcsbridgegenericfrictiontest", "stable", GetLocalPath("DWISADCSBridgeGenericFrictionTest"), "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.FrictionTest.Configuration)),
+       ( "Auto-driller","adcsgenericautodriller", "digiwells/dwisadcsbridgegenericautodriller", "stable", GetLocalPath("DWISADCSBridgeGenericAutoDriller"), "config.json", @"/home", typeof(AutoDrillerConfiguration)),
+        ("Circulation startup", "adcsgenericcirculationstartup", "digiwells/dwisadcsbridgegenericcirculationstartup", "stable", GetLocalPath("DWISADCSBridgeGenericCirculationStartup"), "config.json", @"/home", typeof(CirculationStartupConfiguration)),
+        ("Circulation stop", "adcsgenericcirculationstop", "digiwells/dwisadcsbridgegenericcirculationstop", "stable",GetLocalPath("DWISADCSBridgeGenericCirculationStop"), "config.json", @"/home", typeof(CirculationStopConfiguration)),
+        ("Friction test", "adcsgenericfrictiontest", "digiwells/dwisadcsbridgegenericfrictiontest", "stable", GetLocalPath("DWISADCSBridgeGenericFrictionTest"), "config.json", @"/home", typeof(FrictionTestConfiguration)),
         ("Max flowrate SOE", "adcsgenericmaxflowratesoe", "digiwells/dwisadcsbridgegenericmaxflowratesoe", "stable",GetLocalPath("DWISADCSBridgeGenericMaxFlowrateSOE"), "", @"/home", null),
         ("Over-pressure FDIR", "adcsgenericoverpressurefdir", "digiwells/dwisadcsbridgegenericoverpressurefdir", "stable", GetLocalPath("DWISADCSBridgeGenericOverPressureFDIR"), "", @"/home", null),
         ("Over torque FDIR", "adcsgenericovertorquefdir", "digiwells/dwisadcsbridgegenericovertorquefdir", "stable", GetLocalPath("DWISADCSBridgeGenericOverTorqueFDIR"), "", @"/home", null),
         ("Overpull underpull FDIR", "adcsgenericoverpullunderpullfdir", "digiwells/dwisadcsbridgegenericoverpullunderpullfdir", "stable",GetLocalPath("DWISADCSBridgeGenericOverpullUnderpullFDIR"), "", @"/home", null),
-        ("Pick Off-bottom", "adcsgenericpickoffbottom", "digiwells/dwisadcsbridgegenericpickoffbottom", "stable", GetLocalPath("DWISADCSBridgeGenericPickOffBottom"), "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.PickOffBottom.Configuration)),
-        ("Reciprocation", "adcsgenericreciprocation", "digiwells/dwisadcsbridgegenericreciprocation", "stable", GetLocalPath("DWISADCSBridgeGenericReciprocation"), "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.Reciprocation.Configuration)),
-        ("Rotation startup", "adcsgenericrotationstartup", "digiwells/dwisadcsbridgegenericrotationstartup", "stable", GetLocalPath("DWISADCSBridgeGenericRotationStartup"), "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.RotationStartup.Configuration)),
-        ("Rotation stop", "adcsgenericrotationstop", "digiwells/dwisadcsbridgegenericrotationstop", "stable", GetLocalPath("DWISADCSBridgeGenericRotationStop"), "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.RotationStop.Configuration)),
+        ("Pick Off-bottom", "adcsgenericpickoffbottom", "digiwells/dwisadcsbridgegenericpickoffbottom", "stable", GetLocalPath("DWISADCSBridgeGenericPickOffBottom"), "config.json", @"/home", typeof(PickOffBottomConfiguration)),
+        ("Reciprocation", "adcsgenericreciprocation", "digiwells/dwisadcsbridgegenericreciprocation", "stable", GetLocalPath("DWISADCSBridgeGenericReciprocation"), "config.json", @"/home", typeof(ReciprocationConfiguration)),
+        ("Rotation startup", "adcsgenericrotationstartup", "digiwells/dwisadcsbridgegenericrotationstartup", "stable", GetLocalPath("DWISADCSBridgeGenericRotationStartup"), "config.json", @"/home", typeof(RotationStartupConfiguration)),
+        ("Rotation stop", "adcsgenericrotationstop", "digiwells/dwisadcsbridgegenericrotationstop", "stable", GetLocalPath("DWISADCSBridgeGenericRotationStop"), "config.json", @"/home", typeof(RotationStopConfiguration)),
         ("Swab-surge SOE", "adcsgenericswabsurgesoe", "digiwells/dwisadcsbridgegenericswabsurgesoe", "stable",GetLocalPath("DWISADCSBridgeGenericSwabSurgeSOE"), "", @"/home", null),
-        ("Tag bottom" ,"adcsgenerictagbottom", "digiwells/dwisadcsbridgegenerictagbottom", "stable", GetLocalPath("DWISADCSBridgeGenericTagBottom"), "config.json", @"/home", typeof(DWIS.ADCSBridge.Generic.TagBottom.Configuration))
+        ("Tag bottom" ,"adcsgenerictagbottom", "digiwells/dwisadcsbridgegenerictagbottom", "stable", GetLocalPath("DWISADCSBridgeGenericTagBottom"), "config.json", @"/home", typeof(TagBottomConfiguration))
     };
 
         private static string GetLocalPath(string folderName)

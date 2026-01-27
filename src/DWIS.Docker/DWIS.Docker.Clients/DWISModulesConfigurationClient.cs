@@ -9,21 +9,21 @@ namespace DWIS.Docker.Clients
 
 
 
-        public DWIS.AdviceComposer.Service.Configuration? GetComposerConfigFromFile()
-        {
-            string filePath = Path.Combine(Names.COMPOSER_LOCALPATH, Names.COMPOSER_CONFIGFILENAME);
+        //public DWIS.AdviceComposer.Service.Configuration? GetComposerConfigFromFile()
+        //{
+        //    string filePath = Path.Combine(Names.COMPOSER_LOCALPATH, Names.COMPOSER_CONFIGFILENAME);
 
-            if (!File.Exists(filePath))
-            {
-                return null;
-            }
-            else
-            {
-                string json = System.IO.File.ReadAllText(filePath);
-                var config = System.Text.Json.JsonSerializer.Deserialize<DWIS.AdviceComposer.Service.Configuration>(json);
-                return config;
-            }
-        }
+        //    if (!File.Exists(filePath))
+        //    {
+        //        return null;
+        //    }
+        //    else
+        //    {
+        //        string json = System.IO.File.ReadAllText(filePath);
+        //        var config = System.Text.Json.JsonSerializer.Deserialize<DWIS.AdviceComposer.Service.Configuration>(json);
+        //        return config;
+        //    }
+        //}
 
         public ConfigType? GetConfigurationFromFile<ConfigType>(string localPath, string fileName) where ConfigType : class
         {

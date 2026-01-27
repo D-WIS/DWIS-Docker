@@ -1,10 +1,11 @@
 ﻿@using MudBlazor;
 @using DWIS.Docker.Constants;
+@using DWIS.Docker.ModuleConfigurations
 <MudTabs Outlined="true" Position="Position.Left" Border="true">
 
     <MudTabPanel Text="@Names.BridgeData[0].moduleName">
             <GenericModuleComponent 
-                TModuleConfig=DWIS.ADCSBridge.Generic.AutoDriller.Configuration
+                TModuleConfig=AutoDrillerConfiguration
                 ConfigFileName="@Names.BridgeData[0].configFileName" 
                 ContainerConfigPath="@Names.BridgeData[0].containerConfigPath"
                 ImageName="@Names.BridgeData[0].imageName"
@@ -17,7 +18,7 @@
     <MudTabPanel Text="@Names.BridgeData[1].moduleName">
           
             <GenericModuleComponent 
-                TModuleConfig=DWIS.ADCSBridge.Generic.CirculationStartup.Configuration
+                TModuleConfig=CirculationStartupConfiguration
                 ConfigFileName="@Names.BridgeData[1].configFileName" 
                 ContainerConfigPath="@Names.BridgeData[1].containerConfigPath"
                 ImageName="@Names.BridgeData[1].imageName"
@@ -29,7 +30,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[2].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.CirculationStop.Configuration
+        <GenericModuleComponent TModuleConfig=CirculationStopConfiguration
                                 ConfigFileName="@Names.BridgeData[2].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[2].containerConfigPath"
                                 ImageName="@Names.BridgeData[2].imageName"
@@ -41,7 +42,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[3].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.FrictionTest.Configuration
+        <GenericModuleComponent TModuleConfig=FrictionTestConfiguration
                                 ConfigFileName="@Names.BridgeData[3].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[3].containerConfigPath"
                                 ImageName="@Names.BridgeData[3].imageName"
@@ -53,7 +54,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[4].moduleName">
         <!--non existing-->
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.FrictionTest.Configuration
+        <GenericModuleComponent TModuleConfig=FrictionTestConfiguration
                                 ConfigFileName="@Names.BridgeData[4].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[4].containerConfigPath"
                                 ImageName="@Names.BridgeData[4].imageName"
@@ -65,7 +66,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[5].moduleName">
         <!--non existing-->
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.FrictionTest.Configuration
+        <GenericModuleComponent TModuleConfig=FrictionTestConfiguration
                                 ConfigFileName="@Names.BridgeData[5].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[5].containerConfigPath"
                                 ImageName="@Names.BridgeData[5].imageName"
@@ -77,7 +78,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[6].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.AutoDriller.Configuration
+        <GenericModuleComponent TModuleConfig=AutoDrillerConfiguration
                                 ConfigFileName="@Names.BridgeData[6].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[6].containerConfigPath"
                                 ImageName="@Names.BridgeData[6].imageName"
@@ -89,7 +90,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[7].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.AutoDriller.Configuration
+        <GenericModuleComponent TModuleConfig=AutoDrillerConfiguration
                                 ConfigFileName="@Names.BridgeData[7].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[7].containerConfigPath"
                                 ImageName="@Names.BridgeData[7].imageName"
@@ -101,7 +102,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[8].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.PickOffBottom.Configuration
+        <GenericModuleComponent TModuleConfig=PickOffBottomConfiguration
                                 ConfigFileName="@Names.BridgeData[8].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[8].containerConfigPath"
                                 ImageName="@Names.BridgeData[8].imageName"
@@ -113,7 +114,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[9].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.Reciprocation.Configuration
+        <GenericModuleComponent TModuleConfig=ReciprocationConfiguration
                                 ConfigFileName="@Names.BridgeData[9].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[9].containerConfigPath"
                                 ImageName="@Names.BridgeData[9].imageName"
@@ -125,7 +126,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[10].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.RotationStartup.Configuration
+        <GenericModuleComponent TModuleConfig=RotationStartupConfiguration
                                 ConfigFileName="@Names.BridgeData[10].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[10].containerConfigPath"
                                 ImageName="@Names.BridgeData[10].imageName"
@@ -137,7 +138,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[11].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.RotationStop.Configuration
+        <GenericModuleComponent TModuleConfig=RotationStopConfiguration
                                 ConfigFileName="@Names.BridgeData[11].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[11].containerConfigPath"
                                 ImageName="@Names.BridgeData[11].imageName"
@@ -149,7 +150,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[12].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.AutoDriller.Configuration
+        <GenericModuleComponent TModuleConfig=AutoDrillerConfiguration
                                 ConfigFileName="@Names.BridgeData[12].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[12].containerConfigPath"
                                 ImageName="@Names.BridgeData[12].imageName"
@@ -161,7 +162,7 @@
 
     <MudTabPanel Text="@Names.BridgeData[13].moduleName">
 
-        <GenericModuleComponent TModuleConfig=DWIS.ADCSBridge.Generic.TagBottom.Configuration
+        <GenericModuleComponent TModuleConfig=TagBottomConfiguration
                                 ConfigFileName="@Names.BridgeData[13].configFileName"
                                 ContainerConfigPath="@Names.BridgeData[13].containerConfigPath"
                                 ImageName="@Names.BridgeData[13].imageName"

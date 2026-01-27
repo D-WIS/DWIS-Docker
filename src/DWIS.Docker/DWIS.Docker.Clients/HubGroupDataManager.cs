@@ -1,9 +1,6 @@
-﻿using Docker.DotNet;
-using Docker.DotNet.Models;
-using DWIS.Docker.Models;
-using DWIS.SignalR.DTO;
+﻿using DWIS.Docker.Models;
+//using DWIS.SignalR.DTO;
 using Microsoft.AspNetCore.SignalR.Client;
-using System.ComponentModel;
 
 namespace DWIS.Docker.Clients
 {
@@ -355,5 +352,14 @@ namespace DWIS.Docker.Clients
             }
             return dictionary;
         }
+    }
+    public class GroupData
+    {
+        public string? GroupName { get; set; }
+        public int GroupCount { get; set; }
+    }
+    public class GroupDataDTO
+    {
+        public GroupData[]? GroupDatas { get; set; }
     }
 }

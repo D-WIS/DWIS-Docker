@@ -1,5 +1,5 @@
 ﻿
-//C# DWIS.Docker.ModuleConfigurations\Configurations.cs
+using System;
 using System.Reflection;
 
 namespace DWIS.Docker.ModuleConfigurations
@@ -12,7 +12,6 @@ namespace DWIS.Docker.ModuleConfigurations
         public TimeSpan ProcedureObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
         public TimeSpan FaultDetectionIsolationAndRecoveryObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
         public TimeSpan SafeOperatingEnvelopeObsolescence { get; set; } = TimeSpan.FromSeconds(5.0);
-
     }
 
     public class MicroStateInterpretationConfiguration
@@ -35,7 +34,6 @@ namespace DWIS.Docker.ModuleConfigurations
         public int CalibrationMaxNumberOfIterations { get; set; } = 1000;
 
         public bool GenerateRandomValues { get; set; } = false;
-
     }
 
     public class MicroStateThresholdsConfiguration
@@ -210,8 +208,8 @@ namespace DWIS.Docker.ModuleConfigurations
         public double WOBPIControllerIntegralGain { get; set; } = WOBPIControllerIntegralGainDefault;
     }
 
-    // Added configurations copied from bridge projects and renamed to match the original project names.
-    // Source: DWIS.ADCSBridge.Generic.FrictionTest.Configuration
+    // Copied and renamed configurations from ADCSBridgeGeneric projects
+    // Friction test (from DWIS.ADCSBridge.Generic.FrictionTest.Configuration)
     public class FrictionTestConfiguration
     {
         public static double StickUpHeightDefault = 0.8;
@@ -222,19 +220,115 @@ namespace DWIS.Docker.ModuleConfigurations
         public double? LowestDrillElevation { get; set; } = LowestDrillElevationDefault;
     }
 
-    // Source: DWIS.ADCSBridge.Generic.FrictionTest.ConfigurationOriginal
+    // Friction test original variant (from DWIS.ADCSBridge.Generic.FrictionTest.ConfigurationOriginal)
     public class FrictionTestConfigurationOriginal
     {
         public static double WOBDetectionThresholdDefault = 500.0;
         public double WOBDetectionThreshold { get; set; } = WOBDetectionThresholdDefault;
     }
 
-    // Source: DWIS.ADCSBridge.Generic.Reciprocation.Configuration
+    // Reciprocation (from DWIS.ADCSBridge.Generic.Reciprocation.Configuration)
     public class ReciprocationConfiguration
     {
         public static double StickUpHeightDefault = 0.8;
         public static double LowestDrillElevationDefault = 0.2;
 
+        public bool UseSimpleMode { get; set; } = false;
+        public double? StickUpHeight { get; set; } = StickUpHeightDefault;
+        public double? LowestDrillElevation { get; set; } = LowestDrillElevationDefault;
+    }
+
+    // RotationStop (from DWIS.ADCSBridge.Generic.RotationStop.Configuration)
+    public class RotationStopConfiguration
+    {
+        public static double TorqueMaxDefault = 60000.0;
+        public static double RotationalSpeedSetPointROCDefault = 20.0 / 60.0;
+        public static double ZeroTorqueSpeedDefault = 10.0 / 60.0;
+        public static double MarginStandardDeviationTorqueDefault = 100.0;
+        public static double MarginTorqueDefault = 200.0;
+
+        public double RotationalSpeedSetPointROC { get; set; } = RotationalSpeedSetPointROCDefault;
+        public double TorqueMax { get; set; } = TorqueMaxDefault;
+        public bool UseSimpleMode { get; set; } = false;
+        public bool HasZeroTorque { get; set; } = true;
+        public double ZeroTorqueSpeed { get; set; } = ZeroTorqueSpeedDefault;
+        public double MarginStandardDeviationTorque { get; set; } = MarginStandardDeviationTorqueDefault;
+        public double MarginTorque { get; set; } = MarginTorqueDefault;
+    }
+
+    // RotationStartup (from DWIS.ADCSBridge.Generic.RotationStartup.Configuration)
+    public class RotationStartupConfiguration
+    {
+        public static double TorqueMaxDefault = 60000.0;
+        public static double RotationalSpeedSetPointDefault = 90.0 / 60.0;
+        public static double RotationalSpeedSetPointROCDefault = 20.0 / 60.0;
+
+        public double RotationalSpeedSetPoint { get; set; } = RotationalSpeedSetPointDefault;
+        public double RotationalSpeedSetPointROC { get; set; } = RotationalSpeedSetPointROCDefault;
+        public double TorqueMax { get; set; } = TorqueMaxDefault;
+        public bool UseSimpleMode { get; set; } = false;
+    }
+
+    // CirculationStop (from DWIS.ADCSBridge.Generic.CirculationStop.Configuration)
+    public class CirculationStopConfiguration
+    {
+        public static double FlowrateSetPointROCDefault = 250.0 / 60000.0;
+
+        public double FlowrateSetPointROC { get; set; } = FlowrateSetPointROCDefault;
+
+        public bool UseSimpleMode { get; set; } = false;
+
+        public bool BypassManagingIBOP { get; set; } = true;
+    }
+
+    // CirculationStartup (from DWIS.ADCSBridge.Generic.CirculationStartup.Configuration)
+    public class CirculationStartupConfiguration
+    {
+        public static double FlowrateSetPointDefault = 2500.0 / 60000.0;
+        public static double FlowrateSetPointROCDefault = 20.0 / 60000.0;
+        public static double FlowrateThresholdDefault = 20.0 / 60000.0;
+        public static double TopOfStringPressureThresholdDefault = 5.0e5;
+        public static int AverageCalculationSampleCountDefault = 10;
+
+        public double FlowrateSetPoint { get; set; } = FlowrateSetPointDefault;
+        public double FlowrateSetPointROC { get; set; } = FlowrateSetPointROCDefault;
+
+        public double FlowrateThreshold { get; set; } = FlowrateThresholdDefault;
+        public double TopOfStringPressureThreshold { get; set; } = TopOfStringPressureThresholdDefault;
+        public int AverageCalculationSampleCount { get; set; } = AverageCalculationSampleCountDefault;
+
+        public bool UseSimpleMode { get; set; } = false;
+    }
+
+    // PickOffBottom (from DWIS.ADCSBridge.Generic.PickOffBottom.Configuration)
+    public class PickOffBottomConfiguration
+    {
+        public static double PickDistanceDefault = 1.0;
+        public static double AxialVelocityLimitDefault = 0.1;
+        public static double AxialAccelerationLimitDefault = 0.05;
+        public static double StickUpHeightDefault = 0.8;
+        public static double LowestDrillElevationDefault = 0.2;
+
+        public double PickDistance { get; set; } = PickDistanceDefault;
+        public double AxialVelocityLimit { get; set; } = AxialVelocityLimitDefault;
+        public double AxialAccelerationLimit { get; set; } = AxialAccelerationLimitDefault;
+        public bool UseSimpleMode { get; set; } = false;
+        public double? StickUpHeight { get; set; } = StickUpHeightDefault;
+        public double? LowestDrillElevation { get; set; } = LowestDrillElevationDefault;
+    }
+
+    // TagBottom (from DWIS.ADCSBridge.Generic.TagBottom.Configuration)
+    public class TagBottomConfiguration
+    {
+        public static double TagBottomSpeedSetPointDefault = -50.0 / 3600.0;
+        public static double AxialAccelerationLimitDefault = 0.05;
+        public static double WOBDetectionThresholdDefault = 500.0;
+        public static double StickUpHeightDefault = 0.8;
+        public static double LowestDrillElevationDefault = 0.2;
+
+        public double TagBottomSpeedSetPoint { get; set; } = TagBottomSpeedSetPointDefault;
+        public double AxialAccelerationLimit { get; set; } = AxialAccelerationLimitDefault;
+        public double WOBDetectionThreshold { get; set; } = WOBDetectionThresholdDefault;
         public bool UseSimpleMode { get; set; } = false;
         public double? StickUpHeight { get; set; } = StickUpHeightDefault;
         public double? LowestDrillElevation { get; set; } = LowestDrillElevationDefault;
