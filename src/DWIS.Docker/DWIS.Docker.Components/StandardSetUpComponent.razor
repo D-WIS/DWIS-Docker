@@ -41,8 +41,11 @@
         <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
         <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
     <MudSpacer />
-
-</MudToolBar>
+    @if(_thinking)
+    {
+        <MudProgressCircular Color="Color.Info"  Indeterminate="true" />
+    }
+    </MudToolBar>
 <hr />
 
 
@@ -101,15 +104,15 @@
             <MudTd DataLabel="Image statis">
                 @if(context.CurrentImageStatus == StandardSetUpStatusItem.ImageStatus.Updated)
                 {
-                    <MudBadge Color="Color.Success" Variant="Variant.Filled">Updated</MudBadge>
+                    <MudBadge Color="Color.Success" Dot="true" Class="mx-6 my-4">Updated</MudBadge>
                 }
                 else if(context.CurrentImageStatus == StandardSetUpStatusItem.ImageStatus.Outdated)
                 {
-                    <MudBadge Color="Color.Warning" Variant="Variant.Filled">Outdated</MudBadge>
+                    <MudBadge Color="Color.Warning" Dot="true" Class="mx-6 my-4">Outdated</MudBadge>
                 }
                 else
                 {
-                    <MudBadge Color="Color.Default" Variant="Variant.Filled">Unknown</MudBadge>
+                    <MudBadge Color="Color.Default" Dot="true" Class="mx-6 my-4">Unknown</MudBadge>
                 }
             </MudTd>
     </RowTemplate>
@@ -129,6 +132,9 @@
     private bool _canNotStartSelection = false;
     private bool _canNotStopSelection = false;
     private bool _canNotDeleteContainers = false;
+
+    private bool _thinking = true;
+
 
     private HashSet<StandardSetUpStatusItem>? _currentSelection;
 
@@ -168,8 +174,11 @@
 
     private async void RefreshStatus()
     {
+        _thinking = true;
         Project.Status = await _client.UpdateStandardSetupStatus(SetUp, Project.ReplicationEnabled, Project.HubGroup);
+        _thinking = false;
         await InvokeAsync(StateHasChanged);
+
     }
 
 
@@ -251,7 +260,7 @@
     }
 
     private async Task StartContainers() {
-
+        _thinking = true;
         if(_currentSelection != null)
         {
             foreach(var item in _currentSelection)
@@ -267,6 +276,7 @@
     }
     private async Task StopContainers() {   if(_currentSelection != null)
         {
+        _thinking = true;
             foreach(var item in _currentSelection)
             {
                 if(!string.IsNullOrEmpty(item.ContainerID) && item.Started)
@@ -281,6 +291,7 @@
 
     private async Task CreateContainers()
     {
+        _thinking = true;
         var toCreate = _status.Items.Where(i => string.IsNullOrEmpty(i.ContainerID));
 
         foreach (var item in toCreate)
@@ -306,6 +317,7 @@
     }
 
     private async Task DeleteContainers() {
+        _thinking = true;
         if(_currentSelection != null)
         {
             foreach(var item in _currentSelection)
@@ -321,13 +333,15 @@
     }
     private async Task CheckForUpdates() {
 
-
+        
+        _thinking = true;
         await _client.UpdateStandardSetupImageDates(SetUp);
         RefreshStatus();       
     }
 
 
     private async Task UpdateSelection() {
+        _thinking = true;
         if(_currentSelection != null)
         {
             await _client.UpdateStandardItemImages(_currentSelection);

@@ -102,6 +102,7 @@ namespace DWIS.Docker.Models
 
         public string ExtraArgs { get; set; }
         public DateTime ImageRepoTimeStamp { get; set; } = DateTime.MinValue;
+        public string? Digest { get; set; }
 
         public static List<StandardSetUpItem> GetStandardSetUp()
         {

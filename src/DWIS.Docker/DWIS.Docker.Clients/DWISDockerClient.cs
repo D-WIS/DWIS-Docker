@@ -196,6 +196,7 @@ namespace DWIS.Docker.Clients
                 var tagItem = tags.Tags.FirstOrDefault(t => t.Name == item.ImageTag);
                 if (tagItem != null)
                 {
+                    item.Digest = tagItem.Digest;
                     item.ImageRepoTimeStamp = tagItem.LastUpdated;
                 }
             }
@@ -243,21 +244,6 @@ namespace DWIS.Docker.Clients
             }
         }
 
-
-        public async Task<string> CreateSchedulerContainer(string name = "scheduler")
-        {
-            bool exist = await CheckImageExist(Names.SCHEDULER_NOTAG, "stable", true);
-
-
-            var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
-            {
-                Name = name,
-                Image = Names.SCHEDULER
-            });
-            return response.ID;
-        }
-
-
         public async Task<string> CreateStandardItemContainer(StandardSetUpItem item, string? mainBlackBoardIP = null)
         {
             if (mainBlackBoardIP == null)
@@ -273,8 +259,6 @@ namespace DWIS.Docker.Clients
                 return await CreateContainer(item.ImageName, item.ImageTag, item.ConfigLocalPath, item.ConfigContainerPath, item.DefaultContainerName, envVariables);
             }
         }
-
-
 
         public async Task UpdateStandardItemImages(IEnumerable<StandardSetUpStatusItem> items)
         {
@@ -297,7 +281,6 @@ namespace DWIS.Docker.Clients
                         await _client.Containers.RemoveContainerAsync(item.ContainerID, new ContainerRemoveParameters() { Force = true, RemoveVolumes = false, RemoveLinks = false });
                     }
                 }
-
 
                 await _client.Images.DeleteImageAsync(group.Key.ImageName + ":" + group.Key.ImageTag, new ImageDeleteParameters() { Force = true });
 
@@ -361,9 +344,6 @@ namespace DWIS.Docker.Clients
             else { return string.Empty; }
         }
 
-
-
-
         public async Task<IEnumerable<(string id, string name, bool running)>> GetContainers(string imageName)
         {
             var composerContainers = new List<(string id, string name, bool running)>();
@@ -382,10 +362,6 @@ namespace DWIS.Docker.Clients
             }
             return composerContainers;
         }
-
-
-
-
 
         public async Task<StandardSetUpStatus> UpdateStandardSetupStatus(StandardSetUp standardSetUp, bool replicationEnabled, string hubGroup)
         {
@@ -490,7 +466,7 @@ namespace DWIS.Docker.Clients
                     var container = await _client.Containers.InspectContainerAsync(item.ContainerID);
                     var imageID = container.Image;
                     var image = await _client.Images.InspectImageAsync(imageID);
-
+                    
                     imageDate = image.Created;
                 }
 
@@ -514,7 +490,6 @@ namespace DWIS.Docker.Clients
 
             return status;
         }
-
 
         public async Task<(DateTime localTime, DateTime repoTime)> GetUpdateInfo(string containerID, string imageName, string tag)
         {

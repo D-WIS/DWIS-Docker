@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
     <PackageReference Include="Docker.Registry.DotNet" Version="2.0.0" />
-    <PackageReference Include="DWIS.Client.ReferenceImplementation" Version="2.2.41" />
+    <PackageReference Include="DWIS.Client.ReferenceImplementation" Version="2.2.42" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
   </ItemGroup>
