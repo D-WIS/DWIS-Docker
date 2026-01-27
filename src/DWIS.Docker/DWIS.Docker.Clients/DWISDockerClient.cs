@@ -276,6 +276,49 @@ namespace DWIS.Docker.Clients
 
 
 
+        public async Task UpdateStandardItemImages(IEnumerable<StandardSetUpStatusItem> items)
+        {
+            var groups = items.GroupBy(i => i.SetUpItem);
+
+            List<(string name, string image,string hostname, IList<string> env, HostConfig hConf, IDictionary<string, EmptyStruct> ports)> toRecreate 
+                = new List<(string name, string image, string hostname, IList<string> env, HostConfig hConf, IDictionary<string, EmptyStruct> ports)>();
+
+            foreach (var group in groups) 
+            {
+                foreach (var item in group)
+                {
+                    if (!string.IsNullOrEmpty(item.ContainerID))
+                    {
+                        await StopContainer(item.ContainerID);
+                        var ins = await _client.Containers.InspectContainerAsync(item.ContainerID);
+                    
+                        toRecreate.Add((ins.Name, ins.Config.Image, ins.Config.Hostname, ins.Config.Env, ins.HostConfig, ins.Config.ExposedPorts));
+
+                        await _client.Containers.RemoveContainerAsync(item.ContainerID, new ContainerRemoveParameters() { Force = true, RemoveVolumes = false, RemoveLinks = false });
+                    }
+                }
+
+
+                await _client.Images.DeleteImageAsync(group.Key.ImageName + ":" + group.Key.ImageTag, new ImageDeleteParameters() { Force = true });
+
+                await CheckImageExist(group.Key.ImageName, group.Key.ImageTag, true);
+            }
+
+            foreach (var item in toRecreate)
+            {
+                var ccp = new CreateContainerParameters()
+                {
+                    Name = item.name,
+                    Image = item.image,
+                    HostConfig = item.hConf,
+                    Env = item.env,
+                    Hostname = item.hostname,
+                    ExposedPorts = item.ports
+                };
+                var response = await _client.Containers.CreateContainerAsync(ccp);
+            }
+        }
+
         public async Task<string> CreateContainer(string imageNameNoTag, string tag, string localConfigPath, string containerConfigPath, string containerName, IEnumerable<(string key, string val)>? envVariables = null)
         {
             bool exist = await CheckImageExist(imageNameNoTag, tag, true);

@@ -299,7 +299,7 @@
                 await _client.CreateBlackboardContainer("", item.SetUpItem.DefaultContainerName, item.SetUpItem.BlackBoardPort);
 
             }
-            else await _client.CreateStandardItemContainer(item.SetUpItem);
+            else await _client.CreateStandardItemContainer(item.SetUpItem, Project.BlackBoardHostIP);
 
         }   
         RefreshStatus();
@@ -323,20 +323,24 @@
 
 
         await _client.UpdateStandardSetupImageDates(SetUp);
-         RefreshStatus();       
+        RefreshStatus();       
     }
 
 
-     private async Task UpdateSelection() {
+    private async Task UpdateSelection() {
         if(_currentSelection != null)
         {
-            foreach(var item in _currentSelection)
-            {
-                if(!string.IsNullOrEmpty(item.ContainerID))
-                {
-                    await  _client.DeleteContainer(item.ContainerID);
-                }
-            }
+            await _client.UpdateStandardItemImages(_currentSelection);
+            // foreach(var item in _currentSelection)
+            // {
+            //      await  _client.UpdateStandardItemImages(item);
+
+
+            //     if(!string.IsNullOrEmpty(item.ContainerID))
+            //     {
+            //         await  _client.DeleteContainer(item.ContainerID);
+            //     }
+            // }
         }
         RefreshStatus();
         return; 
