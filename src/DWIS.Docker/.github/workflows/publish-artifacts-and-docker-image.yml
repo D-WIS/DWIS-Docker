@@ -1,0 +1,49 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Publish artifacts and push docker image
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    #env:
+    #  GIT_HUB_API: ${{ secrets.GIT_HUB_API}}
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+        with:
+          path: main      
+      - name: Publish server
+        run: |
+          mkdir publish
+          dotnet publish main/DWIS.Desktop.Web/DWIS.Desktop.Web -o publish --runtime win-x64
+      - name: Upload publish folder as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scheduling-apps-latest-win-x64
+          path: publish/
+          
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Build and push server
+        uses: docker/build-push-action@v6
+        with:
+          context: main
+          file: main/\DWIS.Desktop.Web/DWIS.Desktop.Web/Dockerfile
+          tags: digiwells/dwis-docker:stable
+          push: true
+
+

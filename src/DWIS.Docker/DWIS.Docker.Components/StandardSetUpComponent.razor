@@ -16,7 +16,7 @@
     }
 </style>
 
-<MudText  Class="ml-4" Typo="Typo.h6">Configuration</MudText>
+<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Configuration</MudText>
 <MudForm>
     <MudGrid>
         <MudItem xs = "3">
@@ -165,12 +165,20 @@
         await base.OnInitializedAsync();
         if (_client != null && SetUp != null)
         {
-            await  _client.UpdateStandardSetupImageDates(SetUp);
+            try
+            {
+                await _client.UpdateStandardSetupImageDates(SetUp);
+            }
+            catch (Exception ex)
+            {
+                ManageErrors(ex.ToString());    
+            }
         }
         RefreshStatus();
     }
 
-
+    private async void ManageErrors(string exceptionMessage)
+    { }
 
     private async void RefreshStatus()
     {
@@ -184,6 +192,7 @@
 
     private bool CheckShouldCreateContainers()
     {
+        if (_status == null) return false;
         var groups = _status.Items.GroupBy(i => i.SetUpItem.ModuleDisplayName);
 
         //too many selected from same group
@@ -196,6 +205,8 @@
 
     private bool CheckCanStartSelection()
     {
+        if (_status == null) return false;
+
         if(_currentSelection != null && _currentSelection.Count > 0)
         {
             if (_currentSelection.Any(i => string.IsNullOrEmpty( i.ContainerID)))
@@ -265,9 +276,16 @@
         {
             foreach(var item in _currentSelection)
             {
-                if(!string.IsNullOrEmpty(item.ContainerID) && !item.Started)
+                if (!string.IsNullOrEmpty(item.ContainerID) && !item.Started)
                 {
-                    await  _client.StartContainer(item.ContainerID);
+                    try
+                    {
+                        await _client.StartContainer(item.ContainerID);
+                    }
+                    catch (Exception ex)
+                    {
+                        ManageErrors(ex.ToString());    
+                    }
                 }
             }
         }
@@ -281,8 +299,14 @@
             {
                 if(!string.IsNullOrEmpty(item.ContainerID) && item.Started)
                 {
-                    await  _client.StopContainer(item.ContainerID);
-                }
+                    try
+                    {
+                        await  _client.StopContainer(item.ContainerID);
+                    }
+                    catch (Exception ex)
+                    {
+                        ManageErrors(ex.ToString());    
+                    }}
             }
         }
         RefreshStatus();
@@ -291,6 +315,7 @@
 
     private async Task CreateContainers()
     {
+        if (_status == null) return;
         _thinking = true;
         var toCreate = _status.Items.Where(i => string.IsNullOrEmpty(i.ContainerID));
 
@@ -303,16 +328,33 @@
             if (item.SetUpItem.ModuleDisplayName == "Default Blackboard")
             {
                 string name = Project.ReplicationEnabled ? item.SetUpItem.DefaultContainerName + "-" + Project.HubGroup : item.SetUpItem.DefaultContainerName;
+                try{
                 await _client.CreateBlackboardContainer(Project.HubGroup, name, item.SetUpItem.BlackBoardPort);
-
+                }
+                    catch (Exception ex)
+                    {
+                        ManageErrors(ex.ToString());    
+                    }
             }
             else if (item.SetUpItem.ModuleDisplayName == "Local Blackboard")
             {
+                try{
                 await _client.CreateBlackboardContainer("", item.SetUpItem.DefaultContainerName, item.SetUpItem.BlackBoardPort);
-
+                }
+                    catch (Exception ex)
+                    {
+                        ManageErrors(ex.ToString());    
+                    }
             }
-            else await _client.CreateStandardItemContainer(item.SetUpItem, Project.BlackBoardHostIP);
-
+            else 
+            {
+                try{
+                await _client.CreateStandardItemContainer(item.SetUpItem, Project.BlackBoardHostIP);
+            }
+                    catch (Exception ex)
+                    {
+                        ManageErrors(ex.ToString());    
+                    }}
         }   
         RefreshStatus();
     }
@@ -325,8 +367,13 @@
             {
                 if(!string.IsNullOrEmpty(item.ContainerID))
                 {
+                    try{
                     await  _client.DeleteContainer(item.ContainerID);
                 }
+                    catch (Exception ex)
+                    {
+                        ManageErrors(ex.ToString());    
+                    }}
             }
         }
         RefreshStatus();
@@ -336,8 +383,13 @@
 
         
         _thinking = true;
+        try{
         await _client.UpdateStandardSetupImageDates(SetUp);
-        RefreshStatus();       
+        }
+                    catch (Exception ex)
+                    {
+                        ManageErrors(ex.ToString());    
+                    }RefreshStatus();       
     }
 
 
@@ -345,17 +397,13 @@
         _thinking = true;
         if(_currentSelection != null)
         {
+            try{
             await _client.UpdateStandardItemImages(_currentSelection);
-            // foreach(var item in _currentSelection)
-            // {
-            //      await  _client.UpdateStandardItemImages(item);
-
-
-            //     if(!string.IsNullOrEmpty(item.ContainerID))
-            //     {
-            //         await  _client.DeleteContainer(item.ContainerID);
-            //     }
-            // }
+            }
+                    catch (Exception ex)
+                    {
+                        ManageErrors(ex.ToString());    
+                    }
         }
         RefreshStatus();
         return; 

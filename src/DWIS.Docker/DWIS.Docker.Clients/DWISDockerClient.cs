@@ -27,8 +27,15 @@ namespace DWIS.Docker.Clients
                string.IsNullOrEmpty(uri) ?
                    new DockerClientConfiguration() :
                    new DockerClientConfiguration(new Uri(uri));
-
-            _client = dockerConf.CreateClient();
+            try
+            {
+                _client = dockerConf.CreateClient();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex.ToString(), ex);
+                throw ex;
+            }
         }
 
         public void UpdateConfiguration(DWISDockerClientConfiguration configuration)
@@ -39,30 +46,60 @@ namespace DWIS.Docker.Clients
 
         public async Task StartContainer(string containerId)
         {
-            await _client.Containers.StartContainerAsync(
-                containerId,
-                new ContainerStartParameters()
-                );
+            try
+            {
+                await _client.Containers.StartContainerAsync(
+                    containerId,
+                    new ContainerStartParameters()
+                    );
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
+            }
         }
 
         public async Task StopContainer(string containerID)
         {
-            var stopped = await _client.Containers.StopContainerAsync(
+            try
+            {
+                var stopped = await _client.Containers.StopContainerAsync(
                 containerID,
                 new ContainerStopParameters(),
                 CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
+            }
         }
 
         public async Task DeleteContainer(string containerID)
         {
-            await _client.Containers.RemoveContainerAsync(containerID, new ContainerRemoveParameters());
+            try
+            {
+                await _client.Containers.RemoveContainerAsync(containerID, new ContainerRemoveParameters());
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
+            }
         }
 
         public async Task CreateBlackboardContainer(string hubGroup, string containerName, string port)
         {
-
-            bool exist = await CheckImageExist(Names.BLACKBOARD_NOTAG, Names.LATEST_TAG, true);
-
+            try
+            {
+                bool exist = await CheckImageExist(Names.BLACKBOARD_NOTAG, Names.LATEST_TAG, true);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
+            }
             List<string> cmd;
             if (!string.IsNullOrEmpty(hubGroup))
             {
@@ -70,37 +107,54 @@ namespace DWIS.Docker.Clients
             }
             else { cmd = new List<string>() { "--port", port }; }
 
-
-            var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
+            try
             {
-                Name = containerName,
-                Image = Names.BLACKBOARD,
-                Hostname = "localhost",
-                ExposedPorts = new Dictionary<string, EmptyStruct>
+                var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
+                {
+                    Name = containerName,
+                    Image = Names.BLACKBOARD,
+                    Hostname = "localhost",
+                    ExposedPorts = new Dictionary<string, EmptyStruct>
                 {
                 {port, default(EmptyStruct) }
                 },
-                HostConfig = new HostConfig
-                {
-                    PortBindings = new Dictionary<string, IList<PortBinding>>
+                    HostConfig = new HostConfig
+                    {
+                        PortBindings = new Dictionary<string, IList<PortBinding>>
                     {
                         {port, new List<PortBinding> {new PortBinding {HostPort = port}}}
                     },
-                    PublishAllPorts = true
-                },
-                Cmd = cmd,
-                Labels = new Dictionary<string, string>() { { "port", port }, { "group", hubGroup } }
-            });
+                        PublishAllPorts = true
+                    },
+                    Cmd = cmd,
+                    Labels = new Dictionary<string, string>() { { "port", port }, { "group", hubGroup } }
+                });
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
+            }
         }
 
         public async Task<IEnumerable<BlackboardContainerData>> GetBlackBoardContainers()
         {
             var blackBoardContainers = new List<BlackboardContainerData>();
-            var containers = await _client.Containers.ListContainersAsync(
-             new ContainersListParameters()
-             {
-                 All = true
-             });
+
+            IList<ContainerListResponse> containers = null;
+            try
+            {
+                containers = await _client.Containers.ListContainersAsync(
+                new ContainersListParameters()
+                {
+                    All = true
+                });
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
+            }
             if (containers != null && containers.Count > 0)
             {
                 var myContainers = containers.Where(c => c.Image == "digiwells/ddhubserver:latest");
@@ -180,20 +234,28 @@ namespace DWIS.Docker.Clients
 
         public async Task UpdateStandardSetupImageDates(StandardSetUp setup)
         {
+
             var configuration = new DRD.RegistryClientConfiguration("https://hub.docker.com");
-
-            using var client = configuration.CreateClient();
-
-
-            foreach (var item in setup.Items)
+            try
             {
-                var tags = await client.Repository.ListRepositoryTags("digiwells", item.ImageName.Remove(0, "digiwells/".Length));
-                var tagItem = tags.Tags.FirstOrDefault(t => t.Name == item.ImageTag);
-                if (tagItem != null)
+                using var client = configuration.CreateClient();
+
+
+                foreach (var item in setup.Items)
                 {
-                    item.Digest = tagItem.Digest;
-                    item.ImageRepoTimeStamp = tagItem.LastUpdated;
+                    var tags = await client.Repository.ListRepositoryTags("digiwells", item.ImageName.Remove(0, "digiwells/".Length));
+                    var tagItem = tags.Tags.FirstOrDefault(t => t.Name == item.ImageTag);
+                    if (tagItem != null)
+                    {
+                        item.Digest = tagItem.Digest;
+                        item.ImageRepoTimeStamp = tagItem.LastUpdated;
+                    }
                 }
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
             }
         }
 
@@ -202,40 +264,47 @@ namespace DWIS.Docker.Clients
 
         public async Task<bool> CheckImageExist(string imageName, string tag, bool loadIfNotExist = false)
         {
-
-            var images = await _client.Images.ListImagesAsync(new ImagesListParameters()
+            try
             {
-                Filters = new System.Collections.Generic.Dictionary<string, IDictionary<string, bool>>
+                var images = await _client.Images.ListImagesAsync(new ImagesListParameters()
+                {
+                    Filters = new System.Collections.Generic.Dictionary<string, IDictionary<string, bool>>
             {
                 { "reference", new Dictionary<string, bool> { { imageName, true } } }
             }
-            });
-            if (images != null && images.Count > 0)
-            {
-                return true;
-            }
-            else
-            {
-                if (loadIfNotExist)
+                });
+                if (images != null && images.Count > 0)
                 {
-                    try
-                    {
-                        await _client.Images.CreateImageAsync(
-                            new ImagesCreateParameters()
-                            {
-                                FromImage = imageName,
-                                Tag = tag
-                            },
-                            null,
-                            new Progress<JSONMessage>());
-                        return true;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogError("Error loading image {imageName}:{tag} - {message}", imageName, tag, ex.Message);
-                    }
+                    return true;
                 }
-                return false;
+                else
+                {
+                    if (loadIfNotExist)
+                    {
+                        try
+                        {
+                            await _client.Images.CreateImageAsync(
+                                new ImagesCreateParameters()
+                                {
+                                    FromImage = imageName,
+                                    Tag = tag
+                                },
+                                null,
+                                new Progress<JSONMessage>());
+                            return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.LogError("Error loading image {imageName}:{tag} - {message}", imageName, tag, ex.Message);
+                        }
+                    }
+                    return false;
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
             }
         }
 
@@ -257,43 +326,51 @@ namespace DWIS.Docker.Clients
 
         public async Task UpdateStandardItemImages(IEnumerable<StandardSetUpStatusItem> items)
         {
-            var groups = items.GroupBy(i => i.SetUpItem);
-
-            List<(string name, string image,string hostname, IList<string> env, HostConfig hConf, IDictionary<string, EmptyStruct> ports)> toRecreate 
-                = new List<(string name, string image, string hostname, IList<string> env, HostConfig hConf, IDictionary<string, EmptyStruct> ports)>();
-
-            foreach (var group in groups) 
+            try
             {
-                foreach (var item in group)
-                {
-                    if (!string.IsNullOrEmpty(item.ContainerID))
-                    {
-                        await StopContainer(item.ContainerID);
-                        var ins = await _client.Containers.InspectContainerAsync(item.ContainerID);
-                    
-                        toRecreate.Add((ins.Name, ins.Config.Image, ins.Config.Hostname, ins.Config.Env, ins.HostConfig, ins.Config.ExposedPorts));
+                var groups = items.GroupBy(i => i.SetUpItem);
 
-                        await _client.Containers.RemoveContainerAsync(item.ContainerID, new ContainerRemoveParameters() { Force = true, RemoveVolumes = false, RemoveLinks = false });
+                List<(string name, string image, string hostname, IList<string> env, HostConfig hConf, IDictionary<string, EmptyStruct> ports)> toRecreate
+                    = new List<(string name, string image, string hostname, IList<string> env, HostConfig hConf, IDictionary<string, EmptyStruct> ports)>();
+
+                foreach (var group in groups)
+                {
+                    foreach (var item in group)
+                    {
+                        if (!string.IsNullOrEmpty(item.ContainerID))
+                        {
+                            await StopContainer(item.ContainerID);
+                            var ins = await _client.Containers.InspectContainerAsync(item.ContainerID);
+
+                            toRecreate.Add((ins.Name, ins.Config.Image, ins.Config.Hostname, ins.Config.Env, ins.HostConfig, ins.Config.ExposedPorts));
+
+                            await _client.Containers.RemoveContainerAsync(item.ContainerID, new ContainerRemoveParameters() { Force = true, RemoveVolumes = false, RemoveLinks = false });
+                        }
                     }
+
+                    await _client.Images.DeleteImageAsync(group.Key.ImageName + ":" + group.Key.ImageTag, new ImageDeleteParameters() { Force = true });
+
+                    await CheckImageExist(group.Key.ImageName, group.Key.ImageTag, true);
                 }
 
-                await _client.Images.DeleteImageAsync(group.Key.ImageName + ":" + group.Key.ImageTag, new ImageDeleteParameters() { Force = true });
-
-                await CheckImageExist(group.Key.ImageName, group.Key.ImageTag, true);
-            }
-
-            foreach (var item in toRecreate)
-            {
-                var ccp = new CreateContainerParameters()
+                foreach (var item in toRecreate)
                 {
-                    Name = item.name,
-                    Image = item.image,
-                    HostConfig = item.hConf,
-                    Env = item.env,
-                    Hostname = item.hostname,
-                    ExposedPorts = item.ports
-                };
-                var response = await _client.Containers.CreateContainerAsync(ccp);
+                    var ccp = new CreateContainerParameters()
+                    {
+                        Name = item.name,
+                        Image = item.image,
+                        HostConfig = item.hConf,
+                        Env = item.env,
+                        Hostname = item.hostname,
+                        ExposedPorts = item.ports
+                    };
+                    var response = await _client.Containers.CreateContainerAsync(ccp);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
             }
         }
 
@@ -306,7 +383,7 @@ namespace DWIS.Docker.Clients
                 {
                     Name = containerName,
                     Image = imageNameNoTag + ":" + tag,
-                   
+
                 };
                 ccp.Tty = true;
                 ccp.OpenStdin = true;
@@ -318,13 +395,13 @@ namespace DWIS.Docker.Clients
                         envs.Add(env.key + "=" + env.val);
                     }
                     ccp.Env = envs;
-                   
+
                 }
 
                 if (!string.IsNullOrEmpty(localConfigPath) && !string.IsNullOrEmpty(containerConfigPath))
                 {
                     ccp.HostConfig = new HostConfig
-                    { 
+                    {
                         Binds = new List<string>
                     {
                         localConfigPath + ":" + containerConfigPath// Format: host-path:container-path
@@ -334,9 +411,16 @@ namespace DWIS.Docker.Clients
                 }
 
 
-
-                var response = await _client.Containers.CreateContainerAsync(ccp);
-                return response.ID;
+                try
+                {
+                    var response = await _client.Containers.CreateContainerAsync(ccp);
+                    return response.ID;
+                }
+                catch (Exception exception)
+                {
+                    _logger?.LogError(exception.ToString(), exception);
+                    throw exception;
+                }
             }
             else { return string.Empty; }
         }
@@ -344,20 +428,28 @@ namespace DWIS.Docker.Clients
         public async Task<IEnumerable<(string id, string name, bool running)>> GetContainers(string imageName)
         {
             var composerContainers = new List<(string id, string name, bool running)>();
-            var containers = await _client.Containers.ListContainersAsync(
-             new ContainersListParameters()
-             {
-                 All = true
-             });
-            if (containers != null && containers.Count > 0)
+            try
             {
-                var myContainers = containers.Where(c => c.Image == imageName);
-                foreach (var container in myContainers)
+                var containers = await _client.Containers.ListContainersAsync(
+                 new ContainersListParameters()
+                 {
+                     All = true
+                 });
+                if (containers != null && containers.Count > 0)
                 {
-                    composerContainers.Add((container.ID, container.Names.First(), container.State.ToLower() == "running"));
+                    var myContainers = containers.Where(c => c.Image == imageName);
+                    foreach (var container in myContainers)
+                    {
+                        composerContainers.Add((container.ID, container.Names.First(), container.State.ToLower() == "running"));
+                    }
                 }
+                return composerContainers;
             }
-            return composerContainers;
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
+            }
         }
 
         public async Task<StandardSetUpStatus> UpdateStandardSetupStatus(StandardSetUp standardSetUp, bool replicationEnabled, string hubGroup)
@@ -453,36 +545,43 @@ namespace DWIS.Docker.Clients
                 }
             }
 
-
-            foreach (var item in status.Items)
+            try
             {
-                DateTime imageDate = DateTime.MinValue;
-
-                if (!string.IsNullOrEmpty(item.ContainerID))
+                foreach (var item in status.Items)
                 {
-                    var container = await _client.Containers.InspectContainerAsync(item.ContainerID);
-                    var imageID = container.Image;
-                    var image = await _client.Images.InspectImageAsync(imageID);
-                    
-                    imageDate = image.Created;
-                }
+                    DateTime imageDate = DateTime.MinValue;
 
-                if (imageDate != DateTime.MinValue && item.SetUpItem.ImageRepoTimeStamp != DateTime.MinValue)
-                {
-                    if (item.SetUpItem.ImageRepoTimeStamp > imageDate + TimeSpan.FromMinutes(1))
+                    if (!string.IsNullOrEmpty(item.ContainerID))
                     {
-                        item.CurrentImageStatus = StandardSetUpStatusItem.ImageStatus.Outdated;
+                        var container = await _client.Containers.InspectContainerAsync(item.ContainerID);
+                        var imageID = container.Image;
+                        var image = await _client.Images.InspectImageAsync(imageID);
+
+                        imageDate = image.Created;
+                    }
+
+                    if (imageDate != DateTime.MinValue && item.SetUpItem.ImageRepoTimeStamp != DateTime.MinValue)
+                    {
+                        if (item.SetUpItem.ImageRepoTimeStamp > imageDate + TimeSpan.FromMinutes(1))
+                        {
+                            item.CurrentImageStatus = StandardSetUpStatusItem.ImageStatus.Outdated;
+                        }
+                        else
+                        {
+                            item.CurrentImageStatus = StandardSetUpStatusItem.ImageStatus.Updated;
+                        }
                     }
                     else
                     {
-                        item.CurrentImageStatus = StandardSetUpStatusItem.ImageStatus.Updated;
+                        item.CurrentImageStatus = StandardSetUpStatusItem.ImageStatus.Unknown;
                     }
-                }
-                else
-                {
-                    item.CurrentImageStatus = StandardSetUpStatusItem.ImageStatus.Unknown;
-                }
 
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogError(exception.ToString(), exception);
+                throw exception;
             }
 
             return status;
