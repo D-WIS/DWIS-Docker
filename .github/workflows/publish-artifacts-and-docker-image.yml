@@ -25,7 +25,7 @@ jobs:
       - name: Publish server
         run: |
           mkdir publish
-          dotnet publish main/DWIS.Desktop.Web/DWIS.Desktop.Web -o publish --runtime win-x64
+          dotnet publish main/src/DWIS.Desktop.Web/DWIS.Desktop.Web -o publish --runtime win-x64
       - name: Upload publish folder as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: main
-          file: main/\DWIS.Desktop.Web/DWIS.Desktop.Web/Dockerfile
+          file: main/src/DWIS.Desktop.Web/DWIS.Desktop.Web/Dockerfile
           tags: digiwells/dwis-docker:stable
           push: true
 
