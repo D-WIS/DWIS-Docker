@@ -41,7 +41,7 @@ jobs:
       - name: Build and push server
         uses: docker/build-push-action@v6
         with:
-          context: main
+          context: main/src
           file: main/src/DWIS.Docker/DWIS.Desktop.Web/DWIS.Desktop.Web/Dockerfile
           tags: digiwells/dwis-docker:stable
           push: true
