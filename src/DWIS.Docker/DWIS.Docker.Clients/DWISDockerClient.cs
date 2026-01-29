@@ -29,7 +29,7 @@ namespace DWIS.Docker.Clients
                    new DockerClientConfiguration(new Uri(uri));
             try
             {
-                _client = dockerConf.CreateClient();
+                _client = dockerConf.CreateClient();                
             }
             catch (Exception ex)
             {
