@@ -15,8 +15,8 @@
         text-align: right;
     }
 </style>
-
-<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Configuration</MudText>
+<div class="mt-6 ml-4">
+<MudText  Class="ml-4 mt-4" Typo="Typo.h6">D-WIS Configuration</MudText>
 <MudForm>
     <MudGrid>
         <MudItem xs = "3">
@@ -30,11 +30,15 @@
 </MudForm>
 
 <hr />
+
+
+<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Containers and images management</MudText>
+
 <MudToolBar>
             <MudButton StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="RefreshStatus"> Refresh  </MudButton>  
     <MudSpacer />
         <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers" Disabled="@_shouldNotCreateContainers"> Create missing containers  </MudButton>      
-        <MudButton StartIcon="@Icons.Material.Filled.Start" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
         <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop selection</MudButton> 
         <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteContainers()" Disabled="_canNotDeleteContainers">Delete selection</MudButton> 
             <MudSpacer />
@@ -86,11 +90,11 @@
         <MudTd DataLabel="Start/stop">
                 @if (context.Started)
                 {
-                    <MudButton StartIcon="@Icons.Material.Filled.Stop" OnClick="() => _client.StopContainer(context.ContainerID)">Stop</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => _client.StopContainer(context.ContainerID)">Stop</MudButton>
                 }
                 else if (!string.IsNullOrEmpty(context.ContainerName))
                 {
-                    <MudButton StartIcon="@Icons.Material.Filled.Start" OnClick="() => _client.StartContainer(context.ContainerID)">Start</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="() => _client.StartContainer(context.ContainerID)">Start</MudButton>
                 }
                 else
                 {
@@ -119,6 +123,7 @@
       </MudTable>
 }
 
+      </div>
 @code {
 
 
