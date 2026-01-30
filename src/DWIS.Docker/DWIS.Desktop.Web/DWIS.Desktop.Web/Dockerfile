@@ -11,6 +11,12 @@ EXPOSE 8081
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
+
+# Passing root CA to allow for https connection behind firewall
+ADD ./NORCE_CA.cer /usr/local/share/ca-certificates/foo.crt
+RUN chmod 644 /usr/local/share/ca-certificates/foo.crt && update-ca-certificates
+
+
 WORKDIR /src
 COPY ["DWIS.Desktop.Web/DWIS.Desktop.Web/DWIS.Desktop.Web.csproj", "DWIS.Desktop.Web/DWIS.Desktop.Web/"]
 COPY ["DWIS.Docker.Clients/DWIS.Docker.Clients.csproj", "DWIS.Docker.Clients/"]

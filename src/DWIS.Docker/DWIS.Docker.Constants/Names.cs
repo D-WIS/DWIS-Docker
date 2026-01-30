@@ -18,7 +18,7 @@ namespace DWIS.Docker.Constants
         public const string ADVICE_COMPOSER = "digiwells/dwisadvicecomposerservice:stable";
         public const string ADVICE_COMPOSER_NOTAG = "digiwells/dwisadvicecomposerservice";
 
-        private const string COMPOSER_LINUX_LOCALPATH = "home/Volumes/DWISAdviceComposerService";
+        private const string COMPOSER_LINUX_LOCALPATH = "/home/Volumes/DWISAdviceComposerService";
         private const string COMPOSER_WINDOWS_LOCALPATH = @"C:\Volumes\DWISAdviceComposerService";
 
         public static string COMPOSER_LOCALPATH => Environment.OSVersion.Platform == PlatformID.Unix ?
@@ -30,7 +30,7 @@ namespace DWIS.Docker.Constants
         public const string COMPOSER_CONFIGFILENAME = "config.json";
 
 
-        private const string MICROSTATE_INTERPRETATION_ENGINE_LINUX_LOCALPATH = "home/Volumes/DWISMicrostateInterpretationEngineService";
+        private const string MICROSTATE_INTERPRETATION_ENGINE_LINUX_LOCALPATH = "/home/Volumes/DWISMicrostateInterpretationEngineService";
         private const string MICROSTATE_INTERPRETATION_ENGINE_WINDOWS_LOCALPATH = @"C:/Volumes/DWISMicrostateInterpretationEngineService";
         public const string MICROSTATE_INTERPRETATION_ENGINE_CONFIGFILENAME = "config.json";
         public const string MICROSTATE_INTERPRETATION_ENGINE_CONTAINERPATH = @"/home";
@@ -40,7 +40,7 @@ MICROSTATE_INTERPRETATION_ENGINE_LINUX_LOCALPATH :
 MICROSTATE_INTERPRETATION_ENGINE_WINDOWS_LOCALPATH;
 
 
-        private const string MICROSTATE_GENERATOR_LINUX_LOCALPATH = "home/Volumes/DWISMicroStateSignalGenerator";
+        private const string MICROSTATE_GENERATOR_LINUX_LOCALPATH = "/home/Volumes/DWISMicroStateSignalGenerator";
         private const string MICROSTATE_GENERATOR_WINDOWS_LOCALPATH = @"C:/Volumes/DWISMicroStateSignalGenerator";
         public const string MICROSTATE_GENERATOR_CONFIGFILENAME = "config.json";
         public const string MICROSTATE_GENERATOR_CONTAINERPATH = @"/home";
