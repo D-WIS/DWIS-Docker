@@ -468,7 +468,7 @@ namespace DWIS.Docker.Clients
 
                         var dbb = bbs.Where(b =>
                         ((string.IsNullOrEmpty(b.ContainerGroup) && !replicationEnabled)
-                        || b.ContainerGroup == hubGroup) && b.ContainerPort == item.BlackBoardPort);
+                        ||( b.ContainerGroup == hubGroup && replicationEnabled)) && b.ContainerPort == item.BlackBoardPort);
                         if (dbb != null && dbb.Count() > 0)
                         {
                             foreach (var container in dbb)
