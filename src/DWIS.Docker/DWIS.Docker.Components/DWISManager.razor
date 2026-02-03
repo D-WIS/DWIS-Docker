@@ -116,15 +116,15 @@
 
     protected override Task OnParametersSetAsync()
     {
-        if (Project != null && string.IsNullOrEmpty(Project.BlackBoardHostIP))
-        {
-            var remoteIpAddress = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress;
-            if (remoteIpAddress != null)
-            {
-                // Optionally map to IPv4
-               Project.BlackBoardHostIP = remoteIpAddress.MapToIPv4().ToString();
-            }
-        }
+        // if (Project != null && string.IsNullOrEmpty(Project.BlackBoardHostIP))
+        // {
+        //     var remoteIpAddress = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress;
+        //     if (remoteIpAddress != null)
+        //     {
+        //         // Optionally map to IPv4
+        //        Project.BlackBoardHostIP = remoteIpAddress.MapToIPv4().ToString();
+        //     }
+        // }
         return base.OnParametersSetAsync();
     }
 

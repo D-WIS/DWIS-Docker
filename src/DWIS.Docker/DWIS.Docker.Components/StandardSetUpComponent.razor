@@ -23,9 +23,10 @@
       <MudCheckBox @bind-Value="@Project.ReplicationEnabled">Duplication enabled</MudCheckBox>
       </MudItem>  <MudItem xs = "3">
      <MudTextField Class="ml-4" @bind-Value="@Project.HubGroup" Label="Duplication group" Variant="Variant.Text"></MudTextField>    
-      </MudItem>  <MudItem xs = "3">
-     <MudTextField Class="ml-4" @bind-Value="@Project.BlackBoardHostIP" Label="Black board IP address" Variant="Variant.Text"></MudTextField>
       </MudItem>  
+     @*  <MudItem xs = "3">
+     <MudTextField Class="ml-4" @bind-Value="@Project.BlackBoardHostIP" Label="Black board IP address" Variant="Variant.Text"></MudTextField>
+      </MudItem>   *@
 </MudGrid>
 </MudForm>
 
@@ -354,7 +355,7 @@
             else 
             {
                 try{
-                await _client.CreateStandardItemContainer(item.SetUpItem, Project.BlackBoardHostIP);
+                await _client.CreateStandardItemContainer(item.SetUpItem, "host.docker.internal");
             }
                     catch (Exception ex)
                     {
