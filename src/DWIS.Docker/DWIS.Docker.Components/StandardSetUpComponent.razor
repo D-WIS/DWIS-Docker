@@ -16,13 +16,18 @@
     }
 </style>
 <div class="mt-6 ml-4">
-<MudText  Class="ml-4 mt-4" Typo="Typo.h6">D-WIS Configuration</MudText>
+    <MudGrid>
+
+        <MudItem xs="3">
+
+<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Blackboard</MudText>
 <MudForm>
     <MudGrid>
-        <MudItem xs = "3">
-      <MudCheckBox @bind-Value="@Project.ReplicationEnabled">Duplication enabled</MudCheckBox>
-      </MudItem>  <MudItem xs = "3">
-     <MudTextField Class="ml-4" @bind-Value="@Project.HubGroup" Label="Duplication group" Variant="Variant.Text"></MudTextField>    
+        <MudItem xs = "6">
+      <MudCheckBox @bind-Value="@Project.ReplicationEnabled">Replication</MudCheckBox>
+      </MudItem> 
+      <MudItem xs = "6">
+     <MudTextField Class="ml-4" FullWidth @bind-Value="@Project.HubGroup" Label="Replication group" Variant="Variant.Text"></MudTextField>    
       </MudItem>  
      @*  <MudItem xs = "3">
      <MudTextField Class="ml-4" @bind-Value="@Project.BlackBoardHostIP" Label="Black board IP address" Variant="Variant.Text"></MudTextField>
@@ -30,13 +35,13 @@
 </MudGrid>
 </MudForm>
 
-<hr />
 
-
+</MudItem>
+<MudItem xs ="9">
 <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Containers and images management</MudText>
 
 <MudToolBar>
-            <MudButton StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="RefreshStatus"> Refresh  </MudButton>  
+           
     <MudSpacer />
         <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers" Disabled="@_shouldNotCreateContainers"> Create missing containers  </MudButton>      
         <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
@@ -51,6 +56,9 @@
         <MudProgressCircular Color="Color.Info"  Indeterminate="true" />
     }
     </MudToolBar>
+    </MudItem>
+    </MudGrid>
+
 <hr />
 
 
@@ -71,6 +79,7 @@
           T="StandardSetUpStatusItem"
           SelectedItemsChanged="SelectionChanged">
               <ToolBarContent>
+                   <MudButton  IconSize="Size.Large" StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="RefreshStatus">  </MudButton>  
         <MudText Typo="Typo.h6">Containers</MudText></ToolBarContent>
     <HeaderContent>
         <MudTh>Name</MudTh>
