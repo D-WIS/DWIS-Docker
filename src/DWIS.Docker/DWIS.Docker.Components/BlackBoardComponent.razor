@@ -77,4 +77,10 @@
         await Manager.DeleteContainer(id);
         await InvokeAsync(StateHasChanged);
     }
+
+    private async void Refresh()
+    {
+        await Manager.UpdateManagerData();
+        await InvokeAsync(StateHasChanged);
+    }
 }

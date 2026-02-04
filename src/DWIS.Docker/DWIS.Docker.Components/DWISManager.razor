@@ -24,7 +24,6 @@
     <MudText Typo="Typo.h3" >D-WIS Desktop</MudText>
     <MudSpacer></MudSpacer>
 
-    <MudIconButton Icon="@Icons.Material.Outlined.Refresh" OnClick="Refresh" />
     @if (Desktop)
     {
         <MudIconButton Icon="@Icons.Material.Outlined.Settings" /> 
@@ -42,14 +41,18 @@
         <StandardSetUpComponent Project="Project"></StandardSetUpComponent>
     </MudTabPanel>
     <MudTabPanel Text="Blackboards">
-        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2" Centered>
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2" Centered>            
             <MudTabPanel Text="Blackboard Group view">
                 <HubGroupDataComponent CopyToClipBoard="CopyToClipBoard" SelectFolder="SelectFolder" HubGroups="Manager.HubMonitoringData.HubGroups"></HubGroupDataComponent>
             </MudTabPanel>
             <MudTabPanel Text="Blackboard Container view">
                 <BlackBoardComponent ContainersPerPort="Manager.GetContainersPerPort()"></BlackBoardComponent>
             </MudTabPanel>
+            <MudSpacer />
+            <MudTabPanel  Icon="@Icons.Material.Outlined.Refresh"  OnClick="Refresh">
+            </MudTabPanel>
         </MudTabs>
+
     </MudTabPanel>
      <MudTabPanel Text="DWIS Modules">
         <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2" Centered>
