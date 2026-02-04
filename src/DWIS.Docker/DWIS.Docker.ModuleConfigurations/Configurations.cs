@@ -183,10 +183,10 @@ namespace DWIS.Docker.ModuleConfigurations
     {
         public static double FlowrateSetPointROCDefault = 20.0 / 60000.0;
         public static double FlowrateLimitROCDefault = 20.0 / 60000.0;
-        public static double RotationalSpeedSetPointROCDefault = 20.0 / 60.0;
-        public static double RotationalSpeedLimitROCDefault = 20.0 / 60.0;
+        public static double RotationalSpeedSetPointROCDefault = 20.0 * 2 * System.Math.PI / 60.0;
+        public static double RotationalSpeedLimitROCDefault = 20.0 * 2 * System.Math.PI / 60.0;
         public static double ROPLimitROCDefault = 5.0 / 3600.0;
-        public static double WOBLimitROCDefault = 10000;
+        public static double WOBLimitROCDefault = 10000 * 9.81;
         public static double TOBLimitROCDefault = 500.0;
         public static double DPLimitROCDefault = 1e5;
         public static double LowestDrillHeightDefault = 1.5;
@@ -223,7 +223,7 @@ namespace DWIS.Docker.ModuleConfigurations
     // Friction test original variant (from DWIS.ADCSBridge.Generic.FrictionTest.ConfigurationOriginal)
     public class FrictionTestConfigurationOriginal
     {
-        public static double WOBDetectionThresholdDefault = 500.0;
+        public static double WOBDetectionThresholdDefault = 500.0 * 9.81;
         public double WOBDetectionThreshold { get; set; } = WOBDetectionThresholdDefault;
     }
 
@@ -242,8 +242,8 @@ namespace DWIS.Docker.ModuleConfigurations
     public class RotationStopConfiguration
     {
         public static double TorqueMaxDefault = 60000.0;
-        public static double RotationalSpeedSetPointROCDefault = 20.0 / 60.0;
-        public static double ZeroTorqueSpeedDefault = 10.0 / 60.0;
+        public static double RotationalSpeedSetPointROCDefault = 20.0 * 2 * System.Math.PI / 60.0;
+        public static double ZeroTorqueSpeedDefault = 10.0 * 2 * System.Math.PI / 60.0;
         public static double MarginStandardDeviationTorqueDefault = 100.0;
         public static double MarginTorqueDefault = 200.0;
 
@@ -260,8 +260,8 @@ namespace DWIS.Docker.ModuleConfigurations
     public class RotationStartupConfiguration
     {
         public static double TorqueMaxDefault = 60000.0;
-        public static double RotationalSpeedSetPointDefault = 90.0 / 60.0;
-        public static double RotationalSpeedSetPointROCDefault = 20.0 / 60.0;
+        public static double RotationalSpeedSetPointDefault = 90.0 * 2 * System.Math.PI / 60.0;
+        public static double RotationalSpeedSetPointROCDefault = 20.0 * 2 * System.Math.PI / 60.0;
 
         public double RotationalSpeedSetPoint { get; set; } = RotationalSpeedSetPointDefault;
         public double RotationalSpeedSetPointROC { get; set; } = RotationalSpeedSetPointROCDefault;
@@ -322,7 +322,7 @@ namespace DWIS.Docker.ModuleConfigurations
     {
         public static double TagBottomSpeedSetPointDefault = -50.0 / 3600.0;
         public static double AxialAccelerationLimitDefault = 0.05;
-        public static double WOBDetectionThresholdDefault = 500.0;
+        public static double WOBDetectionThresholdDefault = 500.0 * 9.81;
         public static double StickUpHeightDefault = 0.8;
         public static double LowestDrillElevationDefault = 0.2;
 
