@@ -8,7 +8,9 @@
     <TitleContent>
         <div class="d-flex">
             <MudText Class="mt-1" >@("Group name: " + GroupData.GroupName)</MudText>
-           <MudSpacer></MudSpacer>
+           <MudSpacer />
+           <MudButton StartIcon="@Icons.Material.Filled.Clear" OnClick="ClearGroupManifests">Reset group</MudButton>
+           <MudSpacer />
             <MudTooltip Text="@GetGroupToolTipText()" Color="Color.Primary">
             <MudBadge Content="@GroupData?.NumberOfConnections" Color="Color.Primary" Overlap="true" Class="d-flex ml-auto">
                 <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Default" />
@@ -98,6 +100,15 @@
     private string _newContainerPort { get; set; } = "";
     private string _recordingFolder { get; set; } = "./";
     // public delegate void CopyTextToClipBoard(string text);
+
+
+    private async void ClearGroupManifests()
+    {
+        if (GroupData != null)
+        {
+            await Manager.ClearGroupManifests(GroupData.GroupName);
+        }
+    }
 
     private string GetGroupToolTipText()
     {

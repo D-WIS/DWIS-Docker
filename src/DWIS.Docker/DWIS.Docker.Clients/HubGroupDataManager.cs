@@ -162,6 +162,14 @@ namespace DWIS.Docker.Clients
             await UpdateManagerData();
         }
 
+        public async Task ClearGroupManifests(string groupName)
+        {
+            if (_connection == null) return;
+            else
+            {
+                await _connection.InvokeAsync("ClearSessionManifests", groupName);
+            }
+        }
         public async Task UpdateManagerData()
         {
             GroupDataDTO? groupData = null;
