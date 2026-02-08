@@ -37,8 +37,8 @@
 
 
 </MudItem>
-<MudItem xs ="9">
-<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Containers and images management</MudText>
+<MudItem xs ="6">
+<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Containers</MudText>
 
 <MudToolBar>
            
@@ -48,16 +48,27 @@
         <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop selection</MudButton> 
         <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteContainers()" Disabled="_canNotDeleteContainers">Delete selection</MudButton> 
             <MudSpacer />
-        <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
-        <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
+
     <MudSpacer />
+    
+    </MudToolBar>
+</MudItem>
+
+
+<MudItem xs ="3">
+<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Images</MudText>
+
+<MudToolBar>
+            <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
+        <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
     @if(_thinking)
     {
         <MudProgressCircular Color="Color.Info"  Indeterminate="true" />
     }
     </MudToolBar>
-    </MudItem>
-    </MudGrid>
+
+</MudItem>
+</MudGrid>
 
 <hr />
 

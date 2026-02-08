@@ -8,9 +8,8 @@
     <TitleContent>
         <div class="d-flex">
             <MudText Class="mt-1" >@("Group name: " + GroupData.GroupName)</MudText>
-           <MudSpacer />
-           <MudButton StartIcon="@Icons.Material.Filled.Clear" OnClick="ClearGroupManifests">Reset group</MudButton>
-           <MudSpacer />
+            <MudSpacer /> 
+           <MudButton StartIcon="@Icons.Material.Filled.LockReset" OnClick="ClearGroupManifests">Reset</MudButton>
             <MudTooltip Text="@GetGroupToolTipText()" Color="Color.Primary">
             <MudBadge Content="@GroupData?.NumberOfConnections" Color="Color.Primary" Overlap="true" Class="d-flex ml-auto">
                 <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Default" />

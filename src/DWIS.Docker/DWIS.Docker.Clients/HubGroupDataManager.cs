@@ -21,8 +21,11 @@ namespace DWIS.Docker.Clients
             HubMonitoringData.HubURL = HubAddress;
 
             _connection = hubConnection;
+
+            
+
             _client = client;
-            //InitHubConnection();
+            InitHubConnection();
 
             //InitDockerClient("http://localhost:2375");
         }
@@ -36,17 +39,13 @@ namespace DWIS.Docker.Clients
         //    _client = dockerConf.CreateClient();
         //}
 
-        //private async void InitHubConnection()
-        //{
-        //    HubConnectionBuilder connectionBuilder = new HubConnectionBuilder();
-        //    _connection = connectionBuilder
-        //        .WithUrl(HubAddress + Constants.DWIS_HUB)
-        //        .WithAutomaticReconnect()
-        //        .AddMessagePackProtocol()
-        //    .Build();
-
-        //    await _connection.StartAsync();
-        //}
+        private async void InitHubConnection()
+        {
+            if (_connection != null && _connection.State != HubConnectionState.Connecting && _connection.State != HubConnectionState.Connected)
+            {
+                await _connection.StartAsync();
+            }
+        }
 
         public HubGroupData? GetGroupData(string groupName)
         {

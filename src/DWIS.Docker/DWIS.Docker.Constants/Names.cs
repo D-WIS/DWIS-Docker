@@ -57,6 +57,7 @@ MICROSTATE_GENERATOR_WINDOWS_LOCALPATH;
         public const string BLACKBOARD_CONTAINER_NAME = "blackboard";
         public const string LOCAL_BLACKBOARD_CONTAINER_NAME = "local-blackboard";
 
+        public const string DRILLER_APP_IMAGE_NAME = "digiwells/driller-scheduling-app:stable";
 
 
         public static string LOCALPATH => Environment.OSVersion.Platform == PlatformID.Unix ?

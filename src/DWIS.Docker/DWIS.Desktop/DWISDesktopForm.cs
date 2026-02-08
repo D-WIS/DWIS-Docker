@@ -1,13 +1,18 @@
+using DWIS.API.DTO;
 using DWIS.Docker.Clients;
 using DWIS.Docker.Components;
 using DWIS.Docker.Models;
 using Microsoft.AspNetCore.Components.WebView.WindowsForms;
+using Microsoft.AspNetCore.Connections;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualBasic;
 using MudBlazor.Services;
 using System.Data.Common;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace DWIS.Desktop
 {
@@ -22,12 +27,14 @@ namespace DWIS.Desktop
 
             HubConnectionBuilder connectionBuilder = new HubConnectionBuilder();
             var _connection = connectionBuilder
-                .WithUrl(HubAddress +DWIS_HUB)
+                .WithUrl(HubAddress + DWIS_HUB)
                 .WithAutomaticReconnect()
                 .AddMessagePackProtocol()
             .Build();
 
+            // _connection.StartAsync(new CancellationToken());
 
+            //var _connection = GetConnection().Result;
 
             //HubGroupDataManager
             var services = new ServiceCollection();
@@ -61,6 +68,31 @@ namespace DWIS.Desktop
                 { nameof(DWISManager.Desktop), true}
             });
         }
+
+        void ImportSentManifest(ManifestFileDTO dto) { }
+        private async Task<HubConnection?> GetConnection()
+        {
+            HubConnectionBuilder connectionBuilder = new HubConnectionBuilder();
+            var _connection = connectionBuilder
+                .WithUrl(HubAddress + DWIS_HUB)
+                .WithAutomaticReconnect()
+                .AddMessagePackProtocol()
+            .Build();
+
+            _connection.On<  ManifestFileDTO>("SendManifest", dto => ImportSentManifest(dto));
+            try
+            {
+
+                await _connection.StartAsync();
+            }
+            catch (Exception ex) 
+            {
+                Console.Write(ex.ToString());
+            }
+            return _connection;
+        }
+
+
 
         private async void Quit()
         {
@@ -100,5 +132,11 @@ namespace DWIS.Desktop
             }
             else return string.Empty;
         }
+    }
+
+    public class ManifestFileDTO
+    {
+        public Guid Sender { get; set; }
+        public ManifestFile[] ManifestFiles { get; set; }
     }
 }
