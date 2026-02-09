@@ -364,6 +364,8 @@ namespace DWIS.Docker.Clients
                         Hostname = item.hostname,
                         ExposedPorts = item.ports
                     };
+                    ccp.Tty = true;
+                    ccp.OpenStdin = true;
                     var response = await _client.Containers.CreateContainerAsync(ccp);
                 }
             }
@@ -395,7 +397,6 @@ namespace DWIS.Docker.Clients
                         envs.Add(env.key + "=" + env.val);
                     }
                     ccp.Env = envs;
-
                 }
 
                 if (!string.IsNullOrEmpty(localConfigPath) && !string.IsNullOrEmpty(containerConfigPath))
