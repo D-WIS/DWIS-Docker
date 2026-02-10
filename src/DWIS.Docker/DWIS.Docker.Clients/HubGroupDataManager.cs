@@ -166,7 +166,7 @@ namespace DWIS.Docker.Clients
             if (_connection == null) return;
             else
             {
-                await _connection.InvokeAsync("ClearSessionManifests", groupName);
+               bool cleared =  await _connection.InvokeAsync<bool>("ClearGroupManifests", groupName);
             }
         }
         public async Task UpdateManagerData()
