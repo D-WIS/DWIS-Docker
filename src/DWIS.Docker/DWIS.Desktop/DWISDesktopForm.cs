@@ -36,6 +36,9 @@ namespace DWIS.Desktop
 
             //var _connection = GetConnection().Result;
 
+           
+
+
             //HubGroupDataManager
             var services = new ServiceCollection();
             services.AddSingleton<DWISModulesConfigurationClient>();
@@ -44,7 +47,7 @@ namespace DWIS.Desktop
             services.AddSingleton<DWISDockerClient>();
             services.AddSingleton<HubGroupDataManager>();
             services.AddSingleton<StandardSetUp>();
-            services.AddSingleton<DWISProject>(new DWISProject());
+            services.AddSingleton<DWISProject>(DWISProject.LoadFromBase());
 
 
             services.AddHttpContextAccessor();

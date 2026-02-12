@@ -24,11 +24,14 @@
 <MudForm>
     <MudGrid>
         <MudItem xs = "6">
-      <MudCheckBox @bind-Value="@Project.ReplicationEnabled">Replication</MudCheckBox>
+      <MudCheckBox @bind-Value="@ReplicationEnabled" >Replication</MudCheckBox>
       </MudItem> 
       <MudItem xs = "6">
-     <MudTextField Class="ml-4" FullWidth @bind-Value="@Project.HubGroup" Label="Replication group" Variant="Variant.Text"></MudTextField>    
+     <MudTextField Class="ml-4" FullWidth @bind-Value="@HubGroup" Label="Replication group" Variant="Variant.Text"></MudTextField>    
       </MudItem>  
+      <MudItem xs="8">
+               <MudTextField Class="ml-4" FullWidth @bind-Value="@Project.BlackBoardHostIP" Label="Blackboard host IP" Variant="Variant.Text"></MudTextField>   
+      </MudItem>
      @*  <MudItem xs = "3">
      <MudTextField Class="ml-4" @bind-Value="@Project.BlackBoardHostIP" Label="Black board IP address" Variant="Variant.Text"></MudTextField>
       </MudItem>   *@
@@ -119,7 +122,7 @@
                 {
                     <MudButton StartIcon="@Icons.Material.Filled.NewLabel" OnClick="async () => 
                             {_modulesConfigClient.SaveStandardConfigToFile(context.SetUpItem); 
-                                await _client.CreateStandardItemContainer(context.SetUpItem);}">
+                                await _client.CreateStandardItemContainer(context.SetUpItem, Project.BlackBoardHostIP);}">
                                     Create
                     </MudButton>
                 }
@@ -175,6 +178,23 @@
         Selector = (e) => e.SetUpItem.ModuleGroup
     };
 
+    private bool ReplicationEnabled
+    {
+        get { return Project.ReplicationEnabled; }
+        set { Project.ReplicationEnabled = value; DWISProject.SaveBase(Project); }
+    }
+
+    private string HubGroup
+    {
+        get { return Project.HubGroup; }
+        set { Project.HubGroup = value; DWISProject.SaveBase(Project); }
+    }
+
+    private string BlackBoardHostIP
+    {
+        get { return Project.BlackBoardHostIP; }
+        set { Project.BlackBoardHostIP = value; DWISProject.SaveBase(Project); }    }
+
     private void SelectionChanged(HashSet<StandardSetUpStatusItem> selectedItems)
     {
         _currentSelection = selectedItems;
@@ -183,6 +203,9 @@
         _canNotStopSelection = ! CheckCanStopSelection();
         _canNotDeleteContainers = ! CheckCanDeleteSelection();
     }
+
+
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -373,7 +396,7 @@
             else 
             {
                 try{
-                await _client.CreateStandardItemContainer(item.SetUpItem, "host.docker.internal");
+                await _client.CreateStandardItemContainer(item.SetUpItem, Project.BlackBoardHostIP);
             }
                     catch (Exception ex)
                     {

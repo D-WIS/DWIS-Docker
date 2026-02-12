@@ -34,7 +34,7 @@ builder.Services.AddSingleton<DWISDockerClientConfiguration>();
 builder.Services.AddSingleton<DWISDockerClient>();
 builder.Services.AddSingleton<HubGroupDataManager>();
 builder.Services.AddSingleton<StandardSetUp>();
-builder.Services.AddSingleton<DWISProject>(new DWISProject());
+builder.Services.AddSingleton<DWISProject>(DWISProject.LoadFromBase());
 //services.AddBlazorBootstrap();
 builder.Services.AddMudServices();
 
