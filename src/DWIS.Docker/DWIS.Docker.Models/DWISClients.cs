@@ -12,7 +12,8 @@ namespace DWIS.Docker.Models
         public DWISClients() 
         {
             Apps.Add(new DWISClientApp() {AppName = "Driller scheduling", ImageNameNoTag = "digiwells/driller-scheduling-app", ImageTag = "stable" ,HostPort = "5274", ContainerPort="8080" });
-        }    
+            Apps.Add(new DWISClientApp() { AppName = "Advisor scheduling", ImageNameNoTag = "digiwells/advisor-scheduling-app", ImageTag = "stable", HostPort = "5275", ContainerPort = "8080" });
+        }
     }
 
     public class DWISClientApp 
