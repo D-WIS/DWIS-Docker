@@ -42,14 +42,12 @@
 
 <MudToolBar>
            
-    <MudSpacer />
+
         <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers" Disabled="@_shouldNotCreateContainers"> Create missing containers  </MudButton>      
         <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
         <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop selection</MudButton> 
         <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteContainers()" Disabled="_canNotDeleteContainers">Delete selection</MudButton> 
-            <MudSpacer />
 
-    <MudSpacer />
     
     </MudToolBar>
 </MudItem>
@@ -355,7 +353,7 @@
             {
                 string name = Project.ReplicationEnabled ? item.SetUpItem.DefaultContainerName + "-" + Project.HubGroup : item.SetUpItem.DefaultContainerName;
                 try{
-                await _client.CreateBlackboardContainer(Project.HubGroup, name, item.SetUpItem.BlackBoardPort);
+                await _client.CreateBlackboardContainer(Project.ReplicationEnabled ?   Project.HubGroup : string.Empty, name, item.SetUpItem.BlackBoardPort);
                 }
                     catch (Exception ex)
                     {

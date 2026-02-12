@@ -1,11 +1,83 @@
-﻿<h3>ClientAppsComponent</h3>
+﻿@using MudBlazor;
+@using DWIS.Docker.Models;
+@using DWIS.Docker.Clients;
+@inject DWISProject Project;
+@inject DWISDockerClient DockerClient;
+
+
+<MudTable Items="Project.Clients.Apps" T="DWISClientApp">
+    <HeaderContent>
+        <MudTh>App name</MudTh>
+        <MudTh>Image</MudTh>
+        <MudTh>Start / stop</MudTh>
+        <MudTh>Port</MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd>@context.AppName</MudTd>
+        <MudTd>@context.ImageNameNoTag</MudTd>
+        <MudTd>
+            @if (context.Running)
+            {
+                <MudButton StartIcon="@Icons.Material.Filled.Stop" OnClick="async () =>await Stop(context)"></MudButton>
+            }
+            else
+            {
+                <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="async () => await Start(context)"></MudButton>
+            }
+        </MudTd>
+        <MudTd>
+            <MudLink Href=@GetAddres(context)>@context.HostPort</MudLink>            
+        </MudTd>
+    </RowTemplate>
+</MudTable>
 
 @code {
-    private (string name, string image, string port)[] _clients =
+
+
+    private string GetAddres(DWISClientApp app){
+        return "http://localhost:" + app.HostPort;
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (DockerClient != null)
         {
-        ("Driller scheduling app", "digiwells/driller-scheduling-app:stable", "5274")    
-        }; 
+            foreach (var app in Project.Clients.Apps)
+            {
+                var info = await DockerClient.GetContainers(app.ImageNameNoTag + ":" + app.ImageTag);
+                if (info != default && info.Any())
+                {
+                    app.ContainerID = info.First().id;
+                    app.Running = info.First().running;  
+                    app.AppName = info.First().name;
+                }
+            }
+        }
+        base.OnInitializedAsync();    
+    }
+
+    private async Task Stop(DWISClientApp app)
+    {
+        await DockerClient.StopContainer(app.ContainerID);
+        app.Running = false;
+    }
+    private async Task Start(DWISClientApp app)
+    {
+        if (string.IsNullOrEmpty(app.ContainerID))
+        {
+            var envVariables = new List<(string key, string val)>
+                {
+                    (DWIS.Client.ReferenceImplementation.IDWISClientConfiguration.BLACKBOARD_IP_ENVIRONMENT_VARIABLE, "host.docker.internal")
+                };
 
 
+            app.ContainerID = await DockerClient.CreateContainer(app.ImageNameNoTag, app.ImageTag, null, null, app.AppName.Trim().Replace(" ", "-"), envVariables: envVariables, portsMapping: [(app.HostPort, app.ContainerPort)]);
+        }
+
+
+        await DockerClient.StartContainer(app.ContainerID);
+        app.Running = true;
+    }
 
 }

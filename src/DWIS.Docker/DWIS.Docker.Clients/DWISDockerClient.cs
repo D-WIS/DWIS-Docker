@@ -376,7 +376,7 @@ namespace DWIS.Docker.Clients
             }
         }
 
-        public async Task<string> CreateContainer(string imageNameNoTag, string tag, string localConfigPath, string containerConfigPath, string containerName, IEnumerable<(string key, string val)>? envVariables = null)
+        public async Task<string> CreateContainer(string imageNameNoTag, string tag, string localConfigPath, string containerConfigPath, string containerName, IEnumerable<(string key, string val)>? envVariables = null, IEnumerable<(string hostPort, string containerPort)>? portsMapping = null)
         {
             bool exist = await CheckImageExist(imageNameNoTag, tag, true);
             if (exist)
@@ -411,7 +411,27 @@ namespace DWIS.Docker.Clients
                     };
                 }
 
+                if (portsMapping != null)
+                {
+                    Dictionary<string, EmptyStruct> exposedPorts = new Dictionary<string, EmptyStruct>();
+                    Dictionary<string, IList<PortBinding>> portBindings = new Dictionary<string, IList<PortBinding>>();
+                    foreach (var pm in portsMapping)
+                    {
+                        exposedPorts.Add(pm.containerPort, default(EmptyStruct));
+                        portBindings.Add(pm.containerPort, new List<PortBinding> { new PortBinding { HostPort = pm.hostPort } });
+                    }
+                    ccp.ExposedPorts = exposedPorts;
 
+                    if (ccp.HostConfig == null)
+                    {
+                        ccp.HostConfig = new HostConfig();
+                    }
+                    ccp.HostConfig.PublishAllPorts = true;
+                    ccp.HostConfig.PortBindings = portBindings;
+
+
+
+                }
                 try
                 {
                     var response = await _client.Containers.CreateContainerAsync(ccp);
