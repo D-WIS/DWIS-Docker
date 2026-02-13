@@ -25,7 +25,7 @@ jobs:
       - name: Publish server
         run: |
           mkdir publish
-          dotnet publish main/src/DWIS.Docker/DWIS.Desktop.Web/DWIS.Desktop.Web -o publish --runtime win-x64
+          dotnet publish main/src/DWIS.Docker/DWIS.Desktop -o publish --runtime win-x64
       - name: Upload publish folder as artifact
         uses: actions/upload-artifact@v4
         with:
