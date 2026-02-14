@@ -43,7 +43,14 @@ namespace DWIS.Docker.Clients
         {
             if (_connection != null && _connection.State != HubConnectionState.Connecting && _connection.State != HubConnectionState.Connected)
             {
-                await _connection.StartAsync();
+                try
+                {
+                    await _connection.StartAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
             }
         }
 
@@ -161,12 +168,12 @@ namespace DWIS.Docker.Clients
             await UpdateManagerData();
         }
 
-        public async Task ClearGroupManifests(string groupName)
+        public async Task<bool> ClearGroupManifests(string groupName)
         {
-            if (_connection == null) return;
+            if (_connection == null || _connection.State != HubConnectionState.Connected) return false;
             else
             {
-               bool cleared =  await _connection.InvokeAsync<bool>("ClearGroupManifests", groupName);
+               return  await _connection.InvokeAsync<bool>("ClearGroupManifests", groupName);
             }
         }
         public async Task UpdateManagerData()

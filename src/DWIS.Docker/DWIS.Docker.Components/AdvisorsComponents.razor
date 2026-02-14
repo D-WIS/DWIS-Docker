@@ -5,7 +5,7 @@
 @inject DWISDockerClient DockerClient;
 
 
-<MudTable Items="Project.Clients.Apps" T="DWISApp">
+<MudTable Items="Project.Advisors.Apps" T="DWISApp">
     <HeaderContent>
         <MudTh>App name</MudTh>
         <MudTh>Image</MudTh>
@@ -14,15 +14,12 @@
     </HeaderContent>
 
     <RowTemplate>
-        <MudTd>
-            <MudTextField @bind-Value="@context.AppName" Label="Container name"></MudTextField>
-            @context.AppName
-            </MudTd>
+        <MudTd>@context.AppName</MudTd>
         <MudTd>@context.ImageNameNoTag</MudTd>
         <MudTd>
             @if (context.Running)
             {
-                <MudButton StartIcon="@Icons.Material.Filled.Stop" OnClick="async () =>await Stop(context)"></MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Stop" OnClick="async () => await Stop(context)"></MudButton>
             }
             else
             {
@@ -30,10 +27,7 @@
             }
         </MudTd>
         <MudTd>
-            <MudLink Target="_blank" Href=@GetAddress(context)>
-                <MudTextField @bind-Value="@context.HostPort" Label="Port"></MudTextField>
-               
-                </MudLink>
+            <MudLink Target="_blank" Href=@GetAddress(context)>@context.HostPort</MudLink>
         </MudTd>
     </RowTemplate>
 </MudTable>
@@ -41,7 +35,8 @@
 @code {
 
 
-    private string GetAddress(DWISApp app){
+    private string GetAddress(DWISApp app)
+    {
         return "http://localhost:" + app.HostPort;
     }
 
@@ -49,18 +44,18 @@
     {
         if (DockerClient != null)
         {
-            foreach (var app in Project.Clients.Apps)
+            foreach (var app in Project.Advisors.Apps)
             {
                 var info = await DockerClient.GetContainers(app.ImageNameNoTag + ":" + app.ImageTag);
                 if (info != default && info.Any())
                 {
                     app.ContainerID = info.First().id;
-                    app.Running = info.First().running;  
+                    app.Running = info.First().running;
                     app.AppName = info.First().name;
                 }
             }
         }
-        base.OnInitializedAsync();    
+        base.OnInitializedAsync();
     }
 
     private async Task Stop(DWISApp app)
@@ -91,5 +86,4 @@
         await DockerClient.StartContainer(app.ContainerID);
         app.Running = true;
     }
-
 }

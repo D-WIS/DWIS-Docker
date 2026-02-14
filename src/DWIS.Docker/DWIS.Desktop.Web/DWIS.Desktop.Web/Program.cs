@@ -17,8 +17,14 @@ var _connection = connectionBuilder
     .AddMessagePackProtocol()
 .Build();
 
-await _connection.StartAsync();
-
+try
+{
+    await _connection.StartAsync();
+}
+catch (Exception e)
+{
+    Console.WriteLine(e);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 

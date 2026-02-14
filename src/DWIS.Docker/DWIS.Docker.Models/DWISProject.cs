@@ -5,7 +5,7 @@
         public StandardSetUpStatus? Status { get; set; }
 
         public DWISClients Clients { get; set; } = new DWISClients();
-
+        public DWISAdvisors Advisors { get; set; } = new DWISAdvisors();
 
         public static DWISProject LoadFromBase(string path = "project.json")
         {

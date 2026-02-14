@@ -1,7 +1,7 @@
 ﻿@using MudBlazor
 @using DWIS.Docker.Clients
 @using DWIS.Docker.Models
-
+@inject ISnackbar Snackbar
 @inject HubGroupDataManager Manager;
 
 <MudExpansionPanel Dense Gutters="false">
@@ -105,7 +105,11 @@
     {
         if (GroupData != null)
         {
-            await Manager.ClearGroupManifests(GroupData.GroupName);
+            bool success = await Manager.ClearGroupManifests(GroupData.GroupName);
+            if (!success)
+            {
+                Snackbar.Add("Could not clear group manifests");
+            }
         }
     }
 
