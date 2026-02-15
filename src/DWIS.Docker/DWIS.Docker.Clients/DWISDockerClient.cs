@@ -376,6 +376,17 @@ namespace DWIS.Docker.Clients
             }
         }
 
+        public async Task<bool> DeleteImage(string imageNameWithTag)
+        {
+            try {
+                await _client.Images.DeleteImageAsync(imageNameWithTag, new ImageDeleteParameters() { Force = true });
+                return true;
+            }
+            catch (Exception exception) 
+            { _logger?.LogError(exception.ToString()); }
+            return false;
+        }
+
         public async Task<string> CreateContainer(string imageNameNoTag, string tag, string localConfigPath, string containerConfigPath, string containerName, IEnumerable<(string key, string val)>? envVariables = null, IEnumerable<(string hostPort, string containerPort)>? portsMapping = null)
         {
             bool exist = await CheckImageExist(imageNameNoTag, tag, true);

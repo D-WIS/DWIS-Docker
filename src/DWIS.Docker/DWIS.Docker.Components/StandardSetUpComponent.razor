@@ -4,6 +4,7 @@
 @inject StandardSetUp SetUp;
 @inject DWISDockerClient _client;
 @inject DWISModulesConfigurationClient _modulesConfigClient;
+@inject ISnackbar Snackbar
 
 <style>
     .mud-table-cell-custom-group {
@@ -16,60 +17,59 @@
     }
 </style>
 <div class="mt-6 ml-4">
-    <MudGrid>
+  <MudGrid>
 
-        <MudItem xs="3">
+    <MudItem xs="3">
 
-<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Blackboard</MudText>
-<MudForm>
-    <MudGrid>
-        <MudItem xs = "6">
-      <MudCheckBox @bind-Value="@ReplicationEnabled" >Replication</MudCheckBox>
-      </MudItem> 
-      <MudItem xs = "6">
-     <MudTextField Class="ml-4" FullWidth @bind-Value="@HubGroup" Label="Replication group" Variant="Variant.Text"></MudTextField>    
-      </MudItem>  
-      <MudItem xs="8">
-               <MudTextField Class="ml-4" FullWidth @bind-Value="@Project.BlackBoardHostIP" Label="Blackboard host IP" Variant="Variant.Text"></MudTextField>   
-      </MudItem>
-     @*  <MudItem xs = "3">
-     <MudTextField Class="ml-4" @bind-Value="@Project.BlackBoardHostIP" Label="Black board IP address" Variant="Variant.Text"></MudTextField>
-      </MudItem>   *@
-</MudGrid>
-</MudForm>
+    <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Blackboard</MudText>
+    <MudForm>
+        <MudGrid>
+          <MudItem xs = "6">
+            <MudCheckBox @bind-Value="@ReplicationEnabled" >Replication</MudCheckBox>
+          </MudItem> 
+      
+          <MudItem xs = "6">
+            <MudTextField Class="ml-4" FullWidth @bind-Value="@HubGroup" Label="Replication group" Variant="Variant.Text"></MudTextField>    
+          </MudItem>  
+      
+          <MudItem xs="8">
+                   <MudTextField Class="ml-4" FullWidth @bind-Value="@Project.BlackBoardHostIP" Label="Blackboard host IP" Variant="Variant.Text"></MudTextField>   
+          </MudItem>
+        </MudGrid>
+    </MudForm>
 
 
-</MudItem>
-<MudItem xs ="6">
-<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Containers</MudText>
+    </MudItem>
+  
+    <MudItem xs ="6">
+    <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Containers</MudText>
 
-<MudToolBar>
-           
+    <MudToolBar>          
 
-        <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers" Disabled="@_shouldNotCreateContainers"> Create missing containers  </MudButton>      
-        <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
-        <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop selection</MudButton> 
-        <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteContainers()" Disabled="_canNotDeleteContainers">Delete selection</MudButton> 
+            <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers" Disabled="@_shouldNotCreateContainers"> Create missing containers  </MudButton>      
+            <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop selection</MudButton> 
+            <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteContainers()" Disabled="_canNotDeleteContainers">Delete selection</MudButton> 
 
     
-    </MudToolBar>
-</MudItem>
+        </MudToolBar>
+    </MudItem>
 
+    <MudItem xs ="3">
+    <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Images</MudText>
 
-<MudItem xs ="3">
-<MudText  Class="ml-4 mt-4" Typo="Typo.h6">Images</MudText>
+    <MudToolBar>
+                    <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteSelectedImages()">Delete selected images</MudButton> 
+                <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
+            <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
+        @if(_thinking)
+        {
+            <MudProgressCircular Color="Color.Info"  Indeterminate="true" />
+        }
+        </MudToolBar>
 
-<MudToolBar>
-            <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
-        <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
-    @if(_thinking)
-    {
-        <MudProgressCircular Color="Color.Info"  Indeterminate="true" />
-    }
-    </MudToolBar>
-
-</MudItem>
-</MudGrid>
+    </MudItem>
+  </MudGrid>
 
 <hr />
 
@@ -86,13 +86,21 @@
           GroupHeaderStyle="background-color:var(--mud-palette-background-gray)"
           GroupFooterClass="mb-4"
           Dense="true"        
-          MultiSelection="true"
+          MultiSelection="true" Filter="@(item =>!_focus || Project.FocusedStandardItemsGroups.Contains(item.SetUpItem.ModuleGroup))"
           @ref="_tableRef"
           T="StandardSetUpStatusItem"
           SelectedItemsChanged="SelectionChanged">
-              <ToolBarContent>
-                   <MudButton  IconSize="Size.Large" StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="RefreshStatus">  </MudButton>  
-        <MudText Typo="Typo.h6">Containers</MudText></ToolBarContent>
+          <ToolBarContent>
+            <MudButton  IconSize="Size.Large" StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="RefreshStatus" />  
+
+            <MudText Typo="Typo.h6">Containers</MudText>
+            <MudSpacer />
+            
+            <MudSwitch @bind-Value="@_focus" />
+            <MudButton StartIcon="@Icons.Material.Filled.Loupe" OnClick="UpdateFocus">
+                Set focus to selection
+            </MudButton>
+          </ToolBarContent>
     <HeaderContent>
         <MudTh>Name</MudTh>
         <MudTh>Container</MudTh>
@@ -105,7 +113,7 @@
         <MudTh Class="mud-table-cell-custom-group" colspan="5" >@($"{context.Key}") </MudTh>
       
     </GroupHeaderTemplate>
-    <RowTemplate>
+    <RowTemplate >
         <MudTd DataLabel="Nr">@context.SetUpItem.ModuleDisplayName</MudTd>
         <MudTd DataLabel="Sign">@context.ContainerName</MudTd>
         <MudTd DataLabel="Name">@context.ConfigurationStatus()</MudTd>
@@ -161,7 +169,7 @@
     private bool _canNotDeleteContainers = false;
 
     private bool _thinking = true;
-
+    private bool _focus = false;
 
     private HashSet<StandardSetUpStatusItem>? _currentSelection;
 
@@ -204,9 +212,6 @@
         _canNotDeleteContainers = ! CheckCanDeleteSelection();
     }
 
-
-
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -235,7 +240,6 @@
         await InvokeAsync(StateHasChanged);
 
     }
-
 
     private bool CheckShouldCreateContainers()
     {
@@ -300,7 +304,6 @@
         return false;
     }
 
-
     private bool CheckCanDeleteSelection()
     {
         if (_currentSelection != null && _currentSelection.Count > 0)
@@ -339,6 +342,7 @@
         RefreshStatus();
         return; 
     }
+
     private async Task StopContainers() {   if(_currentSelection != null)
         {
             _thinking = true;
@@ -376,32 +380,32 @@
             {
                 string name = Project.ReplicationEnabled ? item.SetUpItem.DefaultContainerName + "-" + Project.HubGroup : item.SetUpItem.DefaultContainerName;
                 try{
-                await _client.CreateBlackboardContainer(Project.ReplicationEnabled ?   Project.HubGroup : string.Empty, name, item.SetUpItem.BlackBoardPort);
+                    await _client.CreateBlackboardContainer(Project.ReplicationEnabled ?   Project.HubGroup : string.Empty, name, item.SetUpItem.BlackBoardPort);
                 }
-                    catch (Exception ex)
-                    {
-                        ManageErrors(ex.ToString());    
-                    }
+                catch (Exception ex)
+                {
+                    ManageErrors(ex.ToString());    
+                }
             }
             else if (item.SetUpItem.ModuleDisplayName == "Local Blackboard")
             {
                 try{
-                await _client.CreateBlackboardContainer("", item.SetUpItem.DefaultContainerName, item.SetUpItem.BlackBoardPort);
+                    await _client.CreateBlackboardContainer("", item.SetUpItem.DefaultContainerName, item.SetUpItem.BlackBoardPort);
                 }
-                    catch (Exception ex)
-                    {
-                        ManageErrors(ex.ToString());    
-                    }
+                catch (Exception ex)
+                {
+                    ManageErrors(ex.ToString());    
+                }
             }
             else 
             {
                 try{
-                await _client.CreateStandardItemContainer(item.SetUpItem, Project.BlackBoardHostIP);
-            }
-                    catch (Exception ex)
-                    {
-                        ManageErrors(ex.ToString());    
-                    }}
+                    await _client.CreateStandardItemContainer(item.SetUpItem, Project.BlackBoardHostIP);
+                }
+                catch (Exception ex)
+                {
+                    ManageErrors(ex.ToString());    
+                }}
         }   
         RefreshStatus();
     }
@@ -415,8 +419,8 @@
                 if(!string.IsNullOrEmpty(item.ContainerID))
                 {
                     try{
-                    await  _client.DeleteContainer(item.ContainerID);
-                }
+                        await  _client.DeleteContainer(item.ContainerID);
+                    }
                     catch (Exception ex)
                     {
                         ManageErrors(ex.ToString());    
@@ -426,33 +430,68 @@
         RefreshStatus();
         return; 
     }
+
     private async Task CheckForUpdates() {
 
-        
+
         _thinking = true;
         try{
-        await _client.UpdateStandardSetupImageDates(SetUp);
+            await _client.UpdateStandardSetupImageDates(SetUp);
         }
-                    catch (Exception ex)
-                    {
-                        ManageErrors(ex.ToString());    
-                    }RefreshStatus();       
+        catch (Exception ex)
+        {
+            ManageErrors(ex.ToString());    
+        }RefreshStatus();       
     }
-
 
     private async Task UpdateSelection() {
         _thinking = true;
         if(_currentSelection != null)
         {
             try{
-            await _client.UpdateStandardItemImages(_currentSelection);
+                await _client.UpdateStandardItemImages(_currentSelection);
             }
-                    catch (Exception ex)
-                    {
-                        ManageErrors(ex.ToString());    
-                    }
+            catch (Exception ex)
+            {
+                ManageErrors(ex.ToString());    
+            }
         }
         RefreshStatus();
         return; 
+    }
+
+    private async Task DeleteSelectedImages() {  _thinking = true;
+        if(_currentSelection != null)
+        {
+            await StopContainers();
+            await DeleteContainers();
+            try{
+                var selection = _currentSelection.Select(s => s.SetUpItem.ImageName).Distinct();
+                foreach (var item in selection)
+                { if (!string.IsNullOrEmpty(item))
+                    {
+                        bool ok = await _client.DeleteImage(item);
+                        if (!ok)
+                        {
+                            Snackbar.Add($"Could not delete image {item}");
+                        }
+                    } 
+                }
+            }
+            catch (Exception ex)
+            {
+                ManageErrors(ex.ToString());    
+            }
+        }
+        RefreshStatus();
+        return; }
+
+    private void UpdateFocus()
+    {
+        if(_currentSelection != null &&  _currentSelection.Any())
+        {
+            Project.FocusedStandardItemsGroups = _currentSelection.Select(s => s.SetUpItem.ModuleGroup).Distinct().ToList();
+            DWISProject.SaveBase(Project);
+        }
     }
 }
