@@ -230,7 +230,9 @@
     }
 
     private async void ManageErrors(string exceptionMessage)
-    { }
+    {
+        Snackbar.Add(exceptionMessage);    
+    }
 
     private async void RefreshStatus()
     {
@@ -460,31 +462,50 @@
         return; 
     }
 
-    private async Task DeleteSelectedImages() {  _thinking = true;
-        if(_currentSelection != null)
+    private async Task DeleteSelectedImages()
+    {
+        _thinking = true;
+        if (_currentSelection != null)
         {
-            await StopContainers();
-            await DeleteContainers();
-            try{
-                var selection = _currentSelection.Select(s => s.SetUpItem.ImageName).Distinct();
-                foreach (var item in selection)
-                { if (!string.IsNullOrEmpty(item))
+            var selection = _currentSelection
+            .Select(s => s.SetUpItem.ImageName)
+            .Distinct().ToList();
+
+            try
+            {
+
+                var imageGroups = _currentSelection.GroupBy(it => it.SetUpItem.ImageName + ":" + it.SetUpItem.ImageTag);
+
+                foreach (var imageGroup in imageGroups)
+                {
+                    var containers = await _client.GetContainers(imageGroup.Key);
+                    foreach (var container in containers)
                     {
-                        bool ok = await _client.DeleteImage(item);
-                        if (!ok)
+                        if (!string.IsNullOrEmpty(container.id))
                         {
-                            Snackbar.Add($"Could not delete image {item}");
+                            if (container.running)
+                            {
+                                await _client.StopContainer(container.id);    
+                            }
+                            await _client.DeleteContainer(container.id);
                         }
-                    } 
+                    }
+                    
+                    bool ok = await _client.DeleteImage(imageGroup.Key);
+                    if (!ok)
+                    {
+                        ManageErrors($"Could not delete image {imageGroup.Key}");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                ManageErrors(ex.ToString());    
+                ManageErrors(ex.ToString());
             }
         }
         RefreshStatus();
-        return; }
+        return;
+    }
 
     private void UpdateFocus()
     {

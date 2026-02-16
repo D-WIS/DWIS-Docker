@@ -63,7 +63,7 @@ namespace DWIS.Docker.Clients
         public async Task StopContainer(string containerID)
         {
             try
-            {
+            {                
                 var stopped = await _client.Containers.StopContainerAsync(
                 containerID,
                 new ContainerStopParameters(),
@@ -230,11 +230,8 @@ namespace DWIS.Docker.Clients
 
         }
 
-
-
         public async Task UpdateStandardSetupImageDates(StandardSetUp setup)
         {
-
             var configuration = new DRD.RegistryClientConfiguration("https://hub.docker.com");
             try
             {
@@ -258,9 +255,6 @@ namespace DWIS.Docker.Clients
                 throw exception;
             }
         }
-
-
-
 
         public async Task<bool> CheckImageExist(string imageName, string tag, bool loadIfNotExist = false)
         {
