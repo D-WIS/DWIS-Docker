@@ -9,6 +9,13 @@
         <div class="d-flex">
             <MudText Class="mt-1" >@("Group name: " + GroupData.GroupName)</MudText>
             <MudSpacer /> 
+
+            <MudTextField Value="_pwd" Label="Write password"></MudTextField>
+            
+           <MudButton StartIcon="@Icons.Material.Filled.PrivateConnectivity" OnClick="SetGroupPassword">Reset</MudButton>
+           
+            <MudSpacer />
+
            <MudButton StartIcon="@Icons.Material.Filled.LockReset" OnClick="ClearGroupManifests">Reset</MudButton>
             <MudTooltip Text="@GetGroupToolTipText()" Color="Color.Primary">
             <MudBadge Content="@GroupData?.NumberOfConnections" Color="Color.Primary" Overlap="true" Class="d-flex ml-auto">
@@ -98,6 +105,7 @@
     private string _newContainerName { get; set; } = "";
     private string _newContainerPort { get; set; } = "";
     private string _recordingFolder { get; set; } = "./";
+    private string _pwd = "";
     // public delegate void CopyTextToClipBoard(string text);
 
 
@@ -112,6 +120,19 @@
             }
         }
     }
+
+    private async void SetGroupPassword()
+    {
+        if (GroupData != null)
+        {
+            bool success = await Manager.SetGroupPassword(GroupData.GroupName, _pwd);
+            if (!success)
+            {
+                Snackbar.Add("Could not set group password");
+            }
+        }
+    }
+
 
     private string GetGroupToolTipText()
     {

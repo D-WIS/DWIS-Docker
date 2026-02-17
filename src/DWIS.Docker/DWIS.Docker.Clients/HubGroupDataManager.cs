@@ -168,6 +168,24 @@ namespace DWIS.Docker.Clients
             await UpdateManagerData();
         }
 
+        public async Task<bool> SetGroupPassword(string groupName, string password)
+        {
+            if (_connection == null || _connection.State != HubConnectionState.Connected) return false;
+            else
+            {
+                try
+                {
+                    await _connection.SendAsync("CreateProtectedGroup", groupName, password);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    return false;
+                }
+                return true;
+            }
+        }
+
         public async Task<bool> ClearGroupManifests(string groupName)
         {
             if (_connection == null || _connection.State != HubConnectionState.Connected) return false;
