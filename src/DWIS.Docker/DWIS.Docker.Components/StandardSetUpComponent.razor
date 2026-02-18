@@ -128,17 +128,26 @@
         <MudTd DataLabel="Start/stop">
                 @if (context.Started)
                 {
-                    <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => _client.StopContainer(context.ContainerID)">Stop</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="async () => {
+                                 _thinking = true;
+                                await _client.StopContainer(context.ContainerID);
+                                await InvokeAsync(StateHasChanged);}">Stop</MudButton>
                 }
                 else if (!string.IsNullOrEmpty(context.ContainerName))
                 {
-                    <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="() => _client.StartContainer(context.ContainerID)">Start</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="async () => {
+                                _thinking = true;
+                                await _client.StartContainer(context.ContainerID);
+                                await InvokeAsync(StateHasChanged);}">Start</MudButton>
                 }
                 else
                 {
                     <MudButton StartIcon="@Icons.Material.Filled.NewLabel" OnClick="async () => 
-                            {_modulesConfigClient.SaveStandardConfigToFile(context.SetUpItem); 
-                                await _client.CreateStandardItemContainer(context.SetUpItem, Project.BlackBoardHostIP, HubGroup, HubGroupPassword );}">
+                            {   
+                                _thinking = true;
+                                _modulesConfigClient.SaveStandardConfigToFile(context.SetUpItem); 
+                                await _client.CreateStandardItemContainer(context.SetUpItem, Project.BlackBoardHostIP, HubGroup, HubGroupPassword );  
+                                await InvokeAsync(StateHasChanged);}">
                                     Create
                     </MudButton>
                 }
@@ -228,17 +237,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        // if (_client != null && SetUp != null)
-        // {
-        //     try
-        //     {
-        //         await _client.UpdateStandardSetupImageDates(SetUp);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         ManageErrors(ex.ToString());    
-        //     }
-        // }
+
         RefreshStatus();
     }
 
