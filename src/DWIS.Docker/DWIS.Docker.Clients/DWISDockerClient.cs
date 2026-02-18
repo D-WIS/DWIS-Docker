@@ -89,7 +89,7 @@ namespace DWIS.Docker.Clients
             }
         }
 
-        public async Task CreateBlackboardContainer(string hubGroup, string containerName, string port, string writePWD)
+        public async Task<string> CreateBlackboardContainer(string hubGroup, string containerName, string port, string writePWD)
         {
             try
             {
@@ -134,6 +134,7 @@ namespace DWIS.Docker.Clients
                     Cmd = cmd,
                     Labels = new Dictionary<string, string>() { { "port", port }, { "group", hubGroup } }
                 });
+                return response.ID;
             }
             catch (Exception exception)
             {
@@ -307,8 +308,20 @@ namespace DWIS.Docker.Clients
             }
         }
 
-        public async Task<string> CreateStandardItemContainer(StandardSetUpItem item, string? mainBlackBoardIP = null)
+        public async Task<string> CreateStandardItemContainer(StandardSetUpItem item, string? mainBlackBoardIP , string hubGroup, string writePWD)
         {
+
+            if (item.ModuleGroup == StandardSetUpItem.BlackBoardGroup)
+            {
+                string name = item.DefaultContainerName;
+                if (item.ModuleDisplayName == "Default Blackboard")
+                {
+                    name = !string.IsNullOrEmpty(hubGroup)  ? item.DefaultContainerName + "-" + hubGroup : item.DefaultContainerName;
+
+                }
+                return await CreateBlackboardContainer(hubGroup, item.DefaultContainerName, item.BlackBoardPort, writePWD);
+            }
+
             if (mainBlackBoardIP == null)
             {
                 return await CreateContainer(item.ImageName, item.ImageTag, item.ConfigLocalPath, item.ConfigContainerPath, item.DefaultContainerName);

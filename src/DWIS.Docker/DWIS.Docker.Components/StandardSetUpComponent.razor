@@ -138,7 +138,7 @@
                 {
                     <MudButton StartIcon="@Icons.Material.Filled.NewLabel" OnClick="async () => 
                             {_modulesConfigClient.SaveStandardConfigToFile(context.SetUpItem); 
-                                await _client.CreateStandardItemContainer(context.SetUpItem, Project.BlackBoardHostIP);}">
+                                await _client.CreateStandardItemContainer(context.SetUpItem, Project.BlackBoardHostIP, HubGroup, HubGroupPassword );}">
                                     Create
                     </MudButton>
                 }
@@ -415,7 +415,7 @@
             else 
             {
                 try{
-                    await _client.CreateStandardItemContainer(item.SetUpItem, Project.BlackBoardHostIP);
+                    await _client.CreateStandardItemContainer(item.SetUpItem, Project.BlackBoardHostIP, HubGroup, HubGroupPassword);
                 }
                 catch (Exception ex)
                 {
