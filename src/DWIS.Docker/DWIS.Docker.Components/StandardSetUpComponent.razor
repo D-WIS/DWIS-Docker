@@ -31,8 +31,10 @@
           <MudItem xs = "6">
             <MudTextField  AutoGrow Class="ml-4"  @bind-Value="@HubGroup" Label="Replication group" Variant="Variant.Text"></MudTextField>    
           </MudItem>  
-      
-          <MudItem xs="8">
+       <MudItem xs = "6">
+            <MudTextField  AutoGrow Class="ml-4"  @bind-Value="@HubGroupPassword" Label="Group pwd" Variant="Variant.Text"></MudTextField>    
+          </MudItem>  
+          <MudItem xs="6">
                    <MudTextField Class="ml-4" FullWidth @bind-Value="@Project.BlackBoardHostIP" Label="Blackboard host IP" Variant="Variant.Text"></MudTextField>   
           </MudItem>
         </MudGrid>
@@ -207,8 +209,13 @@
     private string BlackBoardHostIP
     {
         get { return Project.BlackBoardHostIP; }
-        set { Project.BlackBoardHostIP = value; DWISProject.SaveBase(Project); }    }
-
+        set { Project.BlackBoardHostIP = value; DWISProject.SaveBase(Project); }    
+    }
+      private string HubGroupPassword
+    {
+        get { return Project.GroupWritePassword; }
+        set { Project.GroupWritePassword = value; DWISProject.SaveBase(Project); }
+    }
     private void SelectionChanged(HashSet<StandardSetUpStatusItem> selectedItems)
     {
         _currentSelection = selectedItems;
@@ -221,17 +228,17 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        if (_client != null && SetUp != null)
-        {
-            try
-            {
-                await _client.UpdateStandardSetupImageDates(SetUp);
-            }
-            catch (Exception ex)
-            {
-                ManageErrors(ex.ToString());    
-            }
-        }
+        // if (_client != null && SetUp != null)
+        // {
+        //     try
+        //     {
+        //         await _client.UpdateStandardSetupImageDates(SetUp);
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         ManageErrors(ex.ToString());    
+        //     }
+        // }
         RefreshStatus();
     }
 
@@ -388,7 +395,7 @@
             {
                 string name = Project.ReplicationEnabled ? item.SetUpItem.DefaultContainerName + "-" + Project.HubGroup : item.SetUpItem.DefaultContainerName;
                 try{
-                    await _client.CreateBlackboardContainer(Project.ReplicationEnabled ?   Project.HubGroup : string.Empty, name, item.SetUpItem.BlackBoardPort);
+                    await _client.CreateBlackboardContainer(Project.ReplicationEnabled ?   Project.HubGroup : string.Empty, name, item.SetUpItem.BlackBoardPort, Project.GroupWritePassword);
                 }
                 catch (Exception ex)
                 {
@@ -398,7 +405,7 @@
             else if (item.SetUpItem.ModuleDisplayName == "Local Blackboard")
             {
                 try{
-                    await _client.CreateBlackboardContainer("", item.SetUpItem.DefaultContainerName, item.SetUpItem.BlackBoardPort);
+                    await _client.CreateBlackboardContainer("", item.SetUpItem.DefaultContainerName, item.SetUpItem.BlackBoardPort, Project.GroupWritePassword);
                 }
                 catch (Exception ex)
                 {

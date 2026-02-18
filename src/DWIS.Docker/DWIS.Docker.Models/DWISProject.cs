@@ -49,6 +49,7 @@
     {
         public bool ReplicationEnabled { get; set; } = true;
         public string HubGroup { get; set; } = "default";
+        public string GroupWritePassword { get; set; } = "";
         public string BlackBoardHostIP { get; set; } = "host.docker.internal";
         public List<string> FocusedStandardItemsGroups { get; set; } = new List<string>();
     }

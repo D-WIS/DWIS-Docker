@@ -22,22 +22,9 @@ namespace DWIS.Docker.Clients
 
             _connection = hubConnection;
 
-            
-
             _client = client;
             InitHubConnection();
-
-            //InitDockerClient("http://localhost:2375");
         }
-
-        //private void InitDockerClient(string uri = "")
-        //{
-        //    DockerClientConfiguration dockerConf = 
-        //        string.IsNullOrEmpty(uri) ? 
-        //            new DockerClientConfiguration() :  
-        //            new DockerClientConfiguration(new Uri(uri));
-        //    _client = dockerConf.CreateClient();
-        //}
 
         private async void InitHubConnection()
         {
@@ -87,10 +74,6 @@ namespace DWIS.Docker.Clients
                     }
 
                     string containerName = "blackboard-" + groupName.Replace(' ', '_') + "-" + port.ToString();
-                    //if (containerCount > 0)
-                    //{
-                    //    containerName += "-" + containerCount;
-                    //}
 
                     return (containerName, port.ToString());
                 }
@@ -111,19 +94,11 @@ namespace DWIS.Docker.Clients
         public async Task StartContainer(string containerId)
         {
             await _client.StartContainer(containerId);
-        //    await _client.Containers.StartContainerAsync(
-        //containerId,
-        //new ContainerStartParameters()
-        //);
         }
 
         public async Task StopContainer(string containerID)
         {
             await _client.StopContainer(containerID);
-        //    var stopped = await _client.Containers.StopContainerAsync(
-        //containerID,
-        //new ContainerStopParameters(),
-        //CancellationToken.None);
         }
 
         public async Task DeleteContainer(string containerID)
@@ -140,30 +115,9 @@ namespace DWIS.Docker.Clients
             await UpdateManagerData();
         }
 
-        public async Task CreateContainer(string hubGroup, string containerName, string port)
+        public async Task CreateContainer(string hubGroup, string containerName, string port, string password)
         {
-            await _client.CreateBlackboardContainer(hubGroup, containerName, port);
-
-            //var response = await _client.Containers.CreateContainerAsync(new CreateContainerParameters()
-            //{
-            //    Name = containerName,
-            //    Image = "digiwells/ddhubserver:latest",
-            //    Hostname = "localhost",
-            //    ExposedPorts = new Dictionary<string, EmptyStruct>
-            //    {
-            //    {port, default(EmptyStruct) }
-            //    },
-            //    HostConfig = new HostConfig
-            //    {
-            //        PortBindings = new Dictionary<string, IList<PortBinding>>
-            //{
-            //    {port, new List<PortBinding> {new PortBinding {HostPort = port}}}
-            //},
-            //        PublishAllPorts = true
-            //    },
-            //    Cmd = new List<string>() { "--useHub", "--hubURL", "https://dwis.digiwells.no/blackboard/applications", "--hubGroup", hubGroup, "--port", port },
-            //    Labels = new Dictionary<string, string>() { { "port", port }, { "group", hubGroup } }
-            //});
+            await _client.CreateBlackboardContainer(hubGroup, containerName, port, password);
 
             await UpdateManagerData();
         }

@@ -155,7 +155,7 @@
 
     private async void CreateBlackBoardContainer()
     {
-        await Manager.CreateContainer(GroupData.GroupName, _newContainerName, _newContainerPort);
+        await Manager.CreateContainer(GroupData.GroupName, _newContainerName, _newContainerPort, _pwd);
         await InvokeAsync(StateHasChanged);
     }
 

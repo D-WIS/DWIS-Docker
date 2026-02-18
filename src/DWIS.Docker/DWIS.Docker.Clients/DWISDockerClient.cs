@@ -89,7 +89,7 @@ namespace DWIS.Docker.Clients
             }
         }
 
-        public async Task CreateBlackboardContainer(string hubGroup, string containerName, string port)
+        public async Task CreateBlackboardContainer(string hubGroup, string containerName, string port, string writePWD)
         {
             try
             {
@@ -104,6 +104,11 @@ namespace DWIS.Docker.Clients
             if (!string.IsNullOrEmpty(hubGroup))
             {
                 cmd = new List<string>() { "--useHub", "--hubURL", "https://dwis.digiwells.no/blackboard/applications", "--hubGroup", hubGroup, "--port", port };
+                if (!string.IsNullOrEmpty(writePWD))
+                {
+                    cmd.Add("--hubPWD"); 
+                    cmd.Add(writePWD);
+                }
             }
             else { cmd = new List<string>() { "--port", port }; }
 
@@ -483,7 +488,6 @@ namespace DWIS.Docker.Clients
             var bbs = await GetBlackBoardContainers();
 
             StandardSetUpStatus status = new StandardSetUpStatus();
-
 
             foreach (var item in standardSetUp.Items)
             {
