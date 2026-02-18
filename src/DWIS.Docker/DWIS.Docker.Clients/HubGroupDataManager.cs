@@ -93,7 +93,14 @@ namespace DWIS.Docker.Clients
 
         public async Task StartContainer(string containerId)
         {
-            await _client.StartContainer(containerId);
+            try
+            {
+                await _client.StartContainer(containerId);
+            }
+            catch (Exception ex)
+            {
+                throw ( new Exception("Exception while starting container", ex));
+            }
         }
 
         public async Task StopContainer(string containerID)

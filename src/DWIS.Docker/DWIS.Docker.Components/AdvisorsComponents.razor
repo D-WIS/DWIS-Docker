@@ -6,41 +6,65 @@
 
 
 <MudTable Items="Project.Advisors.Apps" T="DWISApp">
+    <ToolBarContent>
+        @if (_thinking)
+        {
+            <MudProgressCircular Color="Color.Info" Indeterminate="true" />
+        }
+    </ToolBarContent>
     <HeaderContent>
-        <MudTh>App name</MudTh>
+        <MudTh>App</MudTh>
         <MudTh>Image</MudTh>
-        <MudTh>Start / stop</MudTh>
+        <MudTh>Start / Stop</MudTh>
         <MudTh>Port</MudTh>
     </HeaderContent>
 
     <RowTemplate>
-        <MudTd>@context.AppName</MudTd>
+        <MudTd>
+            <MudTextField @bind-Value="@context.AppName" Label="Container name"></MudTextField>          
+        </MudTd>
         <MudTd>@context.ImageNameNoTag</MudTd>
         <MudTd>
             @if (context.Running)
             {
-                <MudButton StartIcon="@Icons.Material.Filled.Stop" OnClick="async () => await Stop(context)"></MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Stop" OnClick="async () =>{
+                                    _thinking = true;
+                                    await Stop(context);
+                                    await InvokeAsync(RefreshStatus);}">
+                </MudButton>
             }
             else
             {
-                <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="async () => await Start(context)"></MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="async () => {
+                                    _thinking = true;
+                                    await Start(context);
+                                    await InvokeAsync(RefreshStatus);}"></MudButton>
             }
         </MudTd>
         <MudTd>
-            <MudLink Target="_blank" Href=@GetAddress(context)>@context.HostPort</MudLink>
+            <MudLink Target="_blank" Href=@GetAddress(context)>
+                @context.HostPort                          
+            </MudLink>
         </MudTd>
     </RowTemplate>
 </MudTable>
 
 @code {
 
+    private bool _thinking;
 
-    private string GetAddress(DWISApp app)
-    {
+    private string GetAddress(DWISApp app){
         return "http://localhost:" + app.HostPort;
     }
 
     protected async override Task OnInitializedAsync()
+    {
+        RefreshStatus();
+        await base.OnInitializedAsync();
+        _thinking = false;
+    }
+
+    private async void RefreshStatus()
     {
         if (DockerClient != null)
         {
@@ -55,8 +79,10 @@
                 }
             }
         }
-        base.OnInitializedAsync();
+        _thinking = false;   
+        await InvokeAsync(StateHasChanged);
     }
+
 
     private async Task Stop(DWISApp app)
     {
@@ -86,4 +112,5 @@
         await DockerClient.StartContainer(app.ContainerID);
         app.Running = true;
     }
+
 }

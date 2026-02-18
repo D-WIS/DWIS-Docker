@@ -19,7 +19,7 @@
 <div class="mt-6 ml-4">
   <MudGrid>
 
-    <MudItem xs="3">
+    <MudItem xs="12">
     <div style="border:solid; border-block-width:thin; border-color: lightgray; width:100%">
     <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Blackboard</MudText>
     <MudForm>
@@ -43,7 +43,7 @@
     </div>
     </MudItem>
   
-    <MudItem xs ="6">
+@*     <MudItem xs ="6">
             <div style="border:solid; border-block-width:thin; border-color: lightgray; width:100%">
 
     <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Containers</MudText>
@@ -59,24 +59,8 @@
         </MudToolBar>
         
     </div>
-    </MudItem>
+    </MudItem> *@
 
-    <MudItem xs ="3">
-          <div style="border:solid; border-block-width:thin; border-color: lightgray; width:100%">
-        <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Images</MudText>
-
-        <MudToolBar>
-          @* <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteSelectedImages()">Delete selected images</MudButton>  *@
-             <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
-             <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
-            @if(_thinking)
-            {
-                <MudProgressCircular Color="Color.Info"  Indeterminate="true" />
-            }
-         </MudToolBar>
-         
-    </div>
-    </MudItem>
   </MudGrid>
 
 <hr />
@@ -98,16 +82,23 @@
           @ref="_tableRef"
           T="StandardSetUpStatusItem"
           SelectedItemsChanged="SelectionChanged">
-          <ToolBarContent>
+          <ToolBarContent >
+              
             <MudButton  IconSize="Size.Large" StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="RefreshStatus" />  
+                        
+            <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers" Disabled="@_shouldNotCreateContainers"> Create missing containers  </MudButton>      
+            <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop selection</MudButton> 
+            <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteContainers()" Disabled="_canNotDeleteContainers">Delete selection</MudButton> 
 
-            <MudText Typo="Typo.h6">Containers</MudText>
             <MudSpacer />
-            
-            <MudSwitch @bind-Value="@_focus" />
-            <MudButton StartIcon="@Icons.Material.Filled.Loupe" OnClick="UpdateFocus">
-                Set focus to selection
-            </MudButton>
+
+                         <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
+             <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
+             <MudSpacer/>
+
+            <MudSwitch @bind-Value="@Focus" Label="Focus"/>
+          
           </ToolBarContent>
     <HeaderContent>
         <MudTh>Name</MudTh>
@@ -131,14 +122,14 @@
                     <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="async () => {
                                  _thinking = true;
                                 await _client.StopContainer(context.ContainerID);
-                                await InvokeAsync(StateHasChanged);}">Stop</MudButton>
+                                await InvokeAsync(RefreshStatus);}">Stop</MudButton>
                 }
                 else if (!string.IsNullOrEmpty(context.ContainerName))
                 {
                     <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="async () => {
                                 _thinking = true;
                                 await _client.StartContainer(context.ContainerID);
-                                await InvokeAsync(StateHasChanged);}">Start</MudButton>
+                                await InvokeAsync(RefreshStatus);}">Start</MudButton>
                 }
                 else
                 {
@@ -147,7 +138,7 @@
                                 _thinking = true;
                                 _modulesConfigClient.SaveStandardConfigToFile(context.SetUpItem); 
                                 await _client.CreateStandardItemContainer(context.SetUpItem, Project.BlackBoardHostIP, HubGroup, HubGroupPassword );  
-                                await InvokeAsync(StateHasChanged);}">
+                                await InvokeAsync(RefreshStatus);}">
                                     Create
                     </MudButton>
                 }
@@ -187,6 +178,12 @@
 
     private bool _thinking = true;
     private bool _focus = false;
+
+    public bool Focus
+    {
+        get { return _focus; }
+        set { _focus = value;UpdateFocus(); }
+    }
 
     private HashSet<StandardSetUpStatusItem>? _currentSelection;
 
