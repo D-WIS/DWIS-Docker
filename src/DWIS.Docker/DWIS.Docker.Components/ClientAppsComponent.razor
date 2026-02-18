@@ -7,7 +7,7 @@
 
 <MudTable Items="Project.Clients.Apps" T="DWISApp">
     <HeaderContent>
-        <MudTh>App name</MudTh>
+        <MudTh>App</MudTh>
         <MudTh>Image</MudTh>
         <MudTh>Start / stop</MudTh>
         <MudTh>Port</MudTh>
@@ -15,9 +15,8 @@
 
     <RowTemplate>
         <MudTd>
-            <MudTextField @bind-Value="@context.AppName" Label="Container name"></MudTextField>
-            @context.AppName
-            </MudTd>
+            <MudTextField @bind-Value="@context.AppName" Label="Container name"></MudTextField>          
+        </MudTd>
         <MudTd>@context.ImageNameNoTag</MudTd>
         <MudTd>
             @if (context.Running)

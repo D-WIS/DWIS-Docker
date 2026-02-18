@@ -10,9 +10,9 @@
             <MudText Class="mt-1" >@("Group name: " + GroupData.GroupName)</MudText>
             <MudSpacer /> 
 
-            <MudTextField Value="_pwd" Label="Write password"></MudTextField>
+            <MudTextField @bind-Value="_pwd" Label="Write password"></MudTextField>
             
-           <MudButton StartIcon="@Icons.Material.Filled.PrivateConnectivity" OnClick="SetGroupPassword">Reset</MudButton>
+           <MudButton StartIcon="@Icons.Material.Filled.PrivateConnectivity" OnClick="SetGroupPassword">Set password</MudButton>
            
             <MudSpacer />
 

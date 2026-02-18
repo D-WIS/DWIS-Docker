@@ -20,16 +20,16 @@
   <MudGrid>
 
     <MudItem xs="3">
-
+    <div style="border:solid; border-block-width:thin; border-color: lightgray; width:100%">
     <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Blackboard</MudText>
     <MudForm>
         <MudGrid>
           <MudItem xs = "6">
-            <MudCheckBox @bind-Value="@ReplicationEnabled" >Replication</MudCheckBox>
+            <MudCheckBox  UncheckedColor="@Color.Error" @bind-Value="@ReplicationEnabled" >Replication</MudCheckBox>
           </MudItem> 
       
           <MudItem xs = "6">
-            <MudTextField Class="ml-4" FullWidth @bind-Value="@HubGroup" Label="Replication group" Variant="Variant.Text"></MudTextField>    
+            <MudTextField  AutoGrow Class="ml-4"  @bind-Value="@HubGroup" Label="Replication group" Variant="Variant.Text"></MudTextField>    
           </MudItem>  
       
           <MudItem xs="8">
@@ -38,10 +38,12 @@
         </MudGrid>
     </MudForm>
 
-
+    </div>
     </MudItem>
   
     <MudItem xs ="6">
+            <div style="border:solid; border-block-width:thin; border-color: lightgray; width:100%">
+
     <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Containers</MudText>
 
     <MudToolBar>          
@@ -53,21 +55,25 @@
 
     
         </MudToolBar>
+        
+    </div>
     </MudItem>
 
     <MudItem xs ="3">
-    <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Images</MudText>
+          <div style="border:solid; border-block-width:thin; border-color: lightgray; width:100%">
+        <MudText  Class="ml-4 mt-4" Typo="Typo.h6">Images</MudText>
 
-    <MudToolBar>
-                    <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteSelectedImages()">Delete selected images</MudButton> 
-                <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
-            <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
-        @if(_thinking)
-        {
-            <MudProgressCircular Color="Color.Info"  Indeterminate="true" />
-        }
-        </MudToolBar>
-
+        <MudToolBar>
+          @* <MudButton StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Dark" OnClick="() => DeleteSelectedImages()">Delete selected images</MudButton>  *@
+             <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
+             <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
+            @if(_thinking)
+            {
+                <MudProgressCircular Color="Color.Info"  Indeterminate="true" />
+            }
+         </MudToolBar>
+         
+    </div>
     </MudItem>
   </MudGrid>
 
