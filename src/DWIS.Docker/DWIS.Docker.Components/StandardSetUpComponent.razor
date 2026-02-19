@@ -93,13 +93,20 @@
 
             <MudSpacer />
 
-                         <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
-             <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
-             <MudSpacer/>
+            <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
+            <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
+             
+            <MudSpacer/>
 
             <MudSwitch @bind-Value="@Focus" Label="Focus"/>
           
-          </ToolBarContent>
+            <MudSpacer/>
+
+            @if(_thinking)
+            {
+                <MudProgressCircular Indeterminate="true" Color="Color.Info"/>
+            }
+        </ToolBarContent>
     <HeaderContent>
         <MudTh>Name</MudTh>
         <MudTh>Container</MudTh>
