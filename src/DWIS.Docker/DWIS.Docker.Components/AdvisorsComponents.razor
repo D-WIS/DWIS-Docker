@@ -7,6 +7,8 @@
 
 <MudTable Items="Project.Advisors.Apps" T="DWISApp">
     <ToolBarContent>
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshStatus"></MudIconButton>
+        <MudSpacer />
         @if (_thinking)
         {
             <MudProgressCircular Color="Color.Info" Indeterminate="true" />
@@ -14,16 +16,27 @@
     </ToolBarContent>
     <HeaderContent>
         <MudTh>App</MudTh>
-        <MudTh>Image</MudTh>
+        <MudTh>Container</MudTh>
         <MudTh>Start / Stop</MudTh>
-        <MudTh>Port</MudTh>
+        <MudTh>Port</MudTh>        
+        <MudTh>Update</MudTh>
     </HeaderContent>
 
     <RowTemplate>
         <MudTd>
-            <MudTextField @bind-Value="@context.AppName" Label="Container name"></MudTextField>          
+            <MudText>@context.AppName</MudText>
+            @* <MudTextField @bind-Value="@context.AppName" Label="Container name"></MudTextField>           *@
         </MudTd>
-        <MudTd>@context.ImageNameNoTag</MudTd>
+        <MudTd>
+            @if (!string.IsNullOrEmpty(context.ContainerID))
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Check"></MudIcon>               
+            }
+            else
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Error"></MudIcon>
+            }
+        </MudTd>
         <MudTd>
             @if (context.Running)
             {
@@ -45,6 +58,13 @@
             <MudLink Target="_blank" Href=@GetAddress(context)>
                 @context.HostPort                          
             </MudLink>
+        </MudTd>
+        <MudTd> 
+            <MudButton StartIcon="@Icons.Material.Filled.Upgrade" OnClick="async () =>{
+                                    _thinking = true;
+                                    await Upgrade(context);
+                                    await InvokeAsync(RefreshStatus);}">
+            </MudButton>
         </MudTd>
     </RowTemplate>
 </MudTable>
@@ -84,11 +104,18 @@
     }
 
 
+    private async Task Upgrade(DWISApp app)
+    {
+        await DockerClient.UpdateImage(app.ContainerID);
+    }
+
+
     private async Task Stop(DWISApp app)
     {
         await DockerClient.StopContainer(app.ContainerID);
         app.Running = false;
     }
+
     private async Task Start(DWISApp app)
     {
         if (string.IsNullOrEmpty(app.ContainerID))

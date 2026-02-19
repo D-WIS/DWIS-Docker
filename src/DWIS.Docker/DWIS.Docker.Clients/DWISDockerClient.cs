@@ -335,6 +335,44 @@ namespace DWIS.Docker.Clients
             }
         }
 
+
+        public async Task UpdateImage(string containerID)
+        {
+            await StopContainer(containerID);
+
+            List<(string name, string image, string hostname, IList<string> env, HostConfig hConf, IDictionary<string, EmptyStruct> ports)> toRecreate
+                = new List<(string name, string image, string hostname, IList<string> env, HostConfig hConf, IDictionary<string, EmptyStruct> ports)>();
+
+
+            var ins = await _client.Containers.InspectContainerAsync(containerID);
+            
+            toRecreate.Add((ins.Name, ins.Config.Image, ins.Config.Hostname, ins.Config.Env, ins.HostConfig, ins.Config.ExposedPorts));
+
+            await _client.Containers.RemoveContainerAsync(containerID, new ContainerRemoveParameters() { Force = true, RemoveVolumes = false, RemoveLinks = false });
+
+         
+
+            await _client.Images.DeleteImageAsync(ins.Config.Image, new ImageDeleteParameters() { Force = true });
+
+            var split = ins.Config.Image.Split(':');
+
+            await CheckImageExist(split[0], split[1], true);
+
+            var ccp = new CreateContainerParameters()
+            {
+                Name = ins.Name,
+                Image = ins.Config.Image,
+                HostConfig = ins.HostConfig,
+                Env = ins.Config.Env,
+                Hostname = ins.Config.Hostname,
+                ExposedPorts = ins.Config.ExposedPorts
+            };
+            ccp.Tty = true;
+            ccp.OpenStdin = true;
+            var response = await _client.Containers.CreateContainerAsync(ccp);
+        }
+
+
         public async Task UpdateStandardItemImages(IEnumerable<StandardSetUpStatusItem> items)
         {
             try
