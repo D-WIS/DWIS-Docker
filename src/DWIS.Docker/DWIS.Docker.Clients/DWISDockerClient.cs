@@ -317,9 +317,8 @@ namespace DWIS.Docker.Clients
                 if (item.ModuleDisplayName == "Default Blackboard")
                 {
                     name = !string.IsNullOrEmpty(hubGroup)  ? item.DefaultContainerName + "-" + hubGroup : item.DefaultContainerName;
-
                 }
-                return await CreateBlackboardContainer(hubGroup, item.DefaultContainerName, item.BlackBoardPort, writePWD);
+                return await CreateBlackboardContainer(hubGroup, name, item.BlackBoardPort, writePWD);
             }
 
             if (mainBlackBoardIP == null)
