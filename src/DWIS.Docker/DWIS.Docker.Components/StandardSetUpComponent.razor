@@ -86,6 +86,8 @@
               
             <MudButton  IconSize="Size.Large" StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="RefreshStatus" />  
                         
+            <MudSpacer/>
+
             <MudButton StartIcon="@Icons.Material.Filled.NewLabel" IconColor="Color.Warning" OnClick="CreateContainers" Disabled="@_shouldNotCreateContainers"> Create missing containers  </MudButton>      
             <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="() => StartContainers()" Disabled="_canNotStartSelection">Start selection</MudButton>
             <MudButton StartIcon="@Icons.Material.Filled.Stop" IconColor="Color.Error" OnClick="() => StopContainers()" Disabled="_canNotStopSelection">Stop selection</MudButton> 
@@ -94,7 +96,7 @@
             <MudSpacer />
 
             <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Dark" OnClick="() => CheckForUpdates()">Check for updates</MudButton> 
-            <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()">Update images</MudButton> 
+            <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Dark" OnClick="() => UpdateSelection()" Disabled="_hasNotSelectionContainers">Update images</MudButton> 
              
             <MudSpacer/>
 
@@ -106,7 +108,7 @@
             {
                 <MudProgressCircular Indeterminate="true" Color="Color.Info"/>
             }
-        </ToolBarContent>
+         </ToolBarContent>
     <HeaderContent>
         <MudTh>Name</MudTh>
         <MudTh>Container</MudTh>
@@ -182,6 +184,7 @@
     private bool _canNotStartSelection = false;
     private bool _canNotStopSelection = false;
     private bool _canNotDeleteContainers = false;
+    private bool _hasNotSelectionContainers = false;
 
     private bool _thinking = true;
     private bool _focus = false;
@@ -224,7 +227,7 @@
         get { return Project.BlackBoardHostIP; }
         set { Project.BlackBoardHostIP = value; DWISProject.SaveBase(Project); }    
     }
-      private string HubGroupPassword
+    private string HubGroupPassword
     {
         get { return Project.GroupWritePassword; }
         set { Project.GroupWritePassword = value; DWISProject.SaveBase(Project); }
@@ -236,6 +239,7 @@
         _shouldNotCreateContainers = ! CheckShouldCreateContainers();
         _canNotStopSelection = ! CheckCanStopSelection();
         _canNotDeleteContainers = ! CheckCanDeleteSelection();
+        _hasNotSelectionContainers = ! CheckHasSelectionContainers();
     }
 
     protected override async Task OnInitializedAsync()
@@ -324,6 +328,11 @@
 
     private bool CheckCanDeleteSelection()
     {
+        return CheckHasSelectionContainers();
+    }
+
+    private bool CheckHasSelectionContainers()
+    {
         if (_currentSelection != null && _currentSelection.Count > 0)
         {
             if (_currentSelection.Any(s => !string.IsNullOrEmpty(s.ContainerID)))
@@ -337,6 +346,7 @@
         }
         return false;
     }
+
 
     private async Task StartContainers() {
         _thinking = true;

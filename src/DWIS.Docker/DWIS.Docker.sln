@@ -71,6 +71,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scheduler", "scheduler", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.Docker.ModuleConfigurations", "DWIS.Docker.ModuleConfigurations\DWIS.Docker.ModuleConfigurations.csproj", "{3D259E7E-6E5D-425F-B158-C9FF7CCEA3B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DWIS.Docker.AppUpdater", "DWIS.Docker.AppUpdater\DWIS.Docker.AppUpdater.csproj", "{B284F8B6-5DEB-4D75-9FEE-231CC115AD9A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -193,6 +195,10 @@ Global
 		{3D259E7E-6E5D-425F-B158-C9FF7CCEA3B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D259E7E-6E5D-425F-B158-C9FF7CCEA3B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D259E7E-6E5D-425F-B158-C9FF7CCEA3B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B284F8B6-5DEB-4D75-9FEE-231CC115AD9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B284F8B6-5DEB-4D75-9FEE-231CC115AD9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B284F8B6-5DEB-4D75-9FEE-231CC115AD9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B284F8B6-5DEB-4D75-9FEE-231CC115AD9A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -3,6 +3,7 @@ using Docker.DotNet.Models;
 using DWIS.Docker.Constants;
 using DWIS.Docker.Models;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel;
 using DRD = Docker.Registry.DotNet;
 namespace DWIS.Docker.Clients
 {
@@ -335,6 +336,38 @@ namespace DWIS.Docker.Clients
             }
         }
 
+
+        public async Task UpdateContainersByImage(string imageName)
+        {
+            var containers = await GetContainers(imageName);
+
+            var installationDataTasks = containers.Select(async c =>
+            { return await _client.Containers.InspectContainerAsync(c.id); });
+          var installationData = await Task.WhenAll(installationDataTasks);
+            foreach (var container in containers)
+            {
+                if (container.running)
+                {
+                    await StopContainer(container.id);
+                }
+
+                await DeleteContainer(container.id);
+            }
+            await DeleteImage(imageName);
+            foreach (var ins in installationData)
+            {
+                var ccp = new CreateContainerParameters(ins.Config)
+                {
+                    Name = ins.Name,
+                    HostConfig = ins.HostConfig            
+                };
+                ccp.Tty = true;
+                ccp.OpenStdin = true;
+                var response = await _client.Containers.CreateContainerAsync(ccp);
+                await StartContainer(response.ID);
+            }
+
+        }
 
         public async Task UpdateImage(string containerID)
         {

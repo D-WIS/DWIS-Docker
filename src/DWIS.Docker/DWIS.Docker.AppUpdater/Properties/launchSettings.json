@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "DWIS.Docker.AppUpdater": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
