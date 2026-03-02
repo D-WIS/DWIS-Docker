@@ -5,6 +5,7 @@
 @inject HubGroupDataManager Manager
 @inject IDialogService DialogService
 @inject DWISProject Project
+@inject DWISDockerClient DockerClient
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor
 @* Required *@
 <MudThemeProvider  />
@@ -115,6 +116,7 @@
     @* <MudText Typo="Typo.caption">@("Docker: " + Manager.DockerURI)</MudText> *@
     <MudSpacer></MudSpacer>
     <MudIconButton Icon="@Icons.Material.Filled.Settings" OnClick="OpenSettingsDialogAsync" />
+    <MudIconButton Icon="@Icons.Material.Filled.Upgrade" OnClick="UpgradeApp" />
 </MudAppBar>
 
     @code {
@@ -171,11 +173,17 @@
         else return Icons.Material.Outlined.CropSquare;
     }
 
-     private Task OpenSettingsDialogAsync()
+    private Task OpenSettingsDialogAsync()
     {
         var options = new DialogOptions { CloseOnEscapeKey = true };
 
         return DialogService.ShowAsync<DockerClientEditor>("Docker engine", options);
+    }
+
+
+    private async Task UpgradeApp()
+    {
+        await DockerClient.UpdateAppWithUpdater("digiwells/dwis-docker:stable");
     }
 
 

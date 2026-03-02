@@ -363,6 +363,12 @@ namespace DWIS.Docker.Clients
                 };
                 ccp.Tty = true;
                 ccp.OpenStdin = true;
+
+                var split = imageName.Split(':');
+
+                await CheckImageExist(split[0], split[1], true);
+
+
                 var response = await _client.Containers.CreateContainerAsync(ccp);
                 await StartContainer(response.ID);
             }
@@ -728,7 +734,43 @@ namespace DWIS.Docker.Clients
             else return (imageDate, DateTime.MinValue);
         }
 
+        public async Task UpdateAppWithUpdater(string appImageName)
+        {           
+            await CheckImageExist("digiwells/dwis-app-update", "stable", true);
+            var ccp = new CreateContainerParameters()
+            {
+                Name = "appupdate",
+                Image = appImageName,
 
+            };
+            ccp.Tty = true;
+            ccp.OpenStdin = true;
+            List<string> envVariables = new();
+            if (envVariables != null)
+            {
+                List<string> envs = new List<string>();
+                foreach (var env in envVariables)
+                {
+                    envs.Add("DOCKER_HOST=npipe:////./pipe/docker_engine");
+                }
+                ccp.Env = envs;
+            }
+            if (ccp.HostConfig == null)
+            {
+                ccp.HostConfig = new HostConfig() {  };
+            }
+            if (ccp.HostConfig.Binds == null) 
+            { ccp.HostConfig.Binds = new List<string>(); }
+            ccp.HostConfig.Binds.Add("/var/run/docker.sock:/var/run/docker.sock");
+            ccp.User = "root";
+            ccp.Cmd = new List<string>() { appImageName };
+            ccp.HostConfig.AutoRemove = true;
+            var response = await _client.Containers.CreateContainerAsync(ccp);
+            await _client.Containers.StartContainerAsync(
+                  response.ID,
+                  new ContainerStartParameters()
+                  );
+        }
     }
 
     public class DWISDockerClientConfiguration

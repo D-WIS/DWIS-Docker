@@ -1,7 +1,8 @@
 {
   "profiles": {
     "DWIS.Docker.AppUpdater": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "digiwells/dwis-blackboard-explorer:stable"
     },
     "Container (Dockerfile)": {
       "commandName": "Docker"
