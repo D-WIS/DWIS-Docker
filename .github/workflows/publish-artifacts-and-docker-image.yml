@@ -46,4 +46,12 @@ jobs:
           tags: digiwells/dwis-docker:stable
           push: true
 
+      - name: Build and push app upgrader
+        uses: docker/build-push-action@v6
+        with:
+          context: main/src/DWIS.Docker
+          file: main/src/DWIS.Docker/DWIS.Docker.AppUpdater/Dockerfile
+          tags: digiwells/digiwells/dwis-app-update
+          push: true
+
 
