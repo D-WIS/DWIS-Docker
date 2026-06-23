@@ -38,6 +38,9 @@ http://localhost:5272
 
 ## 2. First test
 
+This test will launch a **Blackboard**, replicated against a **Blackboard Hub** hosted by NORCE. Some real-time data are constantly streaming in the Hub, which makes it a good environment for early testing of any D-WIS installation. 
+
+
 The app opens on the **Standard Set-Up** tab. Before proceeding, verify the following settings:
 
 - **Replication** checkbox is checked
