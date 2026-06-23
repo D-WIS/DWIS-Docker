@@ -1,6 +1,7 @@
 ﻿@using MudBlazor;
 @using DWIS.Docker.Models;
 @using DWIS.Docker.Clients;
+@inject IDialogService DialogService
 @inject DWISProject Project;
 @inject DWISDockerClient DockerClient;
 
@@ -19,6 +20,7 @@
         <MudTh>Container</MudTh>
         <MudTh>Start / Stop</MudTh>
         <MudTh>Port</MudTh>        
+        <MudTh>View logs</MudTh>
         <MudTh>Update</MudTh>
     </HeaderContent>
 
@@ -53,12 +55,23 @@
                                     await Start(context);
                                     await InvokeAsync(RefreshStatus);}"></MudButton>
             }
-        </MudTd>
+        </MudTd>        
+        
         <MudTd>
             <MudLink Target="_blank" Href=@GetAddress(context)>
                 @context.HostPort                          
             </MudLink>
         </MudTd>
+
+        <MudTd>      
+            <MudButton StartIcon="@Icons.Material.Filled.Login" OnClick="async () =>{
+                                    _thinking = true;
+                                    await ShowLogs(context);
+                                    await InvokeAsync(RefreshStatus);}">
+            </MudButton>
+        </MudTd>
+
+
         <MudTd> 
             <MudButton StartIcon="@Icons.Material.Filled.Upgrade" OnClick="async () =>{
                                     _thinking = true;
@@ -107,6 +120,17 @@
     private async Task Upgrade(DWISApp app)
     {
         await DockerClient.UpdateImage(app.ContainerID);
+    }
+
+    private async Task ShowLogs(DWISApp app)
+    {
+        string containerLogs = await DockerClient.GetContainerLogs(app.ContainerID, TimeSpan.FromHours(2));
+        var parameters = new DialogParameters<ContainerLogDialog> { 
+            { x => x.ContainerLogs, containerLogs } ,
+            {x => x.ContainerName, app.AppName }           
+        };
+        DialogOptions _maxWidth = new() { CloseButton=true, CloseOnEscapeKey = true, FullScreen = true, MaxWidth = MaxWidth.ExtraExtraLarge, FullWidth = true };
+        var dialog =await  DialogService.ShowAsync<ContainerLogDialog>("Logs", parameters, options:_maxWidth);
     }
 
 

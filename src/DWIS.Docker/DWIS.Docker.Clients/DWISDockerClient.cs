@@ -4,6 +4,7 @@ using DWIS.Docker.Constants;
 using DWIS.Docker.Models;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel;
+using System.Threading;
 using DRD = Docker.Registry.DotNet;
 namespace DWIS.Docker.Clients
 {
@@ -771,6 +772,45 @@ namespace DWIS.Docker.Clients
                   new ContainerStartParameters()
                   );
         }
+
+        public async Task<string> GetContainerLogs(string containerID, TimeSpan span) 
+        {
+            var inspection = await _client.Containers.InspectContainerAsync(containerID);
+            bool tty = inspection.Config.Tty; 
+            CancellationToken cancellationToken = new CancellationToken();
+            string stdOut = "";
+            string formattedSpan = ((int)span.TotalMinutes).ToString() + "m";
+            using (var containerStream = await _client.Containers.GetContainerLogsAsync(containerID, tty, new ContainerLogsParameters() { Timestamps = true, ShowStderr = false, ShowStdout = true , Tail = "10000" /*Since = formattedSpan */})) 
+            {
+                var output = await containerStream.ReadOutputToEndAsync(cancellationToken);
+                stdOut = output.stdout;
+            }
+            return stdOut;
+            // Inside the 'using (var containerStream...)' block
+            //var buffer = new byte[81920]; // Define a suitable buffer size
+            //CancellationToken cancellationToken = new CancellationToken();
+            //while (true)
+            //{
+            //    var readResult = await containerStream.ReadOutputAsync(buffer, 0, buffer.Length, cancellationToken);
+               
+            //    if (readResult.EOF)
+            //    {
+            //        break;
+            //    }
+
+            //    var content = System.Text.Encoding.UTF8.GetString(buffer, 0, readResult.Count);
+            //    if (readResult.Target == MultiplexedStream.TargetStream.StandardOut)
+            //    {
+            //        Console.Write($"(STDOUT): {content}");
+            //    }
+            //    else if (readResult.Target == MultiplexedStream.TargetStream.StandardError)
+            //    {
+            //        Console.Write($"(STDERR): {content}");
+            //    }
+            //}
+        }
+
+
     }
 
     public class DWISDockerClientConfiguration

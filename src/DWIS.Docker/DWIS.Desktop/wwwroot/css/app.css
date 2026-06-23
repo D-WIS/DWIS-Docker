@@ -31,7 +31,9 @@ a, .btn-link {
     height: 300px;
 }
 
-
+.my-editor-logs-class { /* applies to all editor instances with this class */
+    height: 3000px;
+}
 
 
 #blazor-error-ui {
