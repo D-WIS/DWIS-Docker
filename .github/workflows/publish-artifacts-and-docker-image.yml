@@ -51,7 +51,7 @@ jobs:
         with:
           context: main/src/DWIS.Docker
           file: main/src/DWIS.Docker/DWIS.Docker.AppUpdater/Dockerfile
-          tags: digiwells/digiwells/dwis-app-update
+          tags: digiwells/dwis-app-update:stable
           push: true
 
 
