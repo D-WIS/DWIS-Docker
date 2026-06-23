@@ -44,6 +44,8 @@ The app opens on the **Standard Set-Up** tab. Before proceeding, verify the foll
 - **Replication group** is set to `default`
 - **Blackboard host IP** is set to `host.docker.internal`
 
+> Replication uses a secure WebSocket (WSS over HTTPS) connection to `https://dwis.digiwells.no/blackboard/applications`. Depending on your network configuration, you may need to open the appropriate firewall rules to allow this outbound connection.
+
 In the table below, find the **Local Blackboard** entry and click the **CREATE** button.
 
 A blackboard container should now have been created and should appear in your Docker container list.
