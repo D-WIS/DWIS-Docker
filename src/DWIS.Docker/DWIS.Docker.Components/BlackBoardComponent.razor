@@ -33,15 +33,15 @@
                             <MudTd DataLabel="Blackboard name">@context.ContainerName</MudTd>
                             <MudTd DataLabel="Blackboard group">@context.ContainerGroup</MudTd>
                             <MudTd DataLabel="Start">
-                                <MudIconButton Icon="@Icons.Material.Outlined.PlayArrow" OnClick="() => StartContainer(context.ContainerID)" Disabled="context.ContainerStarted">
+                                <MudIconButton Icon="@Icons.Material.Outlined.PlayArrow" Color="Color.Success" OnClick="() => StartContainer(context.ContainerID)" Disabled="context.ContainerStarted">
                                 </MudIconButton>
                             </MudTd>
                             <MudTd DataLabel="Stop">
-                                <MudIconButton Icon="@Icons.Material.Outlined.Stop" OnClick="() => StopContainer(context.ContainerID)" Disabled="!context.ContainerStarted">
+                                <MudIconButton Icon="@Icons.Material.Outlined.Stop" Color="Color.Error" OnClick="() => StopContainer(context.ContainerID)" Disabled="!context.ContainerStarted">
                                 </MudIconButton>
                             </MudTd>
                             <MudTd DataLabel="Delete">
-                                <MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteContainer(context.ContainerID)" Disabled="context.ContainerStarted">
+                                <MudIconButton Icon="@Icons.Material.Outlined.Delete" Color="Color.Default" OnClick="() => DeleteContainer(context.ContainerID)" Disabled="context.ContainerStarted">
                                 </MudIconButton>
                             </MudTd>
                         </RowTemplate>

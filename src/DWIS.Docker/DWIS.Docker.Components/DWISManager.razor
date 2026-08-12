@@ -8,7 +8,7 @@
 @inject DWISDockerClient DockerClient
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor
 @* Required *@
-<MudThemeProvider  />
+<MudThemeProvider Theme="_theme" />
 <MudPopoverProvider />
 
 @* Needed for dialogs *@
@@ -17,26 +17,26 @@
 @* Needed for snackbars *@
 <MudSnackbarProvider />
 
-<MudToolBar >
+<MudToolBar Class="dwis-toolbar">
 
-    <MudImage Src="img/DWIS-Industry-Group-Logo-5-31-21.png" Height="70" Style="margin-top:30px"></MudImage>
+    <MudImage Src="img/DWIS-Industry-Group-Logo-5-31-21.png" Height="48" Class="dwis-logo"></MudImage>
 
-    <MudSpacer></MudSpacer>
-    <MudText Typo="Typo.h3" >D-WIS Desktop</MudText>
+    <MudText Typo="Typo.h5" Class="dwis-title">D-WIS <span class="dwis-title-accent">Desktop</span></MudText>
+
     <MudSpacer></MudSpacer>
 
     @if (Desktop)
     {
-        <MudIconButton Icon="@Icons.Material.Outlined.Settings" /> 
+        <MudIconButton Icon="@Icons.Material.Outlined.Settings" Class="dwis-toolbar-icon" />
 
-        <MudDivider  Vertical="true"  />
-        <MudIconButton Icon="@Icons.Material.Outlined.Minimize" OnClick="OnMinimizeButtonClicked" />
-        <MudIconButton Icon="@GetIcon()" OnClick="OnMaximizeButtonClicked" />
-        <MudIconButton Icon="@Icons.Material.Outlined.Close" OnClick="OnQuitButtonClicked" /> 
+        <MudDivider  Vertical="true" Class="dwis-toolbar-divider" />
+        <MudIconButton Icon="@Icons.Material.Outlined.Minimize" Class="dwis-toolbar-icon" OnClick="OnMinimizeButtonClicked" />
+        <MudIconButton Icon="@GetIcon()" Class="dwis-toolbar-icon" OnClick="OnMaximizeButtonClicked" />
+        <MudIconButton Icon="@Icons.Material.Outlined.Close" Class="dwis-toolbar-icon dwis-toolbar-icon-close" OnClick="OnQuitButtonClicked" />
     }
 </MudToolBar>
 
-<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2"  Border Color="Color.Primary" >
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2 dwis-main-tabs"  Border Color="Color.Primary" >
      <MudSpacer />
     <MudTabPanel Text="Standard set-up" >
         <StandardSetUpComponent Project="Project"></StandardSetUpComponent>
@@ -110,17 +110,43 @@
     </MudTabPanel>
 </MudTabs> *@
 
-<MudAppBar Color="Color.Info" Bottom="true">
+<MudAppBar Color="Color.Info" Bottom="true" Class="dwis-statusbar" Dense="true">
+    <MudIcon Icon="@Icons.Material.Filled.Hub" Size="Size.Small" Class="mr-1" />
     <MudText Typo="Typo.caption">@("Hub: " + Manager.HubAddress)</MudText>
     <MudSpacer></MudSpacer>
     @* <MudText Typo="Typo.caption">@("Docker: " + Manager.DockerURI)</MudText> *@
     <MudSpacer></MudSpacer>
-    <MudIconButton Icon="@Icons.Material.Filled.Settings" OnClick="OpenSettingsDialogAsync" />
-    <MudIconButton Icon="@Icons.Material.Filled.Upgrade" OnClick="UpgradeApp" />
+    <MudTooltip Text="Docker engine settings">
+        <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" OnClick="OpenSettingsDialogAsync" />
+    </MudTooltip>
+    <MudTooltip Text="Update application">
+        <MudIconButton Icon="@Icons.Material.Filled.Upgrade" Size="Size.Small" OnClick="UpgradeApp" />
+    </MudTooltip>
 </MudAppBar>
 
     @code {
 
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#052767",
+            Secondary = "#3a0647",
+            Background = "#f2f4f8",
+            Surface = "#ffffff",
+            AppbarBackground = "#052767",
+            TextPrimary = "#1c2333",
+            TextSecondary = "#5a6270",
+        },
+        LayoutProperties = new LayoutProperties()
+        {
+            DefaultBorderRadius = "10px",
+        },
+        Typography = new Typography()
+        {
+            Default = new DefaultTypography() { FontFamily = ["Roboto", "Helvetica Neue", "Helvetica", "Arial", "sans-serif"] }
+        }
+    };
 
     protected override Task OnParametersSetAsync()
     {

@@ -30,41 +30,47 @@
         <MudTd>
             @if (!string.IsNullOrEmpty(context.ContainerID))
             {
-                <MudIcon Icon="@Icons.Material.Filled.Check"></MudIcon>               
+                <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success"></MudIcon>
             }
             else
             {
-                <MudIcon Icon="@Icons.Material.Filled.Error"></MudIcon>
+                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error"></MudIcon>
             }
         </MudTd>
         <MudTd>
             @if (context.Running)
             {
-                <MudButton StartIcon="@Icons.Material.Filled.Stop" OnClick="async () =>{
+                <MudTooltip Text="Stop">
+                    <MudIconButton Icon="@Icons.Material.Filled.Stop" Color="Color.Error" OnClick="async () =>{
                                     _thinking = true;
                                     await Stop(context);
                                     await InvokeAsync(RefreshStatus);}">
-                </MudButton>
+                    </MudIconButton>
+                </MudTooltip>
             }
             else
             {
-                <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="async () => {
+                <MudTooltip Text="Start">
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" OnClick="async () => {
                                     _thinking = true;
                                     await Start(context);
-                                    await InvokeAsync(RefreshStatus);}"></MudButton>
+                                    await InvokeAsync(RefreshStatus);}"></MudIconButton>
+                </MudTooltip>
             }
         </MudTd>
         <MudTd>
             <MudLink Target="_blank" Href=@GetAddress(context)>
-                @context.HostPort                          
+                @context.HostPort
             </MudLink>
         </MudTd>
-        <MudTd> 
-            <MudButton StartIcon="@Icons.Material.Filled.Upgrade" OnClick="async () =>{
+        <MudTd>
+            <MudTooltip Text="Update image">
+                <MudIconButton Icon="@Icons.Material.Filled.Upgrade" Color="Color.Info" OnClick="async () =>{
                                     _thinking = true;
                                     await Upgrade(context);
                                     await InvokeAsync(RefreshStatus);}">
-            </MudButton>
+                </MudIconButton>
+            </MudTooltip>
         </MudTd>
     </RowTemplate>
 </MudTable>

@@ -72,15 +72,15 @@
                 <RowTemplate>
                     <MudTd DataLabel="Container Name">@context.name</MudTd>
                     <MudTd DataLabel="Start">
-                        <MudIconButton Icon="@Icons.Material.Outlined.PlayArrow" OnClick="() => DockerClient.StartContainer(context.id)">
+                        <MudIconButton Icon="@Icons.Material.Outlined.PlayArrow" Color="Color.Success" OnClick="() => DockerClient.StartContainer(context.id)">
                         </MudIconButton>
                     </MudTd>
                     <MudTd DataLabel="Stop">
-                        <MudIconButton Icon="@Icons.Material.Outlined.Stop" OnClick="() => DockerClient.StopContainer(context.id)">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Stop" Color="Color.Error" OnClick="() => DockerClient.StopContainer(context.id)">
                         </MudIconButton>
                     </MudTd>
                     <MudTd DataLabel="Delete">
-                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteContainer(context.id)">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" Color="Color.Default" OnClick="() => DeleteContainer(context.id)">
                         </MudIconButton>
                     </MudTd>
                 </RowTemplate>

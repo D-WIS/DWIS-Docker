@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dwis-docker-web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "C:\\repos\\D-WIS\\DWIS-Docker\\src\\DWIS.Docker\\DWIS.Desktop.Web\\DWIS.Desktop.Web\\DWIS.Desktop.Web.csproj", "--urls", "http://localhost:5272"],
+      "port": 5272
+    }
+  ]
+}
