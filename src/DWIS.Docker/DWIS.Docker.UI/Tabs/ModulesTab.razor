@@ -1,0 +1,16 @@
+@* DWIS modules: one sub-tab per family, each a ModuleTable with config editing. *@
+
+<MudTabs Elevation="0" Rounded ApplyEffectsToContainer KeepPanelsAlive="false" PanelClass="pt-2" Color="Color.Default">
+    <MudTabPanel Text="Scheduler">
+        <ModuleTable Categories="@([ModuleCategory.Scheduler])" ShowConfig Title="Scheduler" />
+    </MudTabPanel>
+    <MudTabPanel Text="Microstates">
+        <ModuleTable Categories="@([ModuleCategory.Microstates])" ShowConfig Title="Microstates" />
+    </MudTabPanel>
+    <MudTabPanel Text="Composer">
+        <ModuleTable Categories="@([ModuleCategory.Composer])" ShowConfig Title="Advice composer" />
+    </MudTabPanel>
+    <MudTabPanel Text="ADCS bridges">
+        <ModuleTable Categories="@([ModuleCategory.Bridge])" ShowConfig Title="ADCS bridges" />
+    </MudTabPanel>
+</MudTabs>

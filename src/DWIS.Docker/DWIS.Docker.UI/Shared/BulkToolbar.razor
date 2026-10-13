@@ -1,0 +1,76 @@
+@* Toolbar of ModuleTable: refresh, check for updates, and bulk actions on the selection. *@
+@inherits DwisComponentBase
+
+<MudStack Row AlignItems="AlignItems.Center" Spacing="1" Wrap="Wrap.Wrap" Class="py-1">
+    @if (Title is not null)
+    {
+        <MudText Typo="Typo.h6" Class="mr-2">@Title</MudText>
+    }
+    <MudTooltip Text="Refresh now">
+        <MudIconButton Icon="@DwisIcons.Refresh" Size="Size.Small" OnClick="Refresh" Disabled="IsBusy" />
+    </MudTooltip>
+    <MudTooltip Text="Ask the registry whether newer images exist">
+        <MudButton StartIcon="@DwisIcons.CheckUpdates" Size="Size.Small" Variant="Variant.Text" OnClick="CheckUpdates" Disabled="IsBusy">Check for updates</MudButton>
+    </MudTooltip>
+
+    <MudSpacer />
+
+    @if (Selection.Count > 0)
+    {
+        <MudText Typo="Typo.body2" Class="mr-1">@Selection.Count selected</MudText>
+        <MudButton StartIcon="@DwisIcons.Create" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" OnClick="CreateMissing" Disabled="@(IsBusy || !Selection.Any(m => !m.Exists))">Create missing</MudButton>
+        <MudButton StartIcon="@DwisIcons.Start" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success" OnClick="@(() => Bulk(BulkAction.Start, m => m.Exists && !m.IsRunning, "started"))" Disabled="@(IsBusy || !Selection.Any(m => m.Exists && !m.IsRunning))">Start</MudButton>
+        <MudButton StartIcon="@DwisIcons.Stop" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => Bulk(BulkAction.Stop, m => m.IsRunning, "stopped"))" Disabled="@(IsBusy || !Selection.Any(m => m.IsRunning))">Stop</MudButton>
+        <MudButton StartIcon="@DwisIcons.Restart" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" OnClick="@(() => Bulk(BulkAction.Restart, m => m.IsRunning, "restarted"))" Disabled="@(IsBusy || !Selection.Any(m => m.IsRunning))">Restart</MudButton>
+        <MudButton StartIcon="@DwisIcons.Update" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info" OnClick="UpdateImages" Disabled="IsBusy">Update images</MudButton>
+        <MudButton StartIcon="@DwisIcons.Delete" Size="Size.Small" Variant="Variant.Outlined" OnClick="DeleteSelection" Disabled="@(IsBusy || !Selection.Any(m => m.Exists))">Delete</MudButton>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public IReadOnlyCollection<ModuleStatus> Selection { get; set; } = [];
+    [Parameter] public EventCallback ClearSelection { get; set; }
+
+    private Task Refresh() => Actions.QueryAsync(ct => Status.RefreshAsync(ct).ContinueWith(_ => true, ct));
+
+    private Task CheckUpdates() => RunAsync(ct => Status.CheckForUpdatesAsync(ct), "Registry checked.", "Checking the registry for newer images");
+
+    private async Task CreateMissing()
+    {
+        var modules = Selection.Where(m => !m.Exists).Select(m => m.Module).ToList();
+        await RunAsync(async ct =>
+        {
+            var failures = await Modules.CreateMissingAsync(modules, Actions.Progress, ct);
+            Actions.ReportFailures(failures, $"{modules.Count - failures.Count} container(s) created.");
+        }, null, "Creating missing containers");
+        await ClearSelection.InvokeAsync();
+    }
+
+    private async Task Bulk(BulkAction action, Func<ModuleStatus, bool> applies, string pastTense)
+    {
+        var containers = Selection.Where(applies).Select(m => m.Container!).ToList();
+        await RunAsync(async ct =>
+        {
+            var failures = await Modules.BulkAsync(containers, action, ct);
+            Actions.ReportFailures(failures, $"{containers.Count - failures.Count} container(s) {pastTense}.");
+        }, null, $"{action} {containers.Count} container(s)");
+    }
+
+    private async Task UpdateImages()
+    {
+        var steps = Selection
+            .Select(m => ($"Updating {m.Module.DisplayName}", (Func<CancellationToken, Task>)(ct => Modules.UpdateImageAsync(m.Module, Actions.Progress, ct))))
+            .ToList();
+        await Actions.RunManyAsync(steps, "Images updated.");
+    }
+
+    private async Task DeleteSelection()
+    {
+        var targets = Selection.Where(m => m.Exists).ToList();
+        var names = string.Join("\n", targets.Select(m => " - " + m.Container!.Name));
+        if (!await ConfirmAsync("Delete containers", $"Delete {targets.Count} container(s)?\n{names}")) return;
+        await Bulk(BulkAction.Remove, m => m.Exists, "deleted");
+        await ClearSelection.InvokeAsync();
+    }
+}

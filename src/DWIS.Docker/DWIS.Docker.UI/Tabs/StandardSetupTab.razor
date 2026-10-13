@@ -1,0 +1,28 @@
+@* All predefined modules in one grouped table, with a summary of the replication target. *@
+@inherits DwisComponentBase
+
+<div class="dwis-card">
+    <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+        <MudText Class="dwis-card-title mb-0">Target</MudText>
+        <ReplicationChip Replicating="AppSettings.ReplicationEnabled && AppSettings.ReplicationHub is not null" HubUrl="@AppSettings.ReplicationHub?.BaseUrl" Group="@AppSettings.ReplicationGroup" />
+        <MudChip T="string" Icon="@DwisIcons.Docker" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">Blackboard host: @AppSettings.BlackboardHostIp</MudChip>
+        <MudSpacer />
+        <MudButton StartIcon="@DwisIcons.Hub" Size="Size.Small" Variant="Variant.Text" OnClick="@(() => Shell?.ActivateTab(DwisShell.TabReplication))">Replication…</MudButton>
+        <MudButton StartIcon="@DwisIcons.Settings" Size="Size.Small" Variant="Variant.Text" OnClick="@(() => SettingsDialog.ShowAsync(Dialogs))">Settings…</MudButton>
+    </MudStack>
+    <MudChipSet T="ModuleCategory" SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_categories" CheckMark Class="mt-2">
+        @foreach (var c in Enum.GetValues<ModuleCategory>())
+        {
+            <MudChip T="ModuleCategory" Value="c" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@c.DisplayName()</MudChip>
+        }
+    </MudChipSet>
+</div>
+
+<ModuleTable Categories="_categories?.ToList()" GroupByCategory />
+
+@code {
+    [CascadingParameter] private DwisShell? Shell { get; set; }
+
+    private IReadOnlyCollection<ModuleCategory>? _categories =
+        [ModuleCategory.Blackboard, ModuleCategory.Scheduler, ModuleCategory.Microstates, ModuleCategory.Composer, ModuleCategory.Bridge];
+}

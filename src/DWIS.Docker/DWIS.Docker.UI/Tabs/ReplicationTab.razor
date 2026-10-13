@@ -1,0 +1,118 @@
+@* Replication target and the list of SignalR hubs. *@
+@inherits DwisComponentBase
+
+<div class="dwis-card">
+    <MudText Class="dwis-card-title">Replication target for the standard setup</MudText>
+    <MudGrid Spacing="2" Justify="Justify.FlexStart">
+        <MudItem xs="12" md="2">
+            <MudSwitch T="bool" @bind-Value="_enabled" Label="Replicate" Color="Color.Primary" />
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="string" @bind-Value="_hubId" Label="Hub" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(!_enabled)">
+                @foreach (var h in Hubs.Hubs)
+                {
+                    <MudSelectItem T="string" Value="@h.Hub.Id">@h.Hub.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudAutocomplete T="string" @bind-Value="_group" Label="Group" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(!_enabled)"
+                             SearchFunc="SearchGroups" CoerceText="false" CoerceValue="true" ResetValueOnEmptyText="false" />
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudTextField @bind-Value="_password" Label="Group write password" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(!_enabled)"
+                          InputType="@(_showPwd ? InputType.Text : InputType.Password)"
+                          Adornment="Adornment.End" AdornmentIcon="@(_showPwd ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                          OnAdornmentClick="@(() => _showPwd = !_showPwd)" />
+        </MudItem>
+        <MudItem xs="12" md="1" Class="d-flex justify-end">
+            <MudButton StartIcon="@DwisIcons.Save" Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveTarget" Disabled="@(IsBusy || !Dirty)">Save</MudButton>
+        </MudItem>
+    </MudGrid>
+    <MudText Typo="Typo.caption" Class="mt-1">
+        Applies to blackboards created from now on. Recreate an existing blackboard (update its image) to move it to another hub or group.
+    </MudText>
+</div>
+
+<div class="dwis-card">
+    <MudText Class="dwis-card-title">Add a hub</MudText>
+    <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+        <MudTextField @bind-Value="_newName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 180px" />
+        <MudTextField @bind-Value="_newUrl" Label="Base URL" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 380px"
+                      Placeholder="https://host/blackboard/applications" HelperText="The /dwishub path is added automatically" />
+        <MudButton StartIcon="@DwisIcons.Add" Variant="Variant.Outlined" Color="Color.Primary" OnClick="AddHub" Disabled="@(IsBusy || !CanAdd)">Add hub</MudButton>
+    </MudStack>
+</div>
+
+<MudGrid Spacing="3">
+    @foreach (var hub in Hubs.Hubs)
+    {
+        <MudItem xs="12" lg="6" @key="hub.Hub.Id">
+            <HubCard Hub="hub" />
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    private bool _enabled;
+    private string? _hubId;
+    private string _group = "default";
+    private string? _password;
+    private bool _showPwd;
+    private string _newName = "";
+    private string _newUrl = "";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        LoadFromSettings();
+    }
+
+    private void LoadFromSettings()
+    {
+        var s = AppSettings;
+        _enabled = s.ReplicationEnabled;
+        _hubId = s.ReplicationHubId ?? Hubs.Hubs.FirstOrDefault()?.Hub.Id;
+        _group = s.ReplicationGroup;
+        _password = s.ReplicationGroupPassword;
+    }
+
+    private bool Dirty =>
+        _enabled != AppSettings.ReplicationEnabled
+        || _hubId != AppSettings.ReplicationHubId
+        || _group != AppSettings.ReplicationGroup
+        || (_password ?? "") != (AppSettings.ReplicationGroupPassword ?? "");
+
+    private bool CanAdd =>
+        !string.IsNullOrWhiteSpace(_newName)
+        && Uri.TryCreate(_newUrl, UriKind.Absolute, out var u) && (u.Scheme == "http" || u.Scheme == "https");
+
+    private Task<IEnumerable<string>> SearchGroups(string value, CancellationToken ct)
+    {
+        var groups = Hubs.Find(_hubId ?? "")?.Groups.Select(g => g.Name) ?? [];
+        return Task.FromResult(groups.Where(g => string.IsNullOrEmpty(value) || g.Contains(value, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private async Task SaveTarget()
+    {
+        var s = AppSettings.Clone();
+        s.ReplicationEnabled = _enabled;
+        s.ReplicationHubId = _hubId;
+        s.ReplicationGroup = string.IsNullOrWhiteSpace(_group) ? "default" : _group.Trim();
+        s.ReplicationGroupPassword = string.IsNullOrEmpty(_password) ? null : _password;
+        var ok = await RunAsync(ct => Settings.SaveAsync(s, ct), "Replication target saved.");
+        if (ok) LoadFromSettings();
+    }
+
+    private async Task AddHub()
+    {
+        var s = AppSettings.Clone();
+        s.Hubs.Add(new HubDefinition(HubDefinition.NewId(), _newName.Trim(), _newUrl.Trim()));
+        var ok = await RunAsync(ct => Settings.SaveAsync(s, ct), $"Hub '{_newName.Trim()}' added.");
+        if (ok)
+        {
+            _newName = "";
+            _newUrl = "";
+        }
+    }
+}

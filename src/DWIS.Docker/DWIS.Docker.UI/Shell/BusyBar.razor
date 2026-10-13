@@ -1,0 +1,19 @@
+@* Shows the running action and image pull progress under the toolbar. *@
+@inherits DwisComponentBase
+
+@if (Actions.IsBusy)
+{
+    <div class="dwis-busy-bar">
+        <MudProgressLinear Color="Color.Secondary" Indeterminate="@(Actions.ProgressFraction is null)" Value="@((Actions.ProgressFraction ?? 0) * 100)" Size="Size.Small" />
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="px-4 py-1" Style="background: #fff; border-bottom: 1px solid var(--dwis-border)">
+            <MudProgressCircular Size="Size.Small" Indeterminate Color="Color.Primary" />
+            <MudText Typo="Typo.body2">@Actions.BusyMessage</MudText>
+            @if (Actions.ProgressText is not null)
+            {
+                <MudText Typo="Typo.caption" Class="dwis-nowrap" Style="opacity: .8">@Actions.ProgressText</MudText>
+            }
+            <MudSpacer />
+            <MudIconButton Icon="@DwisIcons.Cancel" Size="Size.Small" OnClick="@(() => Actions.Cancel())" title="Cancel" />
+        </MudStack>
+    </div>
+}

@@ -1,0 +1,194 @@
+@* The one table of predefined modules, reused by Standard setup, DWIS Modules, Clients and Advisors. *@
+@inherits DwisComponentBase
+
+<MudTable T="ModuleStatus" Items="Items" Dense Hover Elevation="1" Class="dwis-module-table" HorizontalScrollbar
+          MultiSelection="MultiSelection" SelectOnRowClick="false"
+          SelectedItems="_selected" SelectedItemsChanged="OnSelectionChanged"
+          GroupBy="@(GroupByCategory ? _groupDefinition : null)" GroupHeaderClass="dwis-group-header"
+          RowClassFunc="RowClass">
+    <ToolBarContent>
+        <BulkToolbar Title="@Title" Selection="_selected" ClearSelection="ClearSelection" />
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Module</MudTh>
+        <MudTh>Container</MudTh>
+        <MudTh>State</MudTh>
+        <MudTh>Image</MudTh>
+        <MudTh>Details</MudTh>
+        <MudTh Style="width: 1%">Actions</MudTh>
+    </HeaderContent>
+    <GroupHeaderTemplate>
+        <MudTh colspan="7">
+            @(context.Key is ModuleCategory cat ? cat.DisplayName() : context.Key?.ToString())
+            <MudText Typo="Typo.caption" Class="ml-2" Inline>
+                @context.Items.Count(m => m.IsRunning) / @context.Items.Count() running
+            </MudText>
+        </MudTh>
+    </GroupHeaderTemplate>
+    <RowTemplate>
+        <MudTd DataLabel="Module">
+            <MudText Typo="Typo.body2" Class="dwis-nowrap"><b>@context.Module.DisplayName</b></MudText>
+            <span class="dwis-caption">@context.Module.ImageRef</span>
+        </MudTd>
+        <MudTd DataLabel="Container">
+            @if (context.Container is { } c)
+            {
+                <MudText Typo="Typo.body2" Class="dwis-nowrap">@c.Name</MudText>
+                <span class="dwis-caption">@c.StatusText</span>
+                @if (context.DuplicateContainers > 0)
+                {
+                    <span class="dwis-caption" style="color: #c77700">+@context.DuplicateContainers more container(s) for this module</span>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="dwis-nowrap" Style="opacity: .5">@context.Module.ContainerName</MudText>
+            }
+        </MudTd>
+        <MudTd DataLabel="State">
+            <StateChip Look="DwisStates.Container(context.Container)" />
+            @if (context.Blackboard?.IsLegacy == true)
+            {
+                <StateChip Look="@(new StateLook(DwisIcons.Legacy, Color.Default, "Old format", "Created by a previous version. Update the image to migrate it."))" />
+            }
+        </MudTd>
+        <MudTd DataLabel="Image">
+            <StateChip Look="DwisStates.Image(context.ImageStatus, context.ImagePresent)" />
+        </MudTd>
+        <MudTd DataLabel="Details">
+            @if (context.Module.IsBlackboard)
+            {
+                @if (context.Blackboard is { } bb)
+                {
+                    <ReplicationChip Replicating="bb.IsReplicating" HubUrl="@bb.HubUrl" Group="@bb.Group" />
+                    <MudChip T="string" Icon="@DwisIcons.Port" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">@bb.Port</MudChip>
+                    @if (context.ReplicationMismatch)
+                    {
+                        <StateChip Look="@(new StateLook(DwisIcons.Mismatch, Color.Warning, "Differs from settings", "This blackboard was created with another hub or group than the current replication target. Update the image to recreate it."))" />
+                    }
+                }
+                else
+                {
+                    <ReplicationChip Replicating="AppSettings.ReplicationEnabled && AppSettings.ReplicationHub is not null" HubUrl="@AppSettings.ReplicationHub?.BaseUrl" Group="@AppSettings.ReplicationGroup" />
+                    <MudChip T="string" Icon="@DwisIcons.Port" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">@context.Module.HostPort</MudChip>
+                }
+            }
+            else
+            {
+                @if (context.Module.HasConfig)
+                {
+                    <StateChip Look="DwisStates.Config(context.ConfigFileExists)" OnClick="@(() => ToggleConfig(context.Module.Id))" />
+                }
+                @if (context.Module.HostPort is { } port)
+                {
+                    <MudLink Href="@($"http://localhost:{port}")" Target="_blank" Typo="Typo.body2" Class="dwis-nowrap ml-1">
+                        <MudIcon Icon="@DwisIcons.Port" Size="Size.Small" Style="vertical-align: middle" /> localhost:@port
+                    </MudLink>
+                }
+            }
+        </MudTd>
+        <MudTd DataLabel="Actions">
+            <ContainerActions Container="context.Container" BusyKey="@context.Module.Id"
+                              OnCreate="@(() => Create(context.Module))"
+                              OnUpdateImage="@(() => UpdateImage(context.Module))" />
+        </MudTd>
+    </RowTemplate>
+    <ChildRowContent>
+        @if (ShowConfig && context.Module.HasConfig && _expanded.Contains(context.Module.Id))
+        {
+            <MudTr Class="dwis-child-row">
+                <td colspan="7">
+                    <ConfigEditor Module="context.Module" Container="context.Container" />
+                </td>
+            </MudTr>
+        }
+    </ChildRowContent>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body2" Class="pa-4">No modules in this view.</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    [Parameter] public IReadOnlyList<ModuleCategory>? Categories { get; set; }
+    [Parameter] public bool GroupByCategory { get; set; }
+    [Parameter] public bool MultiSelection { get; set; } = true;
+    [Parameter] public bool ShowConfig { get; set; }
+    [Parameter] public string? Title { get; set; }
+
+    private readonly HashSet<string> _selectedIds = new();
+    private readonly HashSet<string> _expanded = new();
+    // One instance for the whole life of the component: MudTable fires SelectedItemsChanged
+    // whenever it sees a new reference, so replacing the set would loop forever.
+    private readonly HashSet<ModuleStatus> _selected = new();
+
+    private readonly TableGroupDefinition<ModuleStatus> _groupDefinition = new()
+    {
+        GroupName = "Category",
+        Indentation = false,
+        Expandable = true,
+        IsInitiallyExpanded = true,
+        Selector = m => m.Module.Category
+    };
+
+    private IEnumerable<ModuleStatus> Items =>
+        Snapshot.Modules.Where(m => Categories is null || Categories.Contains(m.Module.Category));
+
+    protected override void OnParametersSet() => Reproject();
+
+    private void Reproject()
+    {
+        // Snapshots are new objects every poll, so the selection is kept by module id
+        // and re-projected onto the current snapshot, mutating the set in place.
+        var fresh = Items.Where(m => _selectedIds.Contains(m.Module.Id)).ToList();
+        if (fresh.Count == _selected.Count && fresh.All(_selected.Contains)) return;
+        _selected.Clear();
+        foreach (var m in fresh) _selected.Add(m);
+    }
+
+    private void OnSelectionChanged(HashSet<ModuleStatus> selected)
+    {
+        var ids = selected.Select(m => m.Module.Id).ToHashSet();
+        if (ids.SetEquals(_selectedIds)) return;
+        _selectedIds.Clear();
+        _selectedIds.UnionWith(ids);
+        Reproject();
+    }
+
+    private void ClearSelection()
+    {
+        _selectedIds.Clear();
+        Reproject();
+    }
+
+    private void ToggleConfig(string id)
+    {
+        if (!ShowConfig) return;
+        if (!_expanded.Remove(id)) _expanded.Add(id);
+    }
+
+    private string RowClass(ModuleStatus m, int index) =>
+        Actions.IsBusyWith(m.Module.Id) ? "dwis-row-busy" : "";
+
+    private Task Create(ModuleDefinition module) =>
+        RunAsync(ct => Modules.CreateAndStartAsync(module, Actions.Progress, ct), $"{module.DisplayName} created and started.", $"Creating {module.DisplayName}", module.Id);
+
+    private async Task UpdateImage(ModuleDefinition module)
+    {
+        var status = Snapshot.Find(module.Id);
+        if (status?.Exists == true)
+        {
+            var ok = await ConfirmAsync("Update image",
+                $"Pull the latest {module.ImageRef} and recreate the container '{status.Container!.Name}'?\nIt will be started again if it is running now.",
+                "Update", Color.Info);
+            if (!ok) return;
+        }
+        await RunAsync(ct => Modules.UpdateImageAsync(module, Actions.Progress, ct), $"{module.DisplayName} updated.", $"Updating {module.DisplayName}", module.Id);
+    }
+
+    protected override bool ShouldRender()
+    {
+        // A new snapshot arrives every poll; keep the selection pointing at the current objects.
+        Reproject();
+        return true;
+    }
+}

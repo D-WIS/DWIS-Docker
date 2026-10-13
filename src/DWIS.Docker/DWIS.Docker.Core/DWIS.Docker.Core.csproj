@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DWIS.Docker.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Docker.DotNet" Version="3.125.15" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.20" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="9.0.20" />
+    <!-- Pin the transitive MessagePack package above the version with the known advisory. -->
+    <PackageReference Include="MessagePack" Version="3.1.12" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.20" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.20" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.20" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.20" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DWIS.Docker.Core.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,34 @@
+@* "hub-name / group" when replicating, "Local" otherwise. *@
+@inject IHubService HubService
+
+@if (Replicating)
+{
+    <MudTooltip Text="@HubUrl">
+        <MudChip T="string" Icon="@DwisIcons.Replication" Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">
+            @HubName / @(Group ?? "default")
+        </MudChip>
+    </MudTooltip>
+}
+else
+{
+    <MudChip T="string" Icon="@DwisIcons.ReplicationOff" Color="Color.Default" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">
+        Local
+    </MudChip>
+}
+
+@code {
+    [Parameter] public bool Replicating { get; set; }
+    [Parameter] public string? HubUrl { get; set; }
+    [Parameter] public string? Group { get; set; }
+
+    private string HubName
+    {
+        get
+        {
+            var url = HubUrl?.TrimEnd('/');
+            var hub = HubService.Hubs.FirstOrDefault(h => string.Equals(h.Hub.BaseUrl.TrimEnd('/'), url, StringComparison.OrdinalIgnoreCase));
+            if (hub is not null) return hub.Hub.Name;
+            return Uri.TryCreate(HubUrl, UriKind.Absolute, out var u) ? u.Host : (HubUrl ?? "hub");
+        }
+    }
+}

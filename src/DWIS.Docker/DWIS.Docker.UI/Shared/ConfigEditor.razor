@@ -1,0 +1,119 @@
+@* Plain-text editor for a module's config.json with validation, defaults and a restart hint. *@
+@inherits DwisComponentBase
+@inject IConfigFileService Config
+
+<div class="dwis-config pa-3">
+    @if (_text is null)
+    {
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+            <MudText Typo="Typo.body2">No configuration file yet at <code>@Config.GetLocalPath(Module)</code>.</MudText>
+            <MudButton StartIcon="@DwisIcons.Create" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="CreateDefault" Disabled="IsBusy">
+                Create default config
+            </MudButton>
+        </MudStack>
+    }
+    else
+    {
+        <MudStack Spacing="1">
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                <MudText Typo="Typo.caption"><code>@Config.GetLocalPath(Module)</code></MudText>
+                <MudSpacer />
+                <MudButton StartIcon="@DwisIcons.Save" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="Save" Disabled="@(!_dirty || IsBusy)">Save</MudButton>
+                <MudButton StartIcon="@DwisIcons.Format" Size="Size.Small" OnClick="Format" Disabled="IsBusy">Format</MudButton>
+                <MudButton StartIcon="@DwisIcons.Refresh" Size="Size.Small" OnClick="Load" Disabled="IsBusy">Reload</MudButton>
+                <MudButton StartIcon="@DwisIcons.ResetDefaults" Size="Size.Small" OnClick="ResetDefaults" Disabled="IsBusy">Reset to defaults</MudButton>
+            </MudStack>
+            <MudTextField T="string" Value="_text" ValueChanged="OnTextChanged" Lines="18" Variant="Variant.Outlined" Immediate="false"
+                          Error="@(_error is not null)" ErrorText="@_error" Class="dwis-config" spellcheck="false" />
+            @if (_savedOnce && Container is not null)
+            {
+                <MudAlert Severity="Severity.Info" Dense>
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                        <span>Restart the container to apply the new configuration.</span>
+                        <MudButton StartIcon="@DwisIcons.Restart" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined" OnClick="Restart" Disabled="IsBusy">Restart</MudButton>
+                    </MudStack>
+                </MudAlert>
+            }
+        </MudStack>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ModuleDefinition Module { get; set; } = default!;
+    [Parameter] public ContainerInfo? Container { get; set; }
+
+    private string? _text;
+    private string? _error;
+    private bool _dirty;
+    private bool _savedOnce;
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _text = await Actions.QueryAsync(ct => Config.ReadAsync(Module, ct));
+        _dirty = false;
+        _error = null;
+    }
+
+    private void OnTextChanged(string value)
+    {
+        _text = value;
+        _dirty = true;
+        _error = null;
+    }
+
+    private Task CreateDefault() => RunAsync(async ct =>
+    {
+        await Config.EnsureDefaultAsync(Module, ct);
+        await Load();
+    }, "Default configuration created.", $"Creating config for {Module.DisplayName}", Module.Id);
+
+    private async Task Save()
+    {
+        var errors = Config.Validate(Module, _text ?? "");
+        if (errors.Count > 0)
+        {
+            _error = errors[0];
+            return;
+        }
+        var ok = await RunAsync(ct => Config.WriteAsync(Module, _text!, ct), "Configuration saved.", $"Saving config for {Module.DisplayName}", Module.Id);
+        if (ok)
+        {
+            _dirty = false;
+            _savedOnce = true;
+        }
+    }
+
+    private void Format()
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(_text ?? "", new System.Text.Json.JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = System.Text.Json.JsonCommentHandling.Skip });
+            _text = System.Text.Json.JsonSerializer.Serialize(doc.RootElement, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            _dirty = true;
+            _error = null;
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            _error = "Invalid JSON: " + ex.Message;
+        }
+    }
+
+    private async Task ResetDefaults()
+    {
+        if (!await ConfirmAsync("Reset configuration", $"Replace the configuration of {Module.DisplayName} with the defaults?", "Reset", Color.Warning)) return;
+        await RunAsync(async ct =>
+        {
+            await Config.ResetToDefaultAsync(Module, ct);
+            await Load();
+            _savedOnce = true;
+        }, "Configuration reset to defaults.", $"Resetting config for {Module.DisplayName}", Module.Id);
+    }
+
+    private Task Restart() => RunAsync(ct => Modules.RestartAsync(Container!.Id, ct), $"{Container!.Name} restarted.", $"Restarting {Container!.Name}", Container!.Id);
+}

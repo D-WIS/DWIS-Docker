@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DWIS.Docker.Web</RootNamespace>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DWIS.Docker.Core\DWIS.Docker.Core.csproj" />
+    <ProjectReference Include="..\DWIS.Docker.UI\DWIS.Docker.UI.csproj" />
+  </ItemGroup>
+
+</Project>

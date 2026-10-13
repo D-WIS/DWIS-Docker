@@ -398,3 +398,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# dwis-docker development settings (web host run from source)
+src/DWIS.Docker/DWIS.Docker.Web/data/

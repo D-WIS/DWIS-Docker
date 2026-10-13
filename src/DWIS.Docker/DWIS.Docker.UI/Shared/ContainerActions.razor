@@ -1,0 +1,70 @@
+@* The fixed set of per-row buttons: Create | Start | Stop, Restart, Logs, Update image, Delete. *@
+@inherits DwisComponentBase
+
+<span class="dwis-actions">
+    @if (Busy)
+    {
+        <MudProgressCircular Size="Size.Small" Indeterminate Color="Color.Primary" Style="margin: 6px" />
+    }
+    else if (Container is null)
+    {
+        @if (OnCreate.HasDelegate)
+        {
+            <MudTooltip Text="Create container">
+                <MudIconButton Icon="@DwisIcons.Create" Color="Color.Primary" Size="Size.Small" OnClick="OnCreate" Disabled="IsBusy" />
+            </MudTooltip>
+        }
+    }
+    else if (Container.IsRunning)
+    {
+        <MudTooltip Text="Stop">
+            <MudIconButton Icon="@DwisIcons.Stop" Color="Color.Error" Size="Size.Small" OnClick="Stop" Disabled="IsBusy" />
+        </MudTooltip>
+    }
+    else
+    {
+        <MudTooltip Text="Start">
+            <MudIconButton Icon="@DwisIcons.Start" Color="Color.Success" Size="Size.Small" OnClick="Start" Disabled="IsBusy" />
+        </MudTooltip>
+    }
+
+    <MudTooltip Text="Restart">
+        <MudIconButton Icon="@DwisIcons.Restart" Color="Color.Warning" Size="Size.Small" OnClick="Restart" Disabled="@(IsBusy || Container is null || !Container.IsRunning)" />
+    </MudTooltip>
+    <MudTooltip Text="Logs">
+        <MudIconButton Icon="@DwisIcons.Logs" Size="Size.Small" OnClick="ShowLogs" Disabled="@(Container is null)" />
+    </MudTooltip>
+    @if (OnUpdateImage.HasDelegate)
+    {
+        <MudTooltip Text="@(Container is null ? "Pull image and create" : "Update image and recreate")">
+            <MudIconButton Icon="@DwisIcons.Update" Color="Color.Info" Size="Size.Small" OnClick="OnUpdateImage" Disabled="IsBusy" />
+        </MudTooltip>
+    }
+    <MudTooltip Text="Delete container">
+        <MudIconButton Icon="@DwisIcons.Delete" Size="Size.Small" OnClick="Delete" Disabled="@(IsBusy || Container is null)" />
+    </MudTooltip>
+</span>
+
+@code {
+    [Parameter] public ContainerInfo? Container { get; set; }
+    [Parameter] public string BusyKey { get; set; } = "";
+    [Parameter] public EventCallback OnCreate { get; set; }
+    [Parameter] public EventCallback OnUpdateImage { get; set; }
+    [Parameter] public string? DeleteWarning { get; set; }
+
+    private bool Busy => Actions.IsBusyWith(BusyKey) || (Container is not null && Snapshot.IsBusy(Container.Id));
+
+    private Task Start() => RunAsync(ct => Modules.StartAsync(Container!.Id, ct), $"{Container!.Name} started.", $"Starting {Container!.Name}", BusyKey);
+    private Task Stop() => RunAsync(ct => Modules.StopAsync(Container!.Id, ct), $"{Container!.Name} stopped.", $"Stopping {Container!.Name}", BusyKey);
+    private Task Restart() => RunAsync(ct => Modules.RestartAsync(Container!.Id, ct), $"{Container!.Name} restarted.", $"Restarting {Container!.Name}", BusyKey);
+    private Task ShowLogs() => LogsDialog.ShowAsync(Dialogs, Container!.Id, Container!.Name);
+
+    private async Task Delete()
+    {
+        var message = $"Delete the container '{Container!.Name}'?";
+        if (Container.IsRunning) message += "\nIt is running and will be stopped first.";
+        if (DeleteWarning is not null) message += "\n" + DeleteWarning;
+        if (!await ConfirmAsync("Delete container", message)) return;
+        await RunAsync(ct => Modules.DeleteAsync(Container!.Id, ct), $"{Container!.Name} deleted.", $"Deleting {Container!.Name}", BusyKey);
+    }
+}

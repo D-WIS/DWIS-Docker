@@ -1,0 +1,176 @@
+@* One SignalR hub: connection, its groups, and group management. *@
+@inherits DwisComponentBase
+
+<MudCard Elevation="1" Class="dwis-hub-card">
+    <MudCardHeader>
+        <CardHeaderAvatar>
+            <MudIcon Icon="@DwisIcons.Hub" Color="Color.Primary" />
+        </CardHeaderAvatar>
+        <CardHeaderContent>
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.h6">@Hub.Hub.Name</MudText>
+                <StateChip Look="DwisStates.Hub(Hub.Status)" />
+                @if (IsTarget)
+                {
+                    <MudChip T="string" Icon="@DwisIcons.Target" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">target</MudChip>
+                }
+            </MudStack>
+            <span class="dwis-hub-url">@Hub.Hub.Endpoint</span>
+            @if (Hub.Error is not null)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Error">@Hub.Error</MudText>
+            }
+        </CardHeaderContent>
+        <CardHeaderActions>
+            @if (Hub.IsConnected)
+            {
+                <MudTooltip Text="Disconnect"><MudIconButton Icon="@DwisIcons.Disconnected" OnClick="Disconnect" Disabled="IsBusy" /></MudTooltip>
+            }
+            else
+            {
+                <MudTooltip Text="Connect"><MudIconButton Icon="@DwisIcons.Connected" Color="Color.Success" OnClick="Connect" Disabled="@(IsBusy || Hub.Status == HubConnectionStatus.Connecting)" /></MudTooltip>
+            }
+            <MudTooltip Text="Refresh groups"><MudIconButton Icon="@DwisIcons.Refresh" OnClick="RefreshGroups" Disabled="@(!Hub.IsConnected)" /></MudTooltip>
+            <MudTooltip Text="@(IsTarget ? "This hub is the replication target" : "Remove hub")">
+                <MudIconButton Icon="@DwisIcons.Remove" OnClick="RemoveHub" Disabled="@(IsBusy || IsTarget)" />
+            </MudTooltip>
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudTable T="HubGroupInfo" Items="Hub.Groups" Dense Elevation="0" Hover HorizontalScrollbar>
+            <HeaderContent>
+                <MudTh>Group</MudTh>
+                <MudTh>Connections</MudTh>
+                <MudTh>Local blackboards</MudTh>
+                <MudTh Style="width: 1%"></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Group">
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@DwisIcons.Group" Size="Size.Small" Color="Color.Primary" />
+                        <span>@context.Name</span>
+                        @if (context.IsLocalOnly)
+                        {
+                            <MudTooltip Text="Not on the hub yet. It appears there once a blackboard joins it."><MudChip T="string" Size="Size.Small" Variant="Variant.Text">pending</MudChip></MudTooltip>
+                        }
+                        @if (IsTarget && context.Name == AppSettings.ReplicationGroup)
+                        {
+                            <MudChip T="string" Icon="@DwisIcons.Target" Color="Color.Primary" Variant="Variant.Text" Size="Size.Small">target</MudChip>
+                        }
+                    </MudStack>
+                </MudTd>
+                <MudTd DataLabel="Connections">@context.ConnectionCount</MudTd>
+                <MudTd DataLabel="Local blackboards">@LocalCount(context.Name)</MudTd>
+                <MudTd>
+                    <span class="dwis-actions">
+                        <MudTooltip Text="Use as replication target">
+                            <MudIconButton Icon="@DwisIcons.Target" Size="Size.Small" Color="Color.Primary" OnClick="@(() => UseAsTarget(context.Name))" Disabled="IsBusy" />
+                        </MudTooltip>
+                        <MudTooltip Text="Set write password">
+                            <MudIconButton Icon="@DwisIcons.Password" Size="Size.Small" OnClick="@(() => OpenPassword(context.Name))" Disabled="@(IsBusy || !Hub.IsConnected)" />
+                        </MudTooltip>
+                        <MudTooltip Text="Clear manifests">
+                            <MudIconButton Icon="@DwisIcons.ClearManifests" Size="Size.Small" Color="Color.Warning" OnClick="@(() => ClearManifests(context.Name))" Disabled="@(IsBusy || !Hub.IsConnected)" />
+                        </MudTooltip>
+                    </span>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="pa-2">@(Hub.IsConnected ? "No groups on this hub yet." : "Connect to see the groups.")</MudText>
+            </NoRecordsContent>
+        </MudTable>
+
+        @if (_passwordFor is not null)
+        {
+            <MudPaper Elevation="0" Class="pa-2 mt-2" Style="background: #f7f8fc; border-radius: 8px">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudText Typo="Typo.body2">Password for <b>@_passwordFor</b></MudText>
+                    <MudTextField @bind-Value="_password" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" Style="max-width: 220px" />
+                    <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" OnClick="SetPassword" Disabled="@(IsBusy || string.IsNullOrEmpty(_password))">Set</MudButton>
+                    <MudButton Size="Size.Small" OnClick="@(() => _passwordFor = null)">Cancel</MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudCardContent>
+    <MudCardActions>
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="px-2 pb-1" Style="width: 100%">
+            <MudTextField @bind-Value="_newGroup" Label="New group" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_newGroupPassword" Label="Password (optional)" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" />
+            <MudButton StartIcon="@DwisIcons.Add" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" OnClick="CreateGroup" Disabled="@(IsBusy || string.IsNullOrWhiteSpace(_newGroup))">Create</MudButton>
+        </MudStack>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired] public HubState Hub { get; set; } = default!;
+
+    private string? _passwordFor;
+    private string? _password;
+    private string _newGroup = "";
+    private string? _newGroupPassword;
+
+    private bool IsTarget => AppSettings.ReplicationEnabled && AppSettings.ReplicationHubId == Hub.Hub.Id;
+
+    private string LocalCount(string group)
+    {
+        var mine = Snapshot.Blackboards.Where(b =>
+            string.Equals(b.HubUrl?.TrimEnd('/'), Hub.Hub.BaseUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase) && b.Group == group).ToList();
+        return mine.Count == 0 ? "–" : $"{mine.Count(b => b.Container.IsRunning)} / {mine.Count}";
+    }
+
+    private Task Connect() => RunAsync(ct => Hubs.ConnectAsync(Hub.Hub.Id, ct), $"Connected to {Hub.Hub.Name}.", $"Connecting to {Hub.Hub.Name}");
+    private Task Disconnect() => RunAsync(ct => Hubs.DisconnectAsync(Hub.Hub.Id, ct), null, $"Disconnecting from {Hub.Hub.Name}");
+    private Task RefreshGroups() => Actions.QueryAsync(async ct => { await Hubs.RefreshGroupsAsync(Hub.Hub.Id, ct); return true; });
+
+    private async Task RemoveHub()
+    {
+        if (!await ConfirmAsync("Remove hub", $"Remove '{Hub.Hub.Name}' from the list of hubs?", "Remove")) return;
+        var s = AppSettings.Clone();
+        s.Hubs.RemoveAll(h => h.Id == Hub.Hub.Id);
+        await RunAsync(ct => Settings.SaveAsync(s, ct), $"{Hub.Hub.Name} removed.");
+    }
+
+    private async Task UseAsTarget(string group)
+    {
+        var s = AppSettings.Clone();
+        s.ReplicationEnabled = true;
+        s.ReplicationHubId = Hub.Hub.Id;
+        s.ReplicationGroup = group;
+        await RunAsync(ct => Settings.SaveAsync(s, ct), $"Replication target is now {Hub.Hub.Name} / {group}.");
+    }
+
+    private void OpenPassword(string group)
+    {
+        _passwordFor = group;
+        _password = null;
+    }
+
+    private async Task SetPassword()
+    {
+        var group = _passwordFor!;
+        var ok = await RunAsync(ct => Hubs.SetGroupPasswordAsync(Hub.Hub.Id, group, _password!, ct), $"Password set for group '{group}'.", "Setting group password");
+        if (ok) _passwordFor = null;
+    }
+
+    private async Task ClearManifests(string group)
+    {
+        if (!await ConfirmAsync("Clear manifests", $"Clear all manifests of group '{group}' on {Hub.Hub.Name}?", "Clear", Color.Warning)) return;
+        await RunAsync(async ct =>
+        {
+            var done = await Hubs.ClearGroupManifestsAsync(Hub.Hub.Id, group, ct);
+            if (!done) throw new DwisDockerException($"The hub refused to clear the manifests of '{group}'.");
+        }, $"Manifests of '{group}' cleared.", "Clearing manifests");
+    }
+
+    private async Task CreateGroup()
+    {
+        var name = _newGroup.Trim();
+        var ok = await RunAsync(ct => Hubs.CreateGroupAsync(Hub.Hub.Id, name, string.IsNullOrEmpty(_newGroupPassword) ? null : _newGroupPassword, ct),
+            $"Group '{name}' created.", $"Creating group {name}");
+        if (ok)
+        {
+            _newGroup = "";
+            _newGroupPassword = null;
+        }
+    }
+}

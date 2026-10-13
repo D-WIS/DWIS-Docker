@@ -1,0 +1,115 @@
+@implements IDisposable
+@inject IModuleManager Modules
+@inject IPlatformServices Platform
+@inject UiActionRunner Actions
+@inject IJSRuntime Js
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@DwisIcons.Logs" />
+            <MudText Typo="Typo.h6">@ContainerName</MudText>
+            <MudText Typo="Typo.caption">logs</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+            <MudSelect T="int" Value="_tail" ValueChanged="OnTailChanged" Label="Lines" Dense Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width: 120px">
+                <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                <MudSelectItem T="int" Value="500">500</MudSelectItem>
+                <MudSelectItem T="int" Value="2000">2 000</MudSelectItem>
+                <MudSelectItem T="int" Value="10000">10 000</MudSelectItem>
+            </MudSelect>
+            <MudSwitch T="bool" Value="_follow" ValueChanged="OnFollowChanged" Label="Follow" Color="Color.Primary" />
+            <MudSpacer />
+            <MudIconButton Icon="@DwisIcons.Copy" OnClick="Copy" title="Copy logs" />
+            <MudIconButton Icon="@DwisIcons.Refresh" OnClick="Load" title="Refresh" Disabled="_loading" />
+        </MudStack>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense Class="mb-2">@_error</MudAlert>
+        }
+        @if (_loading && _logs is null)
+        {
+            <MudProgressLinear Indeterminate Color="Color.Primary" Class="mb-2" />
+        }
+        <pre id="@_elementId" class="dwis-logs">@(_logs ?? "")</pre>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => Dialog.Close())">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+    [Parameter, EditorRequired] public string ContainerId { get; set; } = "";
+    [Parameter, EditorRequired] public string ContainerName { get; set; } = "";
+
+    private readonly string _elementId = "logs-" + Guid.NewGuid().ToString("N")[..8];
+    private string? _logs;
+    private string? _error;
+    private bool _loading;
+    private bool _follow;
+    private int _tail = 500;
+    private Timer? _timer;
+
+    protected override Task OnInitializedAsync() => Load();
+
+    private async Task Load()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _logs = await Modules.GetLogsAsync(ContainerId, _tail);
+        }
+        catch (Exception ex)
+        {
+            _error = ex is DwisDockerException d ? d.UserMessage : ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+        try { await Js.InvokeVoidAsync("dwis.scrollToBottom", _elementId); } catch (JSException) { }
+    }
+
+    private Task OnTailChanged(int tail)
+    {
+        _tail = tail;
+        return Load();
+    }
+
+    private Task OnFollowChanged(bool follow)
+    {
+        _follow = follow;
+        _timer?.Dispose();
+        _timer = follow ? new Timer(_ => _ = InvokeAsync(Load), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3)) : null;
+        return Task.CompletedTask;
+    }
+
+    private async Task Copy()
+    {
+        var ok = await Platform.CopyToClipboardAsync(_logs ?? "");
+        Actions.Notify(ok ? "Logs copied to clipboard." : "Could not copy to the clipboard.", ok ? Severity.Success : Severity.Warning);
+    }
+
+    public void Dispose() => _timer?.Dispose();
+
+    public static Task ShowAsync(IDialogService dialogs, string containerId, string containerName)
+    {
+        var parameters = new DialogParameters<LogsDialog>
+        {
+            { x => x.ContainerId, containerId },
+            { x => x.ContainerName, containerName }
+        };
+        return dialogs.ShowAsync<LogsDialog>("Logs", parameters, new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.ExtraLarge,
+            FullWidth = true
+        });
+    }
+}

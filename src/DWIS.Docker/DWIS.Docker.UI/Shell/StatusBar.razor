@@ -1,0 +1,61 @@
+@* Bottom bar: Docker endpoint, replication target, settings and self-update. *@
+@inherits DwisComponentBase
+@inject IDockerService Docker
+
+<MudAppBar Bottom Fixed Dense Elevation="2" Class="dwis-statusbar">
+    <MudTooltip Text="@(Snapshot.Engine.Reachable ? $"Docker {Snapshot.Engine.Version} ({Snapshot.Engine.OsType})" : Snapshot.Engine.Error ?? "")">
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+            <span class="dwis-dot @(Snapshot.Engine.Reachable ? "dwis-dot-ok" : "dwis-dot-bad")"></span>
+            <MudIcon Icon="@DwisIcons.Docker" Size="Size.Small" />
+            <MudText Typo="Typo.caption">@Docker.EndpointDescription</MudText>
+        </MudStack>
+    </MudTooltip>
+
+    <MudDivider Vertical FlexItem Class="mx-3" Style="opacity: .4" />
+
+    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+        <MudIcon Icon="@(Replicating ? DwisIcons.Replication : DwisIcons.ReplicationOff)" Size="Size.Small" />
+        <MudText Typo="Typo.caption">
+            @if (Replicating)
+            {
+                <span>@AppSettings.ReplicationHub!.Name / @AppSettings.ReplicationGroup</span>
+            }
+            else
+            {
+                <span>Replication off</span>
+            }
+        </MudText>
+    </MudStack>
+
+    <MudSpacer />
+
+    @if (Snapshot.TakenAt > DateTimeOffset.MinValue)
+    {
+        <MudText Typo="Typo.caption" Class="mr-3" Style="opacity: .8">updated @Snapshot.TakenAt.ToLocalTime().ToString("HH:mm:ss")</MudText>
+    }
+
+    <MudTooltip Text="Settings">
+        <MudIconButton Icon="@DwisIcons.Settings" Size="Size.Small" OnClick="OpenSettings" />
+    </MudTooltip>
+    @if (Platform.SupportsSelfUpdate)
+    {
+        <MudTooltip Text="Pull the latest dwis-docker image and restart this application">
+            <MudButton StartIcon="@DwisIcons.UpdateApp" Size="Size.Small" Variant="Variant.Text" OnClick="UpdateApp" Disabled="IsBusy">Update application</MudButton>
+        </MudTooltip>
+    }
+</MudAppBar>
+
+@code {
+    private bool Replicating => AppSettings.ReplicationEnabled && AppSettings.ReplicationHub is not null;
+
+    private Task OpenSettings() => SettingsDialog.ShowAsync(Dialogs);
+
+    private async Task UpdateApp()
+    {
+        var ok = await ConfirmAsync("Update application",
+            "A helper container will pull the latest dwis-docker image and recreate this application's container.\nThis page will stop responding for a minute. Reload it afterwards.",
+            "Update", Color.Info);
+        if (!ok) return;
+        await Actions.RunAsync(ct => Modules.UpdateApplicationAsync(ct), "Updater started. Reload this page in a minute.", "Launching the updater", refreshAfter: false);
+    }
+}
