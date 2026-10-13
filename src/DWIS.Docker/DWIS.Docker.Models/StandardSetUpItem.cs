@@ -56,16 +56,16 @@ namespace DWIS.Docker.Models
                 ConfigurationRequired = false
             });
 
-            standardSetUpItems.Add(new StandardSetUpItem
-            {
-                ModuleDisplayName = "Local Blackboard",
-                ModuleGroup = BlackBoardGroup,
-                ImageName = DWIS.Docker.Constants.Names.BLACKBOARD_NOTAG,
-                ImageTag = DWIS.Docker.Constants.Names.LATEST_TAG,
-                DefaultContainerName = Names.LOCAL_BLACKBOARD_CONTAINER_NAME,
-                BlackBoardPort = "48031",
-                ConfigurationRequired = false
-            });
+            //standardSetUpItems.Add(new StandardSetUpItem
+            //{
+            //    ModuleDisplayName = "Local Blackboard",
+            //    ModuleGroup = BlackBoardGroup,
+            //    ImageName = DWIS.Docker.Constants.Names.BLACKBOARD_NOTAG,
+            //    ImageTag = DWIS.Docker.Constants.Names.LATEST_TAG,
+            //    DefaultContainerName = Names.LOCAL_BLACKBOARD_CONTAINER_NAME,
+            //    BlackBoardPort = "48031",
+            //    ConfigurationRequired = false
+            //});
 
             //scheduler
             standardSetUpItems.Add(new StandardSetUpItem
