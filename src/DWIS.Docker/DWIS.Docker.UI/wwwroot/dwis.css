@@ -1,0 +1,186 @@
+/* D-WIS Docker shared styles. Loaded by both hosts as _content/DWIS.Docker.UI/dwis.css */
+
+:root {
+    --dwis-primary: #052767;
+    --dwis-secondary: #3a0647;
+    --dwis-gradient: linear-gradient(90deg, #052767 0%, #3a0647 100%);
+    --dwis-head: #eef1f8;
+    --dwis-border: #e1e5ee;
+    --dwis-mono: "Cascadia Mono", "Consolas", "SFMono-Regular", "Menlo", monospace;
+}
+
+html, body {
+    margin: 0;
+    background: #f2f4f8;
+}
+
+.dwis-root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.dwis-main {
+    flex: 1 1 auto;
+    padding: 12px 16px 56px 16px;
+    max-width: 1500px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* toolbar */
+.dwis-toolbar {
+    background: var(--dwis-gradient);
+    color: #fff;
+    min-height: 60px;
+    padding: 0 16px;
+}
+
+.dwis-toolbar .mud-icon-button,
+.dwis-toolbar .mud-typography {
+    color: #fff;
+}
+
+.dwis-logo {
+    background: #fff;
+    border-radius: 8px;
+    padding: 4px 8px;
+    height: 44px;
+    margin-right: 14px;
+}
+
+.dwis-title {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.dwis-title-accent {
+    font-weight: 300;
+    opacity: 0.85;
+}
+
+/* status bar */
+.dwis-statusbar {
+    background: var(--dwis-gradient);
+    color: #fff;
+}
+
+.dwis-statusbar .mud-typography,
+.dwis-statusbar .mud-icon-root,
+.dwis-statusbar .mud-button-root {
+    color: #fff;
+}
+
+.dwis-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.dwis-dot-ok { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+.dwis-dot-bad { background: #f87171; box-shadow: 0 0 6px #f87171; }
+
+/* cards and tables */
+.dwis-card {
+    background: #fff;
+    border: 1px solid var(--dwis-border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.dwis-card-title {
+    color: var(--dwis-primary);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.dwis-main-tabs .mud-tabs-panels {
+    background: transparent;
+}
+
+.dwis-main-tabs > .mud-tabs-toolbar {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid var(--dwis-border);
+    margin-bottom: 12px;
+}
+
+.mud-table-head .mud-table-cell {
+    background: var(--dwis-head);
+    font-weight: 600;
+}
+
+.dwis-group-header .mud-table-cell {
+    background: #f7f8fc;
+    color: var(--dwis-primary);
+    font-weight: 600;
+}
+
+.dwis-caption {
+    color: #5a6270;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    display: block;
+}
+
+.dwis-nowrap {
+    white-space: nowrap;
+}
+
+.dwis-chip {
+    white-space: nowrap;
+}
+
+.dwis-actions {
+    display: inline-flex;
+    gap: 2px;
+    white-space: nowrap;
+}
+
+.dwis-busy-bar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+/* logs */
+.dwis-logs {
+    font-family: var(--dwis-mono);
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: #1c2333;
+    color: #e6e8ee;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 0;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+/* config editor */
+.dwis-config textarea {
+    font-family: var(--dwis-mono) !important;
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+}
+
+.dwis-child-row {
+    background: #fafbfe;
+}
+
+.dwis-hub-card {
+    height: 100%;
+}
+
+.dwis-hub-url {
+    font-family: var(--dwis-mono);
+    font-size: 0.75rem;
+    color: #5a6270;
+    word-break: break-all;
+}

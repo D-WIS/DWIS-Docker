@@ -1,0 +1,93 @@
+@* Docker endpoint, host volumes root, blackboard host IP and polling. Works on a copy; Cancel discards. *@
+@inject ISettingsStore Settings
+@inject HostEnvironment Env
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@DwisIcons.Settings" />
+            <MudText Typo="Typo.h6">Settings</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_edit.DockerEndpoint" Label="Docker API endpoint" Variant="Variant.Outlined"
+                          Placeholder="leave empty for the default socket" Adornment="Adornment.Start" AdornmentIcon="@DwisIcons.Docker"
+                          HelperText="For example http://localhost:2375 or npipe://./pipe/docker_engine. Empty = default engine socket." />
+
+            <MudTextField @bind-Value="_edit.HostVolumesRoot" Label="Host volumes root" Variant="Variant.Outlined"
+                          Placeholder="@(Env.HostVolumesRootIsKnown ? Env.DefaultHostVolumesRoot : "not detected, please set")"
+                          Adornment="Adornment.Start" AdornmentIcon="@DwisIcons.Folder"
+                          HelperText="@HostRootHelp" />
+
+            <MudTextField @bind-Value="_edit.BlackboardHostIp" Label="Blackboard host IP" Variant="Variant.Outlined"
+                          HelperText="Given to modules as BLACKBOARD_IP so they can reach the blackboard. host.docker.internal works with Docker Desktop." />
+
+            <MudStack Row Spacing="3">
+                <MudNumericField T="int" Value="_pollSeconds" ValueChanged="@(v => _pollSeconds = v)" Label="Polling interval (s)" Min="1" Max="300" Variant="Variant.Outlined" />
+                <MudNumericField T="int" @bind-Value="_edit.LogTailLines" Label="Default log lines" Min="10" Max="100000" Variant="Variant.Outlined" />
+            </MudStack>
+
+            @if (Settings.FilePath is not null)
+            {
+                <MudText Typo="Typo.caption">Stored in <code>@Settings.FilePath</code></MudText>
+            }
+            @if (_errors.Count > 0)
+            {
+                <MudAlert Severity="Severity.Error" Dense>@string.Join(" ", _errors)</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => Dialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@DwisIcons.Save" OnClick="Save" Disabled="_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    private AppSettings _edit = new();
+    private int _pollSeconds;
+    private bool _saving;
+    private IReadOnlyList<string> _errors = [];
+
+    private string HostRootHelp => Env.IsInContainer
+        ? "Folder on the HOST that is mounted on /home of this container (bind-mount source for module config folders). Detected: " + (Env.HostVolumesRootIsKnown ? Env.DefaultHostVolumesRoot : "nothing")
+        : "Folder that holds one sub-folder per module with its config.json. Default: " + Env.DefaultHostVolumesRoot;
+
+    protected override void OnInitialized()
+    {
+        _edit = Settings.Current.Clone();
+        _pollSeconds = (int)Math.Round(_edit.PollingInterval.TotalSeconds);
+    }
+
+    private async Task Save()
+    {
+        _edit.PollingInterval = TimeSpan.FromSeconds(Math.Clamp(_pollSeconds, 1, 300));
+        _edit.DockerEndpoint = string.IsNullOrWhiteSpace(_edit.DockerEndpoint) ? null : _edit.DockerEndpoint.Trim();
+        _edit.HostVolumesRoot = string.IsNullOrWhiteSpace(_edit.HostVolumesRoot) ? null : _edit.HostVolumesRoot.Trim();
+        _errors = _edit.Validate();
+        if (_errors.Count > 0) return;
+
+        _saving = true;
+        try
+        {
+            await Settings.SaveAsync(_edit);
+            Snackbar.Add("Settings saved.", Severity.Success);
+            Dialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            _errors = [ex is DwisDockerException d ? d.UserMessage : ex.Message];
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    public static Task ShowAsync(IDialogService dialogs) =>
+        dialogs.ShowAsync<SettingsDialog>("Settings", new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+}

@@ -1,0 +1,79 @@
+@* Every blackboard container on the engine, plus a form to create more. *@
+@inherits DwisComponentBase
+
+<MudExpansionPanels Elevation="1" Class="mb-3">
+    <MudExpansionPanel @bind-Expanded="_createOpen">
+        <TitleContent>
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@DwisIcons.Create" Color="Color.Primary" />
+                <MudText>Create blackboard</MudText>
+            </MudStack>
+        </TitleContent>
+        <ChildContent>
+            <CreateBlackboardForm Created="@(() => _createOpen = false)" />
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+<MudTable T="BlackboardInfo" Items="Snapshot.Blackboards" Dense Hover Elevation="1" HorizontalScrollbar>
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Blackboards</MudText>
+        <MudText Typo="Typo.caption" Class="ml-3">@Snapshot.Blackboards.Count(b => b.Container.IsRunning) / @Snapshot.Blackboards.Count running</MudText>
+        <MudSpacer />
+        <MudTooltip Text="Refresh now">
+            <MudIconButton Icon="@DwisIcons.Refresh" Size="Size.Small" OnClick="Refresh" Disabled="IsBusy" />
+        </MudTooltip>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>State</MudTh>
+        <MudTh>Replication</MudTh>
+        <MudTh>OPC UA endpoint</MudTh>
+        <MudTh Style="width: 1%">Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">
+            <MudText Typo="Typo.body2"><b>@context.Container.Name</b></MudText>
+            <span class="dwis-caption">@context.Container.ImageRef</span>
+        </MudTd>
+        <MudTd DataLabel="State">
+            <StateChip Look="DwisStates.Container(context.Container)" />
+            @if (context.IsLegacy)
+            {
+                <StateChip Look="@(new StateLook(DwisIcons.Legacy, Color.Default, "Old format", "Created by a previous version. Update the image to migrate it."))" />
+            }
+        </MudTd>
+        <MudTd DataLabel="Replication">
+            <ReplicationChip Replicating="context.IsReplicating" HubUrl="@context.HubUrl" Group="@context.Group" />
+        </MudTd>
+        <MudTd DataLabel="Endpoint">
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="0">
+                <code>opc.tcp://localhost:@context.Port</code>
+                <MudIconButton Icon="@DwisIcons.Copy" Size="Size.Small" OnClick="@(() => CopyAsync($"opc.tcp://localhost:{context.Port}", "Endpoint copied"))" title="Copy" />
+            </MudStack>
+        </MudTd>
+        <MudTd DataLabel="Actions">
+            <ContainerActions Container="context.Container" BusyKey="@context.Container.Id"
+                              OnUpdateImage="@(() => UpdateImage(context))"
+                              DeleteWarning="@(context.IsReplicating ? "It will leave its hub group." : null)" />
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body2" Class="pa-4">No blackboard container exists yet. Create one above or from the Standard setup tab.</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private bool _createOpen;
+
+    private Task Refresh() => Actions.QueryAsync(async ct => { await Status.RefreshAsync(ct); return true; });
+
+    private async Task UpdateImage(BlackboardInfo bb)
+    {
+        var ok = await ConfirmAsync("Update image",
+            $"Pull the latest {bb.Container.ImageRef} and recreate '{bb.Container.Name}' with the same port, hub and group?",
+            "Update", Color.Info);
+        if (!ok) return;
+        await RunAsync(ct => Modules.UpdateBlackboardImageAsync(bb, Actions.Progress, ct), $"{bb.Container.Name} updated.", $"Updating {bb.Container.Name}", bb.Container.Id);
+    }
+}

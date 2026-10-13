@@ -1,0 +1,105 @@
+@* Form to create an extra blackboard container. *@
+@inherits DwisComponentBase
+
+<MudForm @ref="_form">
+    <MudGrid Spacing="2" Justify="Justify.FlexStart">
+        <MudItem xs="12" md="4">
+            <MudTextField @bind-Value="_name" Label="Container name" Variant="Variant.Outlined" Margin="Margin.Dense" Required
+                          Validation="@((string s) => NameValid(s) ? null : "Letters, digits, '-', '_' and '.' only")" />
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudNumericField @bind-Value="_port" Label="Port" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1024" Max="65535"
+                             Validation="@((int p) => PortFree(p) ? null : "Used by another blackboard")" />
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudSwitch T="bool" @bind-Value="_replicate" Label="Replicate" Color="Color.Primary" />
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudSwitch T="bool" @bind-Value="_start" Label="Start after create" Color="Color.Primary" />
+        </MudItem>
+        <MudItem xs="6" md="2" Class="d-flex justify-end">
+            <MudButton StartIcon="@DwisIcons.Create" Color="Color.Primary" Variant="Variant.Filled" OnClick="Create" Disabled="IsBusy">Create</MudButton>
+        </MudItem>
+        @if (_replicate)
+        {
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" @bind-Value="_hubId" Label="Hub" Variant="Variant.Outlined" Margin="Margin.Dense" Required>
+                    @foreach (var h in Hubs.Hubs)
+                    {
+                        <MudSelectItem T="string" Value="@h.Hub.Id">@h.Hub.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudAutocomplete T="string" @bind-Value="_group" Label="Group" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                 SearchFunc="SearchGroups" CoerceText="false" CoerceValue="true" Clearable ResetValueOnEmptyText="false" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="_password" Label="Group write password" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              InputType="@(_showPwd ? InputType.Text : InputType.Password)"
+                              Adornment="Adornment.End" AdornmentIcon="@(_showPwd ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => _showPwd = !_showPwd)" />
+            </MudItem>
+        }
+    </MudGrid>
+</MudForm>
+
+@code {
+    [Parameter] public EventCallback Created { get; set; }
+
+    private MudForm? _form;
+    private string _name = "";
+    private int _port;
+    private bool _replicate;
+    private bool _start = true;
+    private string? _hubId;
+    private string _group = "default";
+    private string? _password;
+    private bool _showPwd;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Suggest();
+    }
+
+    private void Suggest()
+    {
+        var s = AppSettings;
+        _replicate = s.ReplicationEnabled && s.ReplicationHub is not null;
+        _hubId = s.ReplicationHubId ?? Hubs.Hubs.FirstOrDefault()?.Hub.Id;
+        _group = s.ReplicationGroup;
+        var suggestion = Modules.SuggestBlackboard(_replicate ? _hubId : null, _group);
+        _name = suggestion.ContainerName;
+        _port = suggestion.Port;
+        _password = suggestion.WritePassword;
+    }
+
+    private static bool NameValid(string s) =>
+        !string.IsNullOrWhiteSpace(s) && System.Text.RegularExpressions.Regex.IsMatch(s, "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$");
+
+    private bool PortFree(int p) => Snapshot.Blackboards.All(b => b.Port != p);
+
+    private Task<IEnumerable<string>> SearchGroups(string value, CancellationToken ct)
+    {
+        var groups = Hubs.Find(_hubId ?? "")?.Groups.Select(g => g.Name) ?? [];
+        return Task.FromResult(groups.Where(g => string.IsNullOrEmpty(value) || g.Contains(value, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private async Task Create()
+    {
+        if (_form is not null)
+        {
+            await _form.Validate();
+            if (!_form.IsValid) return;
+        }
+        var spec = new BlackboardSpec(_name.Trim(), _port, _replicate ? _hubId : null, _replicate ? _group : null,
+            _replicate ? _password : null, _start);
+        var ok = await RunAsync(ct => Modules.CreateBlackboardAsync(spec, Actions.Progress, ct), $"Blackboard '{spec.ContainerName}' created.", $"Creating blackboard {spec.ContainerName}", spec.ContainerName);
+        if (ok)
+        {
+            Suggest();
+            await Created.InvokeAsync();
+        }
+    }
+}

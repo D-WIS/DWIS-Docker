@@ -1,0 +1,12 @@
+@* One chip for every state: container, image, config, hub. *@
+<MudTooltip Text="@(Look.Tooltip ?? "")" Disabled="@(string.IsNullOrEmpty(Look.Tooltip))">
+    <MudChip T="string" Icon="@Look.Icon" Color="@Look.Color" Variant="Variant.Text" Size="@Size" Class="dwis-chip" OnClick="OnClick">
+        @Look.Text
+    </MudChip>
+</MudTooltip>
+
+@code {
+    [Parameter, EditorRequired] public StateLook Look { get; set; } = default!;
+    [Parameter] public Size Size { get; set; } = Size.Small;
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+}

@@ -1,0 +1,81 @@
+@* Root of the app. Both hosts render exactly this. *@
+@inherits DwisComponentBase
+
+<MudThemeProvider Theme="DwisTheme.Theme" />
+<MudPopoverProvider />
+<MudDialogProvider CloseOnEscapeKey="true" BackdropClick="false" />
+<MudSnackbarProvider />
+
+<CascadingValue Value="this" IsFixed="true">
+<div class="dwis-root">
+    <MudToolBar Class="dwis-toolbar" Dense="false">
+        <MudImage Src="_content/DWIS.Docker.UI/img/dwis-logo.png" Height="40" Class="dwis-logo" Alt="D-WIS" />
+        <MudText Typo="Typo.h5" Class="dwis-title">D-WIS <span class="dwis-title-accent">Docker</span></MudText>
+        <MudSpacer />
+        @if (!Snapshot.Engine.Reachable)
+        {
+            <MudChip T="string" Icon="@DwisIcons.Error" Color="Color.Error" Variant="Variant.Filled" Size="Size.Small">Docker unreachable</MudChip>
+        }
+        <MudTooltip Text="Refresh now">
+            <MudIconButton Icon="@DwisIcons.Refresh" OnClick="Refresh" />
+        </MudTooltip>
+        <MudTooltip Text="Settings">
+            <MudIconButton Icon="@DwisIcons.Settings" OnClick="@(() => SettingsDialog.ShowAsync(Dialogs))" />
+        </MudTooltip>
+    </MudToolBar>
+
+    <BusyBar />
+
+    <div class="dwis-main">
+        @if (!Snapshot.Engine.Reachable && Snapshot.Engine.Error is { } error)
+        {
+            <MudAlert Severity="Severity.Error" Dense Class="mb-3" Icon="@DwisIcons.Error">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <span>@error</span>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => SettingsDialog.ShowAsync(Dialogs))">Open settings</MudButton>
+                </MudStack>
+            </MudAlert>
+        }
+
+        <MudTabs @bind-ActivePanelIndex="_activeTab" Elevation="0" Rounded KeepPanelsAlive="false" Class="dwis-main-tabs" PanelClass="pt-2">
+            <MudTabPanel Text="Replication" Icon="@DwisIcons.TabReplication">
+                <ReplicationTab />
+            </MudTabPanel>
+            <MudTabPanel Text="Standard setup" Icon="@DwisIcons.TabStandard">
+                <StandardSetupTab />
+            </MudTabPanel>
+            <MudTabPanel Text="Blackboards" Icon="@DwisIcons.TabBlackboards">
+                <BlackboardsTab />
+            </MudTabPanel>
+            <MudTabPanel Text="DWIS modules" Icon="@DwisIcons.TabModules">
+                <ModulesTab />
+            </MudTabPanel>
+            <MudTabPanel Text="Clients" Icon="@DwisIcons.TabClients">
+                <ModuleTable Categories="@([ModuleCategory.Client])" ShowConfig Title="Client applications" />
+            </MudTabPanel>
+            <MudTabPanel Text="Advisors" Icon="@DwisIcons.TabAdvisors">
+                <ModuleTable Categories="@([ModuleCategory.Advisor])" ShowConfig Title="Advisors" />
+            </MudTabPanel>
+        </MudTabs>
+    </div>
+
+    <StatusBar />
+</div>
+</CascadingValue>
+
+@code {
+    public const int TabReplication = 0;
+    public const int TabStandardSetup = 1;
+    public const int TabBlackboards = 2;
+
+    private int _activeTab = TabStandardSetup;
+
+    /// <summary>Lets tabs jump to another tab (for example "configure replication").</summary>
+    public void ActivateTab(int index)
+    {
+        _activeTab = index;
+        Rerender();
+    }
+
+    private Task Refresh() => Actions.QueryAsync(async ct => { await Status.RefreshAsync(ct); return true; });
+}
