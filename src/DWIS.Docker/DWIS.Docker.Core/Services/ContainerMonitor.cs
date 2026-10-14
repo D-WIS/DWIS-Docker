@@ -28,6 +28,7 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
     private readonly RegistryCache _registry;
     private readonly OperationTracker _operations;
     private readonly HostEnvironment _env;
+    private readonly RecordingScanner _recordings;
     private readonly ILogger<ContainerMonitor> _logger;
 
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
@@ -47,6 +48,7 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
         RegistryCache registry,
         OperationTracker operations,
         HostEnvironment env,
+        RecordingScanner recordings,
         ILogger<ContainerMonitor> logger)
     {
         _docker = docker;
@@ -55,6 +57,7 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
         _registry = registry;
         _operations = operations;
         _env = env;
+        _recordings = recordings;
         _logger = logger;
         _operations.Changed += OnOperationsChanged;
         _settings.Changed += (_, _) => Wake();
@@ -240,7 +243,7 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
 
         var settings = _settings.Current;
         var target = settings.ReplicationEnabled ? settings.ReplicationHub : null;
-        var expectedHub = target?.BaseUrl;
+        var expectedHub = target?.UrlForContainers;
         var expectedGroup = target is null ? null : settings.ReplicationGroup;
         var catalogBlackboardNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ModuleCatalog.Blackboard.ContainerName };
         if (expectedGroup is not null)
@@ -303,7 +306,21 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
         if (ModuleCatalog.All.Any(m => !_registry.IsFresh(m.ImageRef)))
             _ = FetchRegistryAsync(force: false, _loopCts?.Token ?? ct);
 
-        return new StatusSnapshot(now, engine, modules, blackboards, _operations.Current);
+        IReadOnlyList<RecordingInfo> recordings;
+        try
+        {
+            recordings = _recordings.Scan(containers);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not scan the recordings folder");
+            recordings = previous.Recordings;
+        }
+
+        var localHubs = ContainerSpecBuilder.ScanLocalHubs(containers);
+        var replications = ContainerSpecBuilder.ScanHubReplications(containers);
+
+        return new StatusSnapshot(now, engine, modules, blackboards, recordings, localHubs, replications, _operations.Current);
     }
 
     /// <summary>

@@ -16,9 +16,30 @@
                 }
             </MudStack>
             <span class="dwis-hub-url">@Hub.Hub.Endpoint</span>
+            @if (Hub.Hub.ContainerBaseUrl is { Length: > 0 } containerUrl)
+            {
+                <br /><span class="dwis-hub-url">containers: @(containerUrl.TrimEnd('/') + HubDefinition.HubPath)</span>
+            }
             @if (Hub.Error is not null)
             {
                 <MudText Typo="Typo.caption" Color="Color.Error">@Hub.Error</MudText>
+            }
+            @if (Local is { } local)
+            {
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1" Wrap="Wrap.Wrap" Class="mt-1">
+                    <MudChip T="string" Icon="@DwisIcons.LocalHub" Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">local container @local.Container.Name</MudChip>
+                    <StateChip Look="DwisStates.Container(local.Container)" />
+                    <MudChip T="string" Icon="@DwisIcons.Port" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">@local.HostPort</MudChip>
+                    @foreach (var s in local.Sources)
+                    {
+                        <MudTooltip Text="@("Source: " + s.Url)"><MudChip T="string" Icon="@DwisIcons.Source" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">@s.Describe()</MudChip></MudTooltip>
+                    }
+                    @foreach (var d in local.Destinations)
+                    {
+                        <MudTooltip Text="@("Destination: " + d.Url)"><MudChip T="string" Icon="@DwisIcons.Destination" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">@d.Describe()</MudChip></MudTooltip>
+                    }
+                    <ContainerActions Container="local.Container" BusyKey="@("hub:" + Hub.Hub.Id)" />
+                </MudStack>
             }
         </CardHeaderContent>
         <CardHeaderActions>
@@ -109,12 +130,15 @@
     private string _newGroup = "";
     private string? _newGroupPassword;
 
+    [Inject] private IHubContainerManager HubContainers { get; set; } = default!;
+
     private bool IsTarget => AppSettings.ReplicationEnabled && AppSettings.ReplicationHubId == Hub.Hub.Id;
+    private LocalHubInfo? Local => Snapshot.LocalHub(Hub.Hub.Id);
 
     private string LocalCount(string group)
     {
         var mine = Snapshot.Blackboards.Where(b =>
-            string.Equals(b.HubUrl?.TrimEnd('/'), Hub.Hub.BaseUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase) && b.Group == group).ToList();
+            Hub.Hub.Matches(b.HubUrl) && b.Group == group).ToList();
         return mine.Count == 0 ? "–" : $"{mine.Count(b => b.Container.IsRunning)} / {mine.Count}";
     }
 
@@ -124,10 +148,11 @@
 
     private async Task RemoveHub()
     {
-        if (!await ConfirmAsync("Remove hub", $"Remove '{Hub.Hub.Name}' from the list of hubs?", "Remove")) return;
-        var s = AppSettings.Clone();
-        s.Hubs.RemoveAll(h => h.Id == Hub.Hub.Id);
-        await RunAsync(ct => Settings.SaveAsync(s, ct), $"{Hub.Hub.Name} removed.");
+        var message = Local is { } local
+            ? $"Remove '{Hub.Hub.Name}' from the list of hubs and delete its container '{local.Container.Name}'?"
+            : $"Remove '{Hub.Hub.Name}' from the list of hubs?";
+        if (!await ConfirmAsync("Remove hub", message, "Remove")) return;
+        await RunAsync(ct => HubContainers.RemoveHubAsync(Hub.Hub.Id, ct), $"{Hub.Hub.Name} removed.", $"Removing hub {Hub.Hub.Name}", "hub:" + Hub.Hub.Id);
     }
 
     private async Task UseAsTarget(string group)

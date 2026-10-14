@@ -47,6 +47,9 @@
             <MudTabPanel Text="Blackboards" Icon="@DwisIcons.TabBlackboards">
                 <BlackboardsTab />
             </MudTabPanel>
+            <MudTabPanel Text="Recording" Icon="@DwisIcons.TabRecording">
+                <RecordingTab />
+            </MudTabPanel>
             <MudTabPanel Text="DWIS modules" Icon="@DwisIcons.TabModules">
                 <ModulesTab />
             </MudTabPanel>
@@ -67,6 +70,7 @@
     public const int TabReplication = 0;
     public const int TabStandardSetup = 1;
     public const int TabBlackboards = 2;
+    public const int TabRecording = 3;
 
     private int _activeTab = TabStandardSetup;
 

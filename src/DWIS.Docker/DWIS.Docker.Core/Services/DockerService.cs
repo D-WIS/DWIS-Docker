@@ -20,8 +20,11 @@ public interface IDockerService
     Task<ContainerInspectResponse> InspectAsync(string containerId, CancellationToken ct = default);
     Task<IReadOnlyList<LocalImageInfo>> ListImagesAsync(CancellationToken ct = default);
 
-    /// <summary>The single create path. Pulls the image when absent. The container is not started.</summary>
+    /// <summary>The single create path for catalog modules. Pulls the image when absent. The container is not started.</summary>
     Task<ContainerInfo> CreateContainerAsync(ModuleDefinition module, RunContext ctx, IProgress<PullProgress>? progress, CancellationToken ct = default);
+
+    /// <summary>Creates a container from ready-made parameters (recorder, player). Returns its id. Does not pull.</summary>
+    Task<string> CreateRawAsync(CreateContainerParameters parameters, CancellationToken ct = default);
 
     Task StartAsync(string containerId, CancellationToken ct = default);
     Task StopAsync(string containerId, CancellationToken ct = default);
@@ -158,6 +161,14 @@ public sealed class DockerService : IDockerService, IDisposable
             _logger.LogWarning("Docker warning creating {Name}: {Warning}", spec.Name, w);
         var inspect = await InspectAsync(response.ID, ct).ConfigureAwait(false);
         return ToInfo(inspect);
+    }
+
+    public async Task<string> CreateRawAsync(CreateContainerParameters parameters, CancellationToken ct = default)
+    {
+        var response = await Run(() => Client.Containers.CreateContainerAsync(parameters, ct), $"create container '{parameters.Name}'").ConfigureAwait(false);
+        foreach (var w in response.Warnings ?? [])
+            _logger.LogWarning("Docker warning creating {Name}: {Warning}", parameters.Name, w);
+        return response.ID;
     }
 
     public Task StartAsync(string containerId, CancellationToken ct = default) =>

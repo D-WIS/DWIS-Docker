@@ -1,0 +1,21 @@
+@* One "hub URL + remote group [+ local group]" row of a source or destination list. *@
+
+<MudStack Row AlignItems="AlignItems.Center" Spacing="1" Class="mb-1">
+    <MudAutocomplete T="string" Value="Link.Url" ValueChanged="@(v => Update(Link with { Url = v ?? "" }))" Label="Hub base URL" Variant="Variant.Outlined" Margin="Margin.Dense"
+                     SearchFunc="SearchUrls" CoerceText="false" CoerceValue="true" ResetValueOnEmptyText="false" Style="min-width: 260px; flex: 2" />
+    <MudTextField T="string" Value="Link.RemoteGroup" ValueChanged="@(v => Update(Link with { RemoteGroup = v, LocalGroup = Link.LocalGroup == Link.RemoteGroup ? v : Link.LocalGroup }))" Label="Remote group" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex: 1" />
+    <MudTextField T="string" Value="Link.LocalGroup" ValueChanged="@(v => Update(Link with { LocalGroup = v }))" Label="Local group" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex: 1" />
+    <MudIconButton Icon="@DwisIcons.Remove" Size="Size.Small" OnClick="Removed" title="Remove" />
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public HubLink Link { get; set; } = default!;
+    [Parameter] public IReadOnlyList<string> KnownUrls { get; set; } = [];
+    [Parameter] public EventCallback<HubLink> Changed { get; set; }
+    [Parameter] public EventCallback Removed { get; set; }
+
+    private Task Update(HubLink updated) => Changed.InvokeAsync(updated);
+
+    private Task<IEnumerable<string>> SearchUrls(string value, CancellationToken ct) =>
+        Task.FromResult(KnownUrls.Where(u => string.IsNullOrEmpty(value) || u.Contains(value, StringComparison.OrdinalIgnoreCase)));
+}

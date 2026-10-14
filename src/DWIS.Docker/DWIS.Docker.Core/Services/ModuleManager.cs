@@ -73,7 +73,7 @@ public sealed class ModuleManager : IModuleManager
         var s = _settings.Current;
         ReplicationTarget? replication = null;
         if (s.ReplicationEnabled && s.ReplicationHub is { } hub)
-            replication = new ReplicationTarget(hub.BaseUrl, s.ReplicationGroup, s.ReplicationGroupPassword);
+            replication = new ReplicationTarget(hub.UrlForContainers, s.ReplicationGroup, s.ReplicationGroupPassword);
 
         var root = string.IsNullOrWhiteSpace(s.HostVolumesRoot) ? _env.DefaultHostVolumesRoot : s.HostVolumesRoot!;
         var engine = _status.Current.Engine;
@@ -120,7 +120,7 @@ public sealed class ModuleManager : IModuleManager
         ReplicationTarget? replication = null;
         if (blackboard.IsReplicating)
         {
-            var samePlace = string.Equals(blackboard.HubUrl?.TrimEnd('/'), s.ReplicationHub?.BaseUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)
+            var samePlace = s.ReplicationHub?.Matches(blackboard.HubUrl) == true
                             && blackboard.Group == s.ReplicationGroup;
             replication = new ReplicationTarget(blackboard.HubUrl!, blackboard.Group ?? "default", samePlace ? s.ReplicationGroupPassword : null);
         }
@@ -223,7 +223,7 @@ public sealed class ModuleManager : IModuleManager
         {
             var hub = s.Hubs.FirstOrDefault(h => h.Id == spec.HubId)
                       ?? throw new DwisDockerException("Unknown hub.");
-            replication = new ReplicationTarget(hub.BaseUrl, string.IsNullOrWhiteSpace(spec.Group) ? "default" : spec.Group.Trim(), spec.WritePassword);
+            replication = new ReplicationTarget(hub.UrlForContainers, string.IsNullOrWhiteSpace(spec.Group) ? "default" : spec.Group.Trim(), spec.WritePassword);
         }
 
         var module = ModuleCatalog.AdHocBlackboard(name, spec.Port);

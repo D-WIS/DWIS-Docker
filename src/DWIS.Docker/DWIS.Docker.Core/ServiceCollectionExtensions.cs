@@ -49,6 +49,9 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<ContainerMonitor>());
 
         services.AddSingleton<IModuleManager, ModuleManager>();
+        services.AddSingleton<RecordingScanner>();
+        services.AddSingleton<IRecordingManager, RecordingService>();
+        services.AddSingleton<IHubContainerManager, HubContainerService>();
         services.TryAddSingleton<TimeProvider>(TimeProvider.System);
 
         return services;

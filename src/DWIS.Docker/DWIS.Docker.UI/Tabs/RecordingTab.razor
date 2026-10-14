@@ -1,0 +1,218 @@
+@* Record hub groups into local folders and replay them. *@
+@inherits DwisComponentBase
+@inject IRecordingManager Recordings
+
+<div class="dwis-card">
+    <MudText Class="dwis-card-title">Start a recording</MudText>
+    <MudGrid Spacing="2" Justify="Justify.FlexStart">
+        <MudItem xs="12" md="4">
+            <MudTextField @bind-Value="_name" Label="Recording name" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          HelperText="@($"Folder: {Recordings.HostRecordingsRoot}")" />
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="string" @bind-Value="_hubId" Label="Hub" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var h in Hubs.Hubs)
+                {
+                    <MudSelectItem T="string" Value="@h.Hub.Id">@h.Hub.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudAutocomplete T="string" Value="_group" ValueChanged="OnGroupChanged" Label="Group" Variant="Variant.Outlined" Margin="Margin.Dense"
+                             SearchFunc="SearchGroups" CoerceText="false" CoerceValue="true" ResetValueOnEmptyText="false" />
+        </MudItem>
+        <MudItem xs="12" md="2" Class="d-flex justify-end">
+            <MudButton StartIcon="@DwisIcons.Record" Color="Color.Error" Variant="Variant.Filled" OnClick="StartRecording"
+                       Disabled="@(IsBusy || string.IsNullOrWhiteSpace(_name) || string.IsNullOrWhiteSpace(_hubId))">Record</MudButton>
+        </MudItem>
+    </MudGrid>
+    <MudText Typo="Typo.caption">
+        The recorder listens to the group and writes a chunk file every few minutes. Images: <code>@AppSettings.RecorderImage</code> and <code>@AppSettings.PlayerImage</code> (change them in the settings).
+    </MudText>
+</div>
+
+<MudTable T="RecordingInfo" Items="Snapshot.Recordings" Dense Hover Elevation="1" HorizontalScrollbar>
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Recordings</MudText>
+        <MudText Typo="Typo.caption" Class="ml-3">@Snapshot.Recordings.Count(r => r.State == RecordingState.Recording) recording, @Snapshot.Recordings.Count(r => r.State == RecordingState.Replaying) replaying</MudText>
+        <MudSpacer />
+        <MudTooltip Text="Copy the recordings folder path">
+            <MudIconButton Icon="@DwisIcons.Copy" Size="Size.Small" OnClick="@(() => CopyAsync(Recordings.HostRecordingsRoot, "Folder path copied"))" />
+        </MudTooltip>
+        <MudTooltip Text="Refresh now">
+            <MudIconButton Icon="@DwisIcons.Refresh" Size="Size.Small" OnClick="Refresh" Disabled="IsBusy" />
+        </MudTooltip>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Recording</MudTh>
+        <MudTh>State</MudTh>
+        <MudTh>Source</MudTh>
+        <MudTh>Content</MudTh>
+        <MudTh Style="width: 1%">Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Recording">
+            <MudText Typo="Typo.body2"><b>@context.Name</b></MudText>
+            <span class="dwis-caption">@(context.CreatedAt > DateTimeOffset.MinValue ? context.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "folder missing")</span>
+        </MudTd>
+        <MudTd DataLabel="State">
+            <StateChip Look="StateLook(context)" />
+        </MudTd>
+        <MudTd DataLabel="Source">
+            @if (context.HubUrl is not null)
+            {
+                <ReplicationChip Replicating="true" HubUrl="@context.HubUrl" Group="@context.Group" />
+            }
+            else
+            {
+                <span class="dwis-caption">unknown</span>
+            }
+        </MudTd>
+        <MudTd DataLabel="Content">
+            @if (context.HasData)
+            {
+                <MudChip T="string" Icon="@DwisIcons.Duration" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">@FormatDuration(context.Duration)</MudChip>
+                <MudChip T="string" Icon="@DwisIcons.Storage" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">@context.ChunkCount chunk(s), @FormatSize(context.SizeBytes)</MudChip>
+                @if (context.Start is { } s)
+                {
+                    <span class="dwis-caption">from @s.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
+                }
+            }
+            else
+            {
+                <span class="dwis-caption">@(context.State == RecordingState.Recording ? "first chunk not written yet" : "no data")</span>
+            }
+        </MudTd>
+        <MudTd DataLabel="Actions">
+            <span class="dwis-actions">
+                @if (Busy(context))
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate Color="Color.Primary" Style="margin: 6px" />
+                }
+                else if (context.State == RecordingState.Recording)
+                {
+                    <MudTooltip Text="Stop recording">
+                        <MudIconButton Icon="@DwisIcons.Stop" Color="Color.Error" Size="Size.Small" OnClick="@(() => StopRecording(context))" Disabled="IsBusy" />
+                    </MudTooltip>
+                }
+                else if (context.State == RecordingState.Replaying)
+                {
+                    <MudTooltip Text="Stop replay">
+                        <MudIconButton Icon="@DwisIcons.Stop" Color="Color.Error" Size="Size.Small" OnClick="@(() => StopReplay(context))" Disabled="IsBusy" />
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudTooltip Text="Replay into a hub group">
+                        <MudIconButton Icon="@DwisIcons.Replay" Color="Color.Success" Size="Size.Small" OnClick="@(() => Replay(context))" Disabled="@(IsBusy || !context.HasData)" />
+                    </MudTooltip>
+                }
+                <MudTooltip Text="Logs of the recorder or player">
+                    <MudIconButton Icon="@DwisIcons.Logs" Size="Size.Small" OnClick="@(() => ShowLogs(context))" Disabled="@(context.Recorder is null && context.Player is null)" />
+                </MudTooltip>
+                <MudTooltip Text="Copy folder path">
+                    <MudIconButton Icon="@DwisIcons.Copy" Size="Size.Small" OnClick="@(() => CopyAsync(context.HostFolder, "Folder path copied"))" />
+                </MudTooltip>
+                <MudTooltip Text="Delete recording and its containers">
+                    <MudIconButton Icon="@DwisIcons.Delete" Size="Size.Small" OnClick="@(() => Delete(context))" Disabled="IsBusy" />
+                </MudTooltip>
+            </span>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body2" Class="pa-4">No recordings yet. Start one above; it appears here as soon as its folder exists.</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private string _name = "";
+    private string? _hubId;
+    private string _group = "default";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _hubId = AppSettings.ReplicationHubId ?? Hubs.Hubs.FirstOrDefault()?.Hub.Id;
+        _group = AppSettings.ReplicationGroup;
+        _name = Recordings.SuggestName(_group);
+    }
+
+    private void OnGroupChanged(string group)
+    {
+        var wasSuggested = _name == Recordings.SuggestName(_group) || string.IsNullOrWhiteSpace(_name);
+        _group = group;
+        if (wasSuggested) _name = Recordings.SuggestName(_group);
+    }
+
+    private Task<IEnumerable<string>> SearchGroups(string value, CancellationToken ct)
+    {
+        var groups = Hubs.Find(_hubId ?? "")?.Groups.Select(g => g.Name) ?? [];
+        return Task.FromResult(groups.Where(g => string.IsNullOrEmpty(value) || g.Contains(value, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private bool Busy(RecordingInfo r) =>
+        Snapshot.IsBusy("recording:" + r.Name) || Actions.IsBusyWith("recording:" + r.Name);
+
+    private static StateLook StateLook(RecordingInfo r) => r.State switch
+    {
+        RecordingState.Recording => new StateLook(DwisIcons.Recording, Color.Error, "Recording", r.Recorder?.StatusText),
+        RecordingState.Replaying => new StateLook(DwisIcons.Replaying, Color.Success, "Replaying", r.Player?.StatusText),
+        _ when r.Recorder is not null || r.Player is not null => new StateLook(DwisIcons.Stopped, Color.Warning, "Stopped", (r.Recorder ?? r.Player)!.StatusText),
+        _ => new StateLook(DwisIcons.Missing, Color.Default, "Idle", "No container")
+    };
+
+    private static string FormatDuration(TimeSpan? d) => d switch
+    {
+        null => "–",
+        { TotalHours: >= 1 } t => $"{(int)t.TotalHours}h {t.Minutes:00}m",
+        { TotalMinutes: >= 1 } t => $"{t.Minutes}m {t.Seconds:00}s",
+        { } t => $"{t.Seconds}s"
+    };
+
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        >= 1 << 30 => $"{bytes / (double)(1 << 30):0.#} GB",
+        >= 1 << 20 => $"{bytes / (double)(1 << 20):0.#} MB",
+        >= 1 << 10 => $"{bytes / 1024.0:0.#} KB",
+        _ => $"{bytes} B"
+    };
+
+    private Task Refresh() => Actions.QueryAsync(async ct => { await Status.RefreshAsync(ct); return true; });
+
+    private async Task StartRecording()
+    {
+        var spec = new RecordingSpec(_name.Trim(), _hubId!, _group);
+        var ok = await RunAsync(ct => Recordings.StartRecordingAsync(spec, Actions.Progress, ct), $"Recording '{spec.Name}' started.", $"Starting recording {spec.Name}", "recording:" + spec.Name);
+        if (ok) _name = Recordings.SuggestName(_group);
+    }
+
+    private async Task StopRecording(RecordingInfo r)
+    {
+        if (!await ConfirmAsync("Stop recording", $"Stop recording '{r.Name}'?\nData since the last chunk was written may be lost.", "Stop", Color.Warning)) return;
+        await RunAsync(ct => Recordings.StopRecordingAsync(r.Name, ct), $"Recording '{r.Name}' stopped.", $"Stopping recording {r.Name}", "recording:" + r.Name);
+    }
+
+    private async Task Replay(RecordingInfo r)
+    {
+        var hubId = Hubs.Hubs.FirstOrDefault(h => h.Hub.Matches(r.HubUrl))?.Hub.Id;
+        var spec = await ReplayDialog.ShowAsync(Dialogs, r.Name, hubId, r.Group);
+        if (spec is null) return;
+        await RunAsync(ct => Recordings.StartReplayAsync(spec, Actions.Progress, ct), $"Replaying '{r.Name}'.", $"Replaying {r.Name}", "recording:" + r.Name);
+    }
+
+    private Task StopReplay(RecordingInfo r) =>
+        RunAsync(ct => Recordings.StopReplayAsync(r.Name, ct), $"Replay of '{r.Name}' stopped.", $"Stopping replay of {r.Name}", "recording:" + r.Name);
+
+    private Task ShowLogs(RecordingInfo r)
+    {
+        var c = r.State == RecordingState.Replaying ? r.Player : (r.Recorder ?? r.Player);
+        return LogsDialog.ShowAsync(Dialogs, c!.Id, c.Name);
+    }
+
+    private async Task Delete(RecordingInfo r)
+    {
+        var what = r.HasData ? $"Delete the recording '{r.Name}' ({FormatSize(r.SizeBytes)}) and its containers?\nThe folder {r.HostFolder} will be removed." : $"Delete '{r.Name}' and its containers?";
+        if (!await ConfirmAsync("Delete recording", what)) return;
+        await RunAsync(ct => Recordings.DeleteRecordingAsync(r.Name, ct), $"Recording '{r.Name}' deleted.", $"Deleting recording {r.Name}", "recording:" + r.Name);
+    }
+}

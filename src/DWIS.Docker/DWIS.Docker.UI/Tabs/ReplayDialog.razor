@@ -1,0 +1,66 @@
+@* Picks the hub and group a recording is replayed into. *@
+@inject IHubService Hubs
+@inject ISettingsStore Settings
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@DwisIcons.Replay" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Replay @Name</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.body2">The player sends the recorded data to a hub group, as if a blackboard were live. Blackboards replicating that group receive it.</MudText>
+            <MudSelect T="string" @bind-Value="_hubId" Label="Hub" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var h in Hubs.Hubs)
+                {
+                    <MudSelectItem T="string" Value="@h.Hub.Id">@h.Hub.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudAutocomplete T="string" @bind-Value="_group" Label="Group" Variant="Variant.Outlined" Margin="Margin.Dense"
+                             SearchFunc="SearchGroups" CoerceText="false" CoerceValue="true" ResetValueOnEmptyText="false" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => Dialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@DwisIcons.Replay" Disabled="@(string.IsNullOrWhiteSpace(_hubId) || string.IsNullOrWhiteSpace(_group))"
+                   OnClick="@(() => Dialog.Close(DialogResult.Ok(new ReplaySpec(Name, _hubId!, _group))))">Replay</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter] public string? InitialHubId { get; set; }
+    [Parameter] public string? InitialGroup { get; set; }
+
+    private string? _hubId;
+    private string _group = "default";
+
+    protected override void OnInitialized()
+    {
+        var s = Settings.Current;
+        _hubId = InitialHubId ?? s.ReplicationHubId ?? Hubs.Hubs.FirstOrDefault()?.Hub.Id;
+        _group = InitialGroup ?? s.ReplicationGroup;
+    }
+
+    private Task<IEnumerable<string>> SearchGroups(string value, CancellationToken ct)
+    {
+        var groups = Hubs.Find(_hubId ?? "")?.Groups.Select(g => g.Name) ?? [];
+        return Task.FromResult(groups.Where(g => string.IsNullOrEmpty(value) || g.Contains(value, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    public static async Task<ReplaySpec?> ShowAsync(IDialogService dialogs, string name, string? hubId, string? group)
+    {
+        var parameters = new DialogParameters<ReplayDialog>
+        {
+            { x => x.Name, name },
+            { x => x.InitialHubId, hubId },
+            { x => x.InitialGroup, group }
+        };
+        var dialog = await dialogs.ShowAsync<ReplayDialog>("Replay", parameters, new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+        var result = await dialog.Result;
+        return result is { Canceled: false, Data: ReplaySpec spec } ? spec : null;
+    }
+}

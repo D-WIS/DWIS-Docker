@@ -51,6 +51,9 @@ public sealed class HubManager : IHubService, IHostedService, IAsyncDisposable
     private CancellationTokenSource? _loopCts;
     private Task? _loop;
 
+    /// <summary>How long to wait before trying again to connect a hub that failed (a local hub may still be starting).</summary>
+    private static readonly TimeSpan RetryInterval = TimeSpan.FromSeconds(15);
+
     public HubManager(ISettingsStore settings, ILoggerFactory loggerFactory)
     {
         _settings = settings;
@@ -101,10 +104,15 @@ public sealed class HubManager : IHubService, IHostedService, IAsyncDisposable
             try
             {
                 await Task.Delay(_settings.Current.PollingInterval, ct).ConfigureAwait(false);
-                List<HubClient> connected;
-                lock (_gate) connected = _clients.Values.Where(c => c.Status == HubConnectionStatus.Connected).ToList();
-                foreach (var c in connected)
-                    await c.RefreshGroupsAsync(ct).ConfigureAwait(false);
+                List<HubClient> clients;
+                lock (_gate) clients = _clients.Values.ToList();
+                foreach (var c in clients)
+                {
+                    if (c.Status == HubConnectionStatus.Connected)
+                        await c.RefreshGroupsAsync(ct).ConfigureAwait(false);
+                    else if (c.ShouldRetryConnect(RetryInterval))
+                        _ = c.ConnectAsync(ct).ContinueWith(_ => { }, TaskContinuationOptions.OnlyOnFaulted);
+                }
             }
             catch (OperationCanceledException) { break; }
             catch (Exception ex)
@@ -183,6 +191,15 @@ internal sealed class HubClient : IAsyncDisposable
     private string? _error;
     private DateTimeOffset? _groupsUpdatedAt;
     private bool _userDisconnected;
+    private DateTimeOffset _lastConnectAttempt = DateTimeOffset.MinValue;
+
+    /// <summary>True when this auto-connect hub is not connected, the user did not disconnect it, and the last attempt is old enough.</summary>
+    public bool ShouldRetryConnect(TimeSpan retryInterval)
+    {
+        if (!Definition.AutoConnect || _userDisconnected) return false;
+        if (Status is HubConnectionStatus.Connected or HubConnectionStatus.Connecting or HubConnectionStatus.Reconnecting) return false;
+        return DateTimeOffset.UtcNow - _lastConnectAttempt >= retryInterval;
+    }
 
     public HubClient(HubDefinition definition, ILogger<HubClient> logger)
     {
@@ -230,6 +247,7 @@ internal sealed class HubClient : IAsyncDisposable
         {
             if (_connection.State == HubConnectionState.Connected) return;
             _userDisconnected = false;
+            _lastConnectAttempt = DateTimeOffset.UtcNow;
             Set(HubConnectionStatus.Connecting, null);
             await _connection.StartAsync(ct).ConfigureAwait(false);
             Set(HubConnectionStatus.Connected, null);

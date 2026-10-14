@@ -62,6 +62,9 @@ public sealed record StatusSnapshot(
     EngineStatus Engine,
     IReadOnlyList<ModuleStatus> Modules,
     IReadOnlyList<BlackboardInfo> Blackboards,
+    IReadOnlyList<RecordingInfo> Recordings,
+    IReadOnlyList<LocalHubInfo> LocalHubs,
+    IReadOnlyList<HubReplicationInfo> HubReplications,
     IReadOnlyList<ActiveOperation> Operations)
 {
     public static StatusSnapshot Empty { get; } = new(
@@ -69,7 +72,12 @@ public sealed record StatusSnapshot(
         new EngineStatus(false, null, null, "Not refreshed yet"),
         [],
         [],
+        [],
+        [],
+        [],
         []);
+
+    public LocalHubInfo? LocalHub(string hubId) => LocalHubs.FirstOrDefault(h => h.HubId == hubId);
 
     public ModuleStatus? Find(string moduleId) => Modules.FirstOrDefault(m => m.Module.Id == moduleId);
 

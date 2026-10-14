@@ -27,6 +27,21 @@ public sealed class AppSettings
     public TimeSpan RegistryCheckInterval { get; set; } = TimeSpan.FromMinutes(30);
     public int LogTailLines { get; set; } = 500;
 
+    /// <summary>Image of the blackboard recorder (listens to a hub group and writes chunk files).</summary>
+    public string RecorderImage { get; set; } = "digiwells/blackboardrecorder:latest";
+
+    /// <summary>Image of the blackboard player (replays chunk files into a hub group).</summary>
+    public string PlayerImage { get; set; } = "digiwells/blackboardplayer:latest";
+
+    /// <summary>Sub-folder of the volumes root that holds one folder per recording.</summary>
+    public string RecordingsFolderName { get; set; } = "Recordings";
+
+    /// <summary>Image of the SignalR hub server, for hubs launched locally.</summary>
+    public string LocalHubImage { get; set; } = "digiwells/dwissignalr:latest";
+
+    /// <summary>Image of the standalone hub-to-hub replicator.</summary>
+    public string HubReplicationImage { get; set; } = "digiwells/dwishubreplication:latest";
+
     [JsonIgnore]
     public HubDefinition? ReplicationHub =>
         ReplicationHubId is null ? null : Hubs.FirstOrDefault(h => h.Id == ReplicationHubId);
@@ -44,7 +59,12 @@ public sealed class AppSettings
         ReplicationGroupPassword = ReplicationGroupPassword,
         PollingInterval = PollingInterval,
         RegistryCheckInterval = RegistryCheckInterval,
-        LogTailLines = LogTailLines
+        LogTailLines = LogTailLines,
+        RecorderImage = RecorderImage,
+        PlayerImage = PlayerImage,
+        RecordingsFolderName = RecordingsFolderName,
+        LocalHubImage = LocalHubImage,
+        HubReplicationImage = HubReplicationImage
     };
 
     /// <summary>Returns a list of problems; empty when the settings are usable.</summary>
@@ -63,6 +83,17 @@ public sealed class AppSettings
 
         if (LogTailLines is < 10 or > 100_000)
             errors.Add("Log tail must be between 10 and 100000 lines.");
+
+        if (string.IsNullOrWhiteSpace(RecorderImage) || RecorderImage.Any(char.IsWhiteSpace))
+            errors.Add("Recorder image must be a valid image reference.");
+        if (string.IsNullOrWhiteSpace(PlayerImage) || PlayerImage.Any(char.IsWhiteSpace))
+            errors.Add("Player image must be a valid image reference.");
+        if (string.IsNullOrWhiteSpace(RecordingsFolderName) || RecordingsFolderName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            errors.Add("Recordings folder name must be a plain folder name.");
+        if (string.IsNullOrWhiteSpace(LocalHubImage) || LocalHubImage.Any(char.IsWhiteSpace))
+            errors.Add("Local hub image must be a valid image reference.");
+        if (string.IsNullOrWhiteSpace(HubReplicationImage) || HubReplicationImage.Any(char.IsWhiteSpace))
+            errors.Add("Hub replication image must be a valid image reference.");
 
         var duplicateIds = Hubs.GroupBy(h => h.Id).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
         if (duplicateIds.Count > 0)

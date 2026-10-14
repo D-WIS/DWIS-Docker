@@ -59,6 +59,20 @@ public static class DwisIcons
     public const string NotPulled = Icons.Material.Outlined.CloudOff;
     public const string Unknown = Icons.Material.Outlined.HelpOutline;
 
+    // local hubs and hub replication
+    public const string LocalHub = Icons.Material.Outlined.Router;
+    public const string Route = Icons.Material.Outlined.AltRoute;
+    public const string Source = Icons.Material.Outlined.Input;
+    public const string Destination = Icons.Material.Outlined.Output;
+
+    // recording and replay
+    public const string Record = Icons.Material.Filled.FiberManualRecord;
+    public const string Recording = Icons.Material.Filled.RadioButtonChecked;
+    public const string Replay = Icons.Material.Filled.PlayCircle;
+    public const string Replaying = Icons.Material.Filled.Autorenew;
+    public const string Duration = Icons.Material.Outlined.Timer;
+    public const string Storage = Icons.Material.Outlined.Storage;
+
     // misc
     public const string Error = Icons.Material.Filled.ErrorOutline;
     public const string Info = Icons.Material.Outlined.Info;
@@ -70,6 +84,7 @@ public static class DwisIcons
     public const string TabReplication = Hub;
     public const string TabStandard = Icons.Material.Outlined.PlaylistAddCheck;
     public const string TabBlackboards = Blackboard;
+    public const string TabRecording = Icons.Material.Outlined.Videocam;
     public const string TabModules = Icons.Material.Outlined.Extension;
     public const string TabClients = Icons.Material.Outlined.Devices;
     public const string TabAdvisors = Icons.Material.Outlined.Lightbulb;
