@@ -21,8 +21,66 @@ internal static class ContainerSpecBuilder
     public const string KindBlackboard = "blackboard";
     public const string KindService = "service";
     public const string KindWebApp = "webapp";
+    public const string KindRecorder = "recorder";
+    public const string KindPlayer = "player";
+
+    /// <summary>Name of the recording a recorder or player container works on.</summary>
+    public const string LabelRecording = "dwis.recording";
+    public const string RecordingContainerPath = "/recording";
 
     public const string HostGatewayAlias = "host.docker.internal:host-gateway";
+
+    public static string RecorderContainerName(string recording) => $"recorder-{Slug(recording)}";
+    public static string PlayerContainerName(string recording) => $"player-{Slug(recording)}";
+
+    /// <summary>Recorder: listens to a hub group and writes chunk files into the mounted recording folder.</summary>
+    public static CreateContainerParameters BuildRecorder(string recording, string imageRef, string hubUrl, string group, string hostFolder, bool addHostGatewayAlias) =>
+        BuildRecordingTool(KindRecorder, RecorderContainerName(recording), recording, imageRef, hubUrl, group, hostFolder, "--output-folder", addHostGatewayAlias);
+
+    /// <summary>Player: replays the chunk files of the mounted recording folder into a hub group.</summary>
+    public static CreateContainerParameters BuildPlayer(string recording, string imageRef, string hubUrl, string group, string hostFolder, bool addHostGatewayAlias) =>
+        BuildRecordingTool(KindPlayer, PlayerContainerName(recording), recording, imageRef, hubUrl, group, hostFolder, "--input-folder", addHostGatewayAlias);
+
+    private static CreateContainerParameters BuildRecordingTool(string kind, string name, string recording, string imageRef, string hubUrl, string group, string hostFolder, string folderOption, bool addHostGatewayAlias)
+    {
+        if (string.IsNullOrWhiteSpace(hostFolder))
+            throw new DwisDockerException("The host volumes root is not known. Set it in the settings before recording or replaying.");
+        var p = new CreateContainerParameters
+        {
+            Name = name,
+            Image = imageRef,
+            // Both tools wait on Console.ReadLine, so they need a tty or they exit at once.
+            Tty = true,
+            OpenStdin = true,
+            Cmd = ["--hubURL", hubUrl, "--hubGroup", group, folderOption, RecordingContainerPath],
+            Labels = new Dictionary<string, string>
+            {
+                [LabelManaged] = "true",
+                [LabelModule] = kind,
+                [LabelKind] = kind,
+                [LabelHub] = hubUrl,
+                [LabelGroup] = group,
+                [LabelRecording] = recording
+            },
+            HostConfig = new HostConfig
+            {
+                Binds = [$"{hostFolder}:{RecordingContainerPath}"]
+            }
+        };
+        if (addHostGatewayAlias)
+            p.HostConfig.ExtraHosts = [HostGatewayAlias];
+        return p;
+    }
+
+    public static bool IsRecordingTool(ContainerInfo c, out string kind, out string recording)
+    {
+        kind = "";
+        recording = "";
+        if (!c.Labels.TryGetValue(LabelKind, out var k) || (k != KindRecorder && k != KindPlayer)) return false;
+        kind = k;
+        recording = c.Labels.GetValueOrDefault(LabelRecording, "");
+        return true;
+    }
 
     public static string ContainerNameFor(ModuleDefinition module, RunContext ctx)
     {

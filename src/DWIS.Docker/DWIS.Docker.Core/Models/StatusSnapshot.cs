@@ -62,11 +62,13 @@ public sealed record StatusSnapshot(
     EngineStatus Engine,
     IReadOnlyList<ModuleStatus> Modules,
     IReadOnlyList<BlackboardInfo> Blackboards,
+    IReadOnlyList<RecordingInfo> Recordings,
     IReadOnlyList<ActiveOperation> Operations)
 {
     public static StatusSnapshot Empty { get; } = new(
         DateTimeOffset.MinValue,
         new EngineStatus(false, null, null, "Not refreshed yet"),
+        [],
         [],
         [],
         []);

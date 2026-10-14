@@ -38,12 +38,14 @@ What ends up in `C:\Volumes`:
 
 - `dwis-docker\settings.json` — the app settings (Docker endpoint, hubs, replication target, …). They survive updates of the app.
 - `<Module>\config.json` — one folder per module that has a configuration, for example `DWISAdviceComposerService\config.json`. The folder is mounted into the module container as `/home`.
+- `Recordings\<name>\` — one folder per recording made from the Recording tab (chunk files plus an `rtData` index).
 
 ## 2. The tabs
 
 - **Replication** — the SignalR hubs the blackboards can replicate to. Add or remove hubs, connect, see the groups and how many blackboards are connected to each, create groups, set a group write password, clear a group's manifests, and pick the hub and group the standard setup replicates to.
 - **Standard setup** — every predefined container in one table, grouped by category. Each row shows whether the container exists, whether it runs, whether the image is up to date, and whether its configuration file exists. Select rows for bulk actions (create missing, start, stop, restart, update images, delete).
 - **Blackboards** — all blackboard containers on the engine, with their replication hub, group and OPC UA port. Create extra blackboards here.
+- **Recording** — record what a hub group streams into a folder under `C:\Volumes\Recordings\<name>`, and replay a recording into a hub group later. Each recording shows its duration, size and whether a recorder or player container is running. The recorder and player images are set in the settings.
 - **DWIS modules** — scheduler, microstates, composer and the ADCS bridges, each with an inline editor for its `config.json`.
 - **Clients** and **Advisors** — the web applications and advisor services, with a link to each app's port.
 
