@@ -194,7 +194,7 @@
 
     private async Task Replay(RecordingInfo r)
     {
-        var hubId = Hubs.Hubs.FirstOrDefault(h => string.Equals(h.Hub.BaseUrl.TrimEnd('/'), r.HubUrl?.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))?.Hub.Id;
+        var hubId = Hubs.Hubs.FirstOrDefault(h => h.Hub.Matches(r.HubUrl))?.Hub.Id;
         var spec = await ReplayDialog.ShowAsync(Dialogs, r.Name, hubId, r.Group);
         if (spec is null) return;
         await RunAsync(ct => Recordings.StartReplayAsync(spec, Actions.Progress, ct), $"Replaying '{r.Name}'.", $"Replaying {r.Name}", "recording:" + r.Name);

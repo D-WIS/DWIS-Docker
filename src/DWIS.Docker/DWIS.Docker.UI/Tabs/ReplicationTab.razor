@@ -34,17 +34,38 @@
     </MudText>
 </div>
 
-<div class="dwis-card">
-    <MudText Class="dwis-card-title">Add a hub</MudText>
-    <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
-        <MudTextField @bind-Value="_newName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 180px" />
-        <MudTextField @bind-Value="_newUrl" Label="Base URL" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 380px"
-                      Placeholder="https://host/blackboard/applications" HelperText="The /dwishub path is added automatically" />
-        <MudButton StartIcon="@DwisIcons.Add" Variant="Variant.Outlined" Color="Color.Primary" OnClick="AddHub" Disabled="@(IsBusy || !CanAdd)">Add hub</MudButton>
-    </MudStack>
-</div>
+<MudExpansionPanels Elevation="1" Class="mb-3">
+    <MudExpansionPanel @bind-Expanded="_addOpen">
+        <TitleContent>
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@DwisIcons.Add" Color="Color.Primary" />
+                <MudText>Add a remote hub</MudText>
+            </MudStack>
+        </TitleContent>
+        <ChildContent>
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+                <MudTextField @bind-Value="_newName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 180px" />
+                <MudTextField @bind-Value="_newUrl" Label="Base URL" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 380px"
+                              Placeholder="https://host/blackboard/applications" HelperText="The /dwishub path is added automatically" />
+                <MudButton StartIcon="@DwisIcons.Add" Variant="Variant.Outlined" Color="Color.Primary" OnClick="AddHub" Disabled="@(IsBusy || !CanAdd)">Add hub</MudButton>
+            </MudStack>
+        </ChildContent>
+    </MudExpansionPanel>
+    <MudExpansionPanel @bind-Expanded="_launchOpen">
+        <TitleContent>
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@DwisIcons.LocalHub" Color="Color.Primary" />
+                <MudText>Launch a hub locally</MudText>
+                <MudText Typo="Typo.caption">a SignalR hub server container on this machine, optionally pulling from or pushing to other hubs</MudText>
+            </MudStack>
+        </TitleContent>
+        <ChildContent>
+            <LocalHubForm Launched="@(() => _launchOpen = false)" />
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
 
-<MudGrid Spacing="3">
+<MudGrid Spacing="3" Class="mb-3">
     @foreach (var hub in Hubs.Hubs)
     {
         <MudItem xs="12" lg="6" @key="hub.Hub.Id">
@@ -52,6 +73,8 @@
         </MudItem>
     }
 </MudGrid>
+
+<HubReplicationsCard />
 
 @code {
     private bool _enabled;
@@ -61,6 +84,8 @@
     private bool _showPwd;
     private string _newName = "";
     private string _newUrl = "";
+    private bool _addOpen;
+    private bool _launchOpen;
 
     protected override void OnInitialized()
     {

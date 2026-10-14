@@ -26,7 +26,7 @@ else
         get
         {
             var url = HubUrl?.TrimEnd('/');
-            var hub = HubService.Hubs.FirstOrDefault(h => string.Equals(h.Hub.BaseUrl.TrimEnd('/'), url, StringComparison.OrdinalIgnoreCase));
+            var hub = HubService.Hubs.FirstOrDefault(h => h.Hub.Matches(url));
             if (hub is not null) return hub.Hub.Name;
             return Uri.TryCreate(HubUrl, UriKind.Absolute, out var u) ? u.Host : (HubUrl ?? "hub");
         }

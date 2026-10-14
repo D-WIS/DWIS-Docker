@@ -191,7 +191,7 @@ public sealed class RecordingService : IRecordingManager
             try
             {
                 var image = _settings.Current.RecorderImage;
-                var p = ContainerSpecBuilder.BuildRecorder(name, image, hub.BaseUrl, group, _scanner.HostFolder(name), LinuxEngine);
+                var p = ContainerSpecBuilder.BuildRecorder(name, image, hub.UrlForContainers, group, _scanner.HostFolder(name), LinuxEngine);
                 var id = await CreateAsync(p, image, progress, token).ConfigureAwait(false);
                 await _docker.StartAsync(id, token).ConfigureAwait(false);
             }
@@ -225,7 +225,7 @@ public sealed class RecordingService : IRecordingManager
             if (rec.Player is not null)
                 await RemoveContainerAsync(rec.Player, token).ConfigureAwait(false);
             var image = _settings.Current.PlayerImage;
-            var p = ContainerSpecBuilder.BuildPlayer(name, image, hub.BaseUrl, group, _scanner.HostFolder(name), LinuxEngine);
+            var p = ContainerSpecBuilder.BuildPlayer(name, image, hub.UrlForContainers, group, _scanner.HostFolder(name), LinuxEngine);
             var id = await CreateAsync(p, image, progress, token).ConfigureAwait(false);
             await _docker.StartAsync(id, token).ConfigureAwait(false);
         }, ct);

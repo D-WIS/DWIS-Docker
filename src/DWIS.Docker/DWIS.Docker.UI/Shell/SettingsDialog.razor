@@ -38,6 +38,13 @@
             <MudTextField @bind-Value="_edit.RecordingsFolderName" Label="Recordings folder" Variant="Variant.Outlined"
                           HelperText="Sub-folder of the host volumes root that holds one folder per recording" />
 
+            <MudDivider />
+            <MudText Typo="Typo.subtitle2">Hubs</MudText>
+            <MudStack Row Spacing="3">
+                <MudTextField @bind-Value="_edit.LocalHubImage" Label="Hub server image" Variant="Variant.Outlined" HelperText="Image used when a hub is launched locally" />
+                <MudTextField @bind-Value="_edit.HubReplicationImage" Label="Hub replication image" Variant="Variant.Outlined" HelperText="Standalone hub-to-hub replicator" />
+            </MudStack>
+
             @if (Settings.FilePath is not null)
             {
                 <MudText Typo="Typo.caption">Stored in <code>@Settings.FilePath</code></MudText>

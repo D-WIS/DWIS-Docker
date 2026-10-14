@@ -1,0 +1,125 @@
+@* Standalone hub-to-hub replicators: list of running ones and a form to start a new one. *@
+@inherits DwisComponentBase
+@inject IHubContainerManager HubContainers
+
+<div class="dwis-card">
+    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+        <MudIcon Icon="@DwisIcons.Route" Color="Color.Primary" />
+        <MudText Class="dwis-card-title mb-0">Hub-to-hub replication</MudText>
+        <MudText Typo="Typo.caption">Copies everything published on one hub group to another group, on the same or another hub.</MudText>
+    </MudStack>
+
+    <MudTable T="HubReplicationInfo" Items="Snapshot.HubReplications" Dense Hover Elevation="0" HorizontalScrollbar Class="mt-2">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>State</MudTh>
+            <MudTh>Routes</MudTh>
+            <MudTh Style="width: 1%">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">
+                <MudText Typo="Typo.body2"><b>@context.Name</b></MudText>
+                <span class="dwis-caption">@context.Container.Name</span>
+            </MudTd>
+            <MudTd DataLabel="State"><StateChip Look="DwisStates.Container(context.Container)" /></MudTd>
+            <MudTd DataLabel="Routes">
+                @foreach (var r in context.Routes)
+                {
+                    <MudChip T="string" Icon="@DwisIcons.Route" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">@r.Describe()</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Actions">
+                <ContainerActions Container="context.Container" BusyKey="@("replication:" + context.Name)" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2" Class="pa-2">No replication running.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+
+    <MudExpansionPanels Elevation="0" Class="mt-2">
+        <MudExpansionPanel @bind-Expanded="_formOpen">
+            <TitleContent>
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@DwisIcons.Add" Color="Color.Primary" />
+                    <MudText>New replication</MudText>
+                </MudStack>
+            </TitleContent>
+            <ChildContent>
+                <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width: 320px" />
+                @foreach (var route in _routes)
+                {
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1" Class="mt-2">
+                        <MudAutocomplete T="string" Value="route.SourceUrl" ValueChanged="@(v => Update(route, route with { SourceUrl = v ?? "" }))" Label="Source hub" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                         SearchFunc="SearchUrls" CoerceText="false" CoerceValue="true" ResetValueOnEmptyText="false" Style="min-width: 240px; flex: 2" />
+                        <MudTextField T="string" Value="route.SourceGroup" ValueChanged="@(v => Update(route, route with { SourceGroup = v }))" Label="Group" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex: 1" />
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" />
+                        <MudAutocomplete T="string" Value="route.DestinationUrl" ValueChanged="@(v => Update(route, route with { DestinationUrl = v ?? "" }))" Label="Destination hub" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                         SearchFunc="SearchUrls" CoerceText="false" CoerceValue="true" ResetValueOnEmptyText="false" Style="min-width: 240px; flex: 2" />
+                        <MudTextField T="string" Value="route.DestinationGroup" ValueChanged="@(v => Update(route, route with { DestinationGroup = v }))" Label="Group" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex: 1" />
+                        <MudIconButton Icon="@DwisIcons.Remove" Size="Size.Small" OnClick="@(() => _routes.Remove(route))" title="Remove route" />
+                    </MudStack>
+                }
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
+                    <MudButton StartIcon="@DwisIcons.Add" Size="Size.Small" OnClick="@(() => _routes.Add(NewRoute()))">Add route</MudButton>
+                    <MudSpacer />
+                    <MudButton StartIcon="@DwisIcons.Start" Color="Color.Primary" Variant="Variant.Filled" OnClick="Create" Disabled="@(IsBusy || string.IsNullOrWhiteSpace(_name) || _routes.Count == 0)">Start replication</MudButton>
+                </MudStack>
+                <MudText Typo="Typo.caption">Image: <code>@AppSettings.HubReplicationImage</code> (change it in the settings).</MudText>
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+</div>
+
+@code {
+    private bool _formOpen;
+    private string _name = "";
+    private readonly List<ReplicationRouteInfo> _routes = new();
+
+    private IReadOnlyList<string> KnownUrls => AppSettings.Hubs.Select(h => h.UrlForContainers).ToList();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _name = SuggestName();
+        _routes.Add(NewRoute());
+    }
+
+    private string SuggestName()
+    {
+        var existing = Snapshot.HubReplications.Select(r => r.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var name = "replication";
+        for (var i = 2; existing.Contains(name); i++) name = $"replication-{i}";
+        return name;
+    }
+
+    private ReplicationRouteInfo NewRoute()
+    {
+        var hubs = AppSettings.Hubs;
+        var src = AppSettings.ReplicationHub ?? hubs.FirstOrDefault();
+        var dst = hubs.FirstOrDefault(h => h.Id != src?.Id) ?? src;
+        return new ReplicationRouteInfo(src?.UrlForContainers ?? "", AppSettings.ReplicationGroup, dst?.UrlForContainers ?? "", AppSettings.ReplicationGroup);
+    }
+
+    private void Update(ReplicationRouteInfo old, ReplicationRouteInfo updated)
+    {
+        var i = _routes.IndexOf(old);
+        if (i >= 0) _routes[i] = updated;
+    }
+
+    private Task<IEnumerable<string>> SearchUrls(string value, CancellationToken ct) =>
+        Task.FromResult(KnownUrls.Where(u => string.IsNullOrEmpty(value) || u.Contains(value, StringComparison.OrdinalIgnoreCase)));
+
+    private async Task Create()
+    {
+        var spec = new HubReplicationSpec(_name.Trim(), _routes.ToList());
+        var ok = await RunAsync(ct => HubContainers.CreateReplicationAsync(spec, Actions.Progress, ct), $"Replication '{spec.Name}' started.", $"Starting replication {spec.Name}", "replication:" + spec.Name);
+        if (ok)
+        {
+            _formOpen = false;
+            _name = SuggestName();
+            _routes.Clear();
+            _routes.Add(NewRoute());
+        }
+    }
+}

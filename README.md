@@ -42,7 +42,7 @@ What ends up in `C:\Volumes`:
 
 ## 2. The tabs
 
-- **Replication** — the SignalR hubs the blackboards can replicate to. Add or remove hubs, connect, see the groups and how many blackboards are connected to each, create groups, set a group write password, clear a group's manifests, and pick the hub and group the standard setup replicates to.
+- **Replication** — the SignalR hubs the blackboards can replicate to. Add or remove hubs, connect, see the groups and how many blackboards are connected to each, create groups, set a group write password, clear a group's manifests, and pick the hub and group the standard setup replicates to. You can also **launch a hub locally** (a `digiwells/dwissignalr` container on a port of your choice, optionally pulling data from or pushing data to groups of other hubs) and start **hub-to-hub replications** (a standalone container that copies one hub group to another).
 - **Standard setup** — every predefined container in one table, grouped by category. Each row shows whether the container exists, whether it runs, whether the image is up to date, and whether its configuration file exists. Select rows for bulk actions (create missing, start, stop, restart, update images, delete).
 - **Blackboards** — all blackboard containers on the engine, with their replication hub, group and OPC UA port. Create extra blackboards here.
 - **Recording** — record what a hub group streams into a folder under `C:\Volumes\Recordings\<name>`, and replay a recording into a hub group later. Each recording shows its duration, size and whether a recorder or player container is running. The recorder and player images are set in the settings.

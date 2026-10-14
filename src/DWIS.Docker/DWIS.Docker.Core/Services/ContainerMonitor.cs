@@ -243,7 +243,7 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
 
         var settings = _settings.Current;
         var target = settings.ReplicationEnabled ? settings.ReplicationHub : null;
-        var expectedHub = target?.BaseUrl;
+        var expectedHub = target?.UrlForContainers;
         var expectedGroup = target is null ? null : settings.ReplicationGroup;
         var catalogBlackboardNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ModuleCatalog.Blackboard.ContainerName };
         if (expectedGroup is not null)
@@ -317,7 +317,10 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
             recordings = previous.Recordings;
         }
 
-        return new StatusSnapshot(now, engine, modules, blackboards, recordings, _operations.Current);
+        var localHubs = ContainerSpecBuilder.ScanLocalHubs(containers);
+        var replications = ContainerSpecBuilder.ScanHubReplications(containers);
+
+        return new StatusSnapshot(now, engine, modules, blackboards, recordings, localHubs, replications, _operations.Current);
     }
 
     /// <summary>

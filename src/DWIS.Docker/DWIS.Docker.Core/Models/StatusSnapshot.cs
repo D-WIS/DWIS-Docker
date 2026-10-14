@@ -63,6 +63,8 @@ public sealed record StatusSnapshot(
     IReadOnlyList<ModuleStatus> Modules,
     IReadOnlyList<BlackboardInfo> Blackboards,
     IReadOnlyList<RecordingInfo> Recordings,
+    IReadOnlyList<LocalHubInfo> LocalHubs,
+    IReadOnlyList<HubReplicationInfo> HubReplications,
     IReadOnlyList<ActiveOperation> Operations)
 {
     public static StatusSnapshot Empty { get; } = new(
@@ -71,7 +73,11 @@ public sealed record StatusSnapshot(
         [],
         [],
         [],
+        [],
+        [],
         []);
+
+    public LocalHubInfo? LocalHub(string hubId) => LocalHubs.FirstOrDefault(h => h.HubId == hubId);
 
     public ModuleStatus? Find(string moduleId) => Modules.FirstOrDefault(m => m.Module.Id == moduleId);
 

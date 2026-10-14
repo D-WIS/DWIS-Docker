@@ -72,6 +72,149 @@ internal static class ContainerSpecBuilder
         return p;
     }
 
+    // ---------------------------------------------------------------- local hub server and hub replicator
+
+    public const string KindHub = "hub";
+    public const string KindHubReplication = "hubreplication";
+    public const string LabelHubId = "dwis.hub.id";
+    public const string LabelHubPath = "dwis.hub.path";
+    public const string LabelHubSources = "dwis.hub.sources";
+    public const string LabelHubDestinations = "dwis.hub.destinations";
+    public const string LabelName = "dwis.name";
+    public const string LabelRoutes = "dwis.routes";
+    public const int HubContainerPort = 8080;
+    public const string DefaultHubPath = HubDefinition.DefaultPath;
+
+    public static string LocalHubContainerName(string name) => $"hub-{Slug(name)}";
+    public static string HubReplicationContainerName(string name) => $"hub-replication-{Slug(name)}";
+    public static string LocalHubId(string name) => $"local-{Slug(name).ToLowerInvariant()}";
+
+    /// <summary>The SignalR hub server (DWIS.Server.SignalRHub): <c>--path</c>, <c>--source-hubs</c>, <c>--destination-hubs</c>, port 8080.</summary>
+    public static CreateContainerParameters BuildLocalHub(LocalHubSpec spec, string imageRef, string hubId, bool addHostGatewayAlias)
+    {
+        var path = NormalizePath(spec.PathBase);
+        var cmd = new List<string> { "--path", path.Length == 0 ? "." : path };
+        if (spec.Sources.Count > 0) cmd.AddRange(["--source-hubs", FormatHubLinks(spec.Sources)]);
+        if (spec.Destinations.Count > 0) cmd.AddRange(["--destination-hubs", FormatHubLinks(spec.Destinations)]);
+
+        var p = new CreateContainerParameters
+        {
+            Name = LocalHubContainerName(spec.Name),
+            Image = imageRef,
+            Cmd = cmd,
+            Labels = new Dictionary<string, string>
+            {
+                [LabelManaged] = "true",
+                [LabelModule] = KindHub,
+                [LabelKind] = KindHub,
+                [LabelHubId] = hubId,
+                [LabelName] = spec.Name,
+                [LabelPort] = spec.HostPort.ToString(),
+                [LabelHubPath] = path,
+                [LabelHubSources] = FormatHubLinks(spec.Sources),
+                [LabelHubDestinations] = FormatHubLinks(spec.Destinations)
+            },
+            HostConfig = new HostConfig()
+        };
+        AddPort(p, HubContainerPort, spec.HostPort);
+        if (addHostGatewayAlias) p.HostConfig.ExtraHosts = [HostGatewayAlias];
+        return p;
+    }
+
+    /// <summary>The standalone replicator (DWIS.Hub.HubReplication): <c>--routes</c>.</summary>
+    public static CreateContainerParameters BuildHubReplication(HubReplicationSpec spec, string imageRef, bool addHostGatewayAlias)
+    {
+        if (spec.Routes.Count == 0) throw new DwisDockerException("At least one route is needed.");
+        var routes = FormatRoutes(spec.Routes);
+        var p = new CreateContainerParameters
+        {
+            Name = HubReplicationContainerName(spec.Name),
+            Image = imageRef,
+            Cmd = ["--routes", routes],
+            Labels = new Dictionary<string, string>
+            {
+                [LabelManaged] = "true",
+                [LabelModule] = KindHubReplication,
+                [LabelKind] = KindHubReplication,
+                [LabelName] = spec.Name,
+                [LabelRoutes] = routes
+            },
+            HostConfig = new HostConfig()
+        };
+        if (addHostGatewayAlias) p.HostConfig.ExtraHosts = [HostGatewayAlias];
+        return p;
+    }
+
+    public static string FormatHubLinks(IEnumerable<HubLink> links) =>
+        string.Join(";", links.Select(l => l.LocalGroup == l.RemoteGroup ? $"{l.Url},{l.RemoteGroup}" : $"{l.Url},{l.RemoteGroup},{l.LocalGroup}"));
+
+    public static IReadOnlyList<HubLink> ParseHubLinks(string? raw)
+    {
+        var list = new List<HubLink>();
+        foreach (var entry in (raw ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = entry.Split(',', StringSplitOptions.TrimEntries);
+            if (parts.Length is < 2 or > 3 || parts.Any(string.IsNullOrEmpty)) continue;
+            list.Add(new HubLink(parts[0], parts[1], parts.Length == 3 ? parts[2] : parts[1]));
+        }
+        return list;
+    }
+
+    public static string FormatRoutes(IEnumerable<ReplicationRouteInfo> routes) =>
+        string.Join(";", routes.Select(r => $"{r.SourceUrl},{r.SourceGroup},{r.DestinationUrl},{r.DestinationGroup}"));
+
+    public static IReadOnlyList<ReplicationRouteInfo> ParseRoutes(string? raw)
+    {
+        var list = new List<ReplicationRouteInfo>();
+        foreach (var entry in (raw ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = entry.Split(',', StringSplitOptions.TrimEntries);
+            if (parts.Length != 4 || parts.Any(string.IsNullOrEmpty)) continue;
+            list.Add(new ReplicationRouteInfo(parts[0], parts[1], parts[2], parts[3]));
+        }
+        return list;
+    }
+
+    /// <summary>Hub server containers started from this app, from their labels.</summary>
+    public static IReadOnlyList<LocalHubInfo> ScanLocalHubs(IEnumerable<ContainerInfo> containers)
+    {
+        var result = new List<LocalHubInfo>();
+        foreach (var c in containers)
+        {
+            if (!c.Labels.TryGetValue(LabelKind, out var kind) || kind != KindHub) continue;
+            if (!c.Labels.TryGetValue(LabelHubId, out var hubId)) continue;
+            var port = c.Labels.TryGetValue(LabelPort, out var ps) && int.TryParse(ps, out var p) ? p : HubContainerPort;
+            result.Add(new LocalHubInfo(
+                hubId, c, port,
+                c.Labels.GetValueOrDefault(LabelHubPath, DefaultHubPath),
+                ParseHubLinks(c.Labels.GetValueOrDefault(LabelHubSources)),
+                ParseHubLinks(c.Labels.GetValueOrDefault(LabelHubDestinations))));
+        }
+        return result;
+    }
+
+    /// <summary>Replicator containers started from this app, from their labels.</summary>
+    public static IReadOnlyList<HubReplicationInfo> ScanHubReplications(IEnumerable<ContainerInfo> containers)
+    {
+        var result = new List<HubReplicationInfo>();
+        foreach (var c in containers)
+        {
+            if (!c.Labels.TryGetValue(LabelKind, out var kind) || kind != KindHubReplication) continue;
+            result.Add(new HubReplicationInfo(
+                c.Labels.GetValueOrDefault(LabelName, c.Name),
+                c,
+                ParseRoutes(c.Labels.GetValueOrDefault(LabelRoutes))));
+        }
+        return result.OrderBy(r => r.Name).ToList();
+    }
+
+    /// <summary>"/blackboard/applications" style: leading slash, no trailing slash; "" for the root.</summary>
+    public static string NormalizePath(string? path)
+    {
+        var p = (path ?? "").Trim().Trim('/');
+        return p.Length == 0 || p == "." ? "" : "/" + p;
+    }
+
     public static bool IsRecordingTool(ContainerInfo c, out string kind, out string recording)
     {
         kind = "";

@@ -1,0 +1,99 @@
+@* Launches a SignalR hub server locally, with optional source and destination hubs. *@
+@inherits DwisComponentBase
+@inject IHubContainerManager HubContainers
+
+<MudGrid Spacing="2" Justify="Justify.FlexStart">
+    <MudItem xs="12" md="4">
+        <MudTextField @bind-Value="_name" Label="Hub name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="6" md="2">
+        <MudNumericField @bind-Value="_port" Label="Host port" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1024" Max="65535" />
+    </MudItem>
+    <MudItem xs="6" md="4">
+        <MudTextField @bind-Value="_path" Label="Path (optional)" Placeholder="@HubDefinition.DefaultPath" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@HubUrlHelp" />
+    </MudItem>
+    <MudItem xs="12" md="2" Class="d-flex justify-end">
+        <MudButton StartIcon="@DwisIcons.LocalHub" Color="Color.Primary" Variant="Variant.Filled" OnClick="Launch" Disabled="@(IsBusy || string.IsNullOrWhiteSpace(_name))">Launch</MudButton>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Spacing="2" Class="mt-1">
+    <MudItem xs="12" md="6">
+        <MudText Typo="Typo.subtitle2"><MudIcon Icon="@DwisIcons.Source" Size="Size.Small" Style="vertical-align: middle" /> Sources (pull data from)</MudText>
+        <MudText Typo="Typo.caption">Groups of other hubs whose data this hub receives.</MudText>
+        @foreach (var link in _sources)
+        {
+            <HubLinkRow Link="link" KnownUrls="KnownUrls" Changed="@(l => Replace(_sources, link, l))" Removed="@(() => _sources.Remove(link))" />
+        }
+        <MudButton StartIcon="@DwisIcons.Add" Size="Size.Small" OnClick="@(() => _sources.Add(NewLink()))">Add source</MudButton>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudText Typo="Typo.subtitle2"><MudIcon Icon="@DwisIcons.Destination" Size="Size.Small" Style="vertical-align: middle" /> Destinations (push data to)</MudText>
+        <MudText Typo="Typo.caption">Groups of other hubs that receive this hub's data.</MudText>
+        @foreach (var link in _destinations)
+        {
+            <HubLinkRow Link="link" KnownUrls="KnownUrls" Changed="@(l => Replace(_destinations, link, l))" Removed="@(() => _destinations.Remove(link))" />
+        }
+        <MudButton StartIcon="@DwisIcons.Add" Size="Size.Small" OnClick="@(() => _destinations.Add(NewLink()))">Add destination</MudButton>
+    </MudItem>
+</MudGrid>
+<MudText Typo="Typo.caption" Class="mt-1">Image: <code>@AppSettings.LocalHubImage</code> (change it in the settings). Other containers reach the hub through <code>@AppSettings.BlackboardHostIp</code>.</MudText>
+
+@code {
+    [Parameter] public EventCallback Launched { get; set; }
+
+    private string _name = "";
+    private int _port = 5290;
+    // Root by default: a local hub has no reverse proxy in front of it, and the published image
+    // only applies --path when it understands every option it is given.
+    private string _path = "";
+    private readonly List<HubLink> _sources = new();
+    private readonly List<HubLink> _destinations = new();
+
+    private IReadOnlyList<string> KnownUrls => AppSettings.Hubs.Select(h => h.UrlForContainers).ToList();
+
+    private string HubUrlHelp
+    {
+        get
+        {
+            var app = HubContainers.LocalHubBaseUrl(_port, _path);
+            var containers = HubContainers.LocalHubContainerUrl(_port, _path);
+            return app == containers
+                ? $"Hub endpoint: {app}/dwishub"
+                : $"This app connects to {app}/dwishub; containers use {containers}/dwishub";
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _name = HubContainers.SuggestLocalHubName();
+        _port = HubContainers.SuggestLocalHubPort();
+    }
+
+    private HubLink NewLink()
+    {
+        var hub = AppSettings.ReplicationHub ?? AppSettings.Hubs.FirstOrDefault();
+        return new HubLink(hub?.UrlForContainers ?? "", AppSettings.ReplicationGroup, AppSettings.ReplicationGroup);
+    }
+
+    private static void Replace(List<HubLink> list, HubLink old, HubLink updated)
+    {
+        var i = list.IndexOf(old);
+        if (i >= 0) list[i] = updated;
+    }
+
+    private async Task Launch()
+    {
+        var spec = new LocalHubSpec(_name.Trim(), _port, _path, _sources.ToList(), _destinations.ToList());
+        var ok = await RunAsync(ct => HubContainers.CreateLocalHubAsync(spec, Actions.Progress, ct), $"Hub '{spec.Name}' launched.", $"Launching hub {spec.Name}", "hub:" + spec.Name);
+        if (ok)
+        {
+            _name = HubContainers.SuggestLocalHubName();
+            _port = HubContainers.SuggestLocalHubPort();
+            _sources.Clear();
+            _destinations.Clear();
+            await Launched.InvokeAsync();
+        }
+    }
+}

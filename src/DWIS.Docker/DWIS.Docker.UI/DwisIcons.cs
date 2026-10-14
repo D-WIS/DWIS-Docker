@@ -59,6 +59,12 @@ public static class DwisIcons
     public const string NotPulled = Icons.Material.Outlined.CloudOff;
     public const string Unknown = Icons.Material.Outlined.HelpOutline;
 
+    // local hubs and hub replication
+    public const string LocalHub = Icons.Material.Outlined.Router;
+    public const string Route = Icons.Material.Outlined.AltRoute;
+    public const string Source = Icons.Material.Outlined.Input;
+    public const string Destination = Icons.Material.Outlined.Output;
+
     // recording and replay
     public const string Record = Icons.Material.Filled.FiberManualRecord;
     public const string Recording = Icons.Material.Filled.RadioButtonChecked;
