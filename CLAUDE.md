@@ -26,7 +26,7 @@ docker build -f DWIS.Docker.AppUpdater/Dockerfile -t digiwells/dwis-app-update:s
 
 ## CI / release
 
-`.github/workflows/publish-artifacts-and-docker-image.yml` runs only on manual `workflow_dispatch`: tests, a `win-x64` publish of the web app, and both Docker images pushed to Docker Hub. Nothing builds automatically on push or PR, so build and test locally before committing.
+`.github/workflows/publish-artifacts-and-docker-image.yml` runs on manual `workflow_dispatch` and on every push to `main` that changes `src/**`: tests, a `win-x64` publish of the web app, and both Docker images pushed to Docker Hub with the `stable` tag. Nothing runs on other branches or on pull requests, so build and test locally before merging; a merge into `main` publishes new `stable` images.
 
 ## Architecture
 

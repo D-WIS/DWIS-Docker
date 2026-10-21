@@ -3,6 +3,13 @@ name: Publish artifacts and push docker image
 on:
   # Run manually from the Actions tab
   workflow_dispatch:
+  # Run when source files change on main (the images are tagged "stable", so only main publishes)
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - '.github/workflows/publish-artifacts-and-docker-image.yml'
 
 jobs:
   build:
