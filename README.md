@@ -40,6 +40,37 @@ What ends up in `C:\Volumes`:
 - `<Module>\config.json` — one folder per module that has a configuration, for example `DWISAdviceComposerService\config.json`. The folder is mounted into the module container as `/home`.
 - `Recordings\<name>\` — one folder per recording made from the Recording tab (chunk files plus an `rtData` index).
 
+### Running on a remote machine
+
+The app manages the Docker engine it is connected to, and the module configuration folders must be on the same machine as that engine. So if your Docker engine runs on a remote machine (for example a Linux VM you reach over SSH), run the app **on that machine** and open its web UI from your PC through an SSH port forward.
+
+On the remote machine, create the volumes folder and start the container with the engine's own socket:
+
+```bash
+mkdir -p ~/Volumes
+docker run --name dwis-docker --user root -P \
+  -p 5272:8080/tcp \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v ~/Volumes:/home \
+  -dit digiwells/dwis-docker:stable
+```
+
+On your PC, forward the web port over SSH (replace `user@remote-host` with your login and the machine's address) and keep this command running:
+
+```bash
+ssh -N -L 5272:localhost:5272 user@remote-host
+```
+
+Then open your browser and navigate to `http://localhost:5272` as usual. The web UI, the engine, the module folders and the bind mounts all stay on the remote machine, so everything works as on a local installation.
+
+A few things to know about this setup:
+
+- The port 5272 is only reachable through the SSH tunnel. Nothing else needs to be opened on the remote machine's firewall.
+- Links to module web apps (Log view, Blackboard explorer, …) point to `localhost:<port>`. To open them from your PC, forward their ports too, for example `-L 5276:localhost:5276 -L 5277:localhost:5277` on the same `ssh` command.
+- The OPC-UA endpoint of a blackboard (`opc.tcp://localhost:48030`) can be forwarded the same way with `-L 48030:localhost:48030`.
+- On a Linux host, the **Blackboard host IP** setting (default `host.docker.internal`) may have to be changed to the host's IP on the Docker bridge, usually `172.17.0.1`, so that modules can reach the blackboard.
+- Do not expose the Docker API itself (port 2375) to the network as a shortcut. The app has no TLS settings, and an open Docker API gives root access to the machine.
+
 ## 2. The tabs
 
 - **Replication** — the SignalR hubs the blackboards can replicate to. Add or remove hubs, connect, see the groups and how many blackboards are connected to each, create groups, set a group write password, clear a group's manifests, and pick the hub and group the standard setup replicates to. You can also **launch a hub locally** (a `digiwells/dwissignalr` container on a port of your choice, optionally pulling data from or pushing data to groups of other hubs) and start **hub-to-hub replications** (a standalone container that copies one hub group to another).
