@@ -1,0 +1,127 @@
+@* Creates one instance of a client or advisor against a chosen blackboard. *@
+@inherits DwisComponentBase
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@DwisIcons.Create" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Create @Module.DisplayName</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.body2">
+                The application finds its blackboard through <code>@ModuleCatalog.BlackboardIpEnvVar</code> (@AppSettings.BlackboardHostIp)
+                and <code>@ModuleCatalog.BlackboardPortEnvVar</code>. Pick the blackboard it should use.
+            </MudText>
+            @if (!Snapshot.Blackboards.Any())
+            {
+                <MudAlert Severity="Severity.Warning" Dense Icon="@DwisIcons.Info">No blackboard container exists yet. The instance will be bound to the default blackboard; create it from the Standard setup tab.</MudAlert>
+            }
+            <MudSelect T="string" Value="_blackboardName" ValueChanged="OnBlackboardChanged" Label="Blackboard" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var option in Options)
+                {
+                    <MudSelectItem T="string" Value="@option.Target.ContainerName">
+                        @option.Target.ContainerName (port @option.Target.Port@(option.Info is null ? ", not created yet" : option.Info.Container.IsRunning ? "" : ", stopped"))
+                    </MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField T="string" Value="_name" ValueChanged="OnNameChanged" Label="Container name" Variant="Variant.Outlined" Margin="Margin.Dense" Required
+                          Validation="@((string s) => NameValid(s) ? null : "Letters, digits, '-', '_' and '.' only")" />
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                @if (Module.ContainerPort is not null)
+                {
+                    <MudNumericField T="int?" @bind-Value="_port" Label="Host port" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Max="65535" Clearable
+                                     HelperText="@(_port is null ? "Not published" : PortFree(_port.Value) ? $"Open at http://localhost:{_port}" : "Used by another container")" />
+                }
+                <MudSwitch T="bool" @bind-Value="_start" Label="Start after create" Color="Color.Primary" />
+            </MudStack>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => Dialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@DwisIcons.Create" OnClick="Create"
+                   Disabled="@(IsBusy || !NameValid(_name) || _blackboardName is null || (_port is { } p && !PortFree(p)))">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+    [Parameter, EditorRequired] public ModuleDefinition Module { get; set; } = default!;
+
+    private sealed record Option(BlackboardTarget Target, BlackboardInfo? Info);
+
+    private string? _blackboardName;
+    private string _name = "";
+    private int? _port;
+    private bool _start = true;
+    private bool _nameEdited;
+
+    private List<Option> Options
+    {
+        get
+        {
+            var list = Snapshot.Blackboards
+                .Select(b => new Option(new BlackboardTarget(b.Container.Name, b.Port), b))
+                .OrderBy(o => o.Info!.Container.Name)
+                .ToList();
+            var fallback = Modules.DefaultBlackboardTarget();
+            if (!list.Any(o => o.Target.ContainerName.Equals(fallback.ContainerName, StringComparison.OrdinalIgnoreCase)))
+                list.Insert(0, new Option(fallback, null));
+            return list;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        var options = Options;
+        var fallback = Modules.DefaultBlackboardTarget();
+        var initial = options.FirstOrDefault(o => o.Target.ContainerName.Equals(fallback.ContainerName, StringComparison.OrdinalIgnoreCase)) ?? options.First();
+        Apply(initial.Target);
+    }
+
+    private void OnBlackboardChanged(string name)
+    {
+        var option = Options.FirstOrDefault(o => o.Target.ContainerName == name);
+        if (option is not null) Apply(option.Target);
+    }
+
+    private void Apply(BlackboardTarget target)
+    {
+        _blackboardName = target.ContainerName;
+        var suggestion = Modules.SuggestInstance(Module, target);
+        if (!_nameEdited) _name = suggestion.ContainerName;
+        _port ??= suggestion.HostPort;
+    }
+
+    private void OnNameChanged(string value)
+    {
+        _name = value;
+        _nameEdited = true;
+    }
+
+    private static bool NameValid(string s) =>
+        !string.IsNullOrWhiteSpace(s) && System.Text.RegularExpressions.Regex.IsMatch(s, "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$");
+
+    private bool PortFree(int port) =>
+        Snapshot.Modules.SelectMany(m => m.Instances).All(i => i.HostPort != port && i.Container.PublishedPorts.All(p => p.HostPort != port))
+        && Snapshot.Blackboards.All(b => b.Port != port)
+        && Snapshot.LocalHubs.All(h => h.HostPort != port);
+
+    private void Create()
+    {
+        var option = Options.FirstOrDefault(o => o.Target.ContainerName == _blackboardName);
+        if (option is null) return;
+        Dialog.Close(DialogResult.Ok(new InstanceSpec(Module.Id, _name.Trim(), option.Target, _port, _start)));
+    }
+
+    public static async Task<InstanceSpec?> ShowAsync(IDialogService dialogs, ModuleDefinition module)
+    {
+        var parameters = new DialogParameters<CreateInstanceDialog> { { x => x.Module, module } };
+        var dialog = await dialogs.ShowAsync<CreateInstanceDialog>($"Create {module.DisplayName}", parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        return result is { Canceled: false, Data: InstanceSpec spec } ? spec : null;
+    }
+}

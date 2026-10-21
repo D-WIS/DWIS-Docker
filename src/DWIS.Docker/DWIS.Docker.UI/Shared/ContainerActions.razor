@@ -1,4 +1,4 @@
-@* The fixed set of per-row buttons: Create | Start | Stop, Restart, Logs, Update image, Delete. *@
+@* The fixed set of per-row buttons: Create | Start | Stop, Restart, Logs, Update image, Copy run command, Delete. *@
 @inherits DwisComponentBase
 
 <span class="dwis-actions">
@@ -10,7 +10,7 @@
     {
         @if (OnCreate.HasDelegate)
         {
-            <MudTooltip Text="Create container">
+            <MudTooltip Text="@CreateText">
                 <MudIconButton Icon="@DwisIcons.Create" Color="Color.Primary" Size="Size.Small" OnClick="OnCreate" Disabled="IsBusy" />
             </MudTooltip>
         }
@@ -40,6 +40,18 @@
             <MudIconButton Icon="@DwisIcons.Update" Color="Color.Info" Size="Size.Small" OnClick="OnUpdateImage" Disabled="IsBusy" />
         </MudTooltip>
     }
+    @if (Container is not null && OnAddInstance.HasDelegate)
+    {
+        <MudTooltip Text="@AddInstanceText">
+            <MudIconButton Icon="@DwisIcons.AddInstance" Color="Color.Primary" Size="Size.Small" OnClick="OnAddInstance" Disabled="IsBusy" />
+        </MudTooltip>
+    }
+    @if (RunCommand is not null)
+    {
+        <MudTooltip Text="@(Container is null ? "Copy the docker run command that would create it" : "Copy the equivalent docker run command")">
+            <MudIconButton Icon="@DwisIcons.RunCommand" Size="Size.Small" OnClick="CopyRunCommand" />
+        </MudTooltip>
+    }
     <MudTooltip Text="Delete container">
         <MudIconButton Icon="@DwisIcons.Delete" Size="Size.Small" OnClick="Delete" Disabled="@(IsBusy || Container is null)" />
     </MudTooltip>
@@ -49,8 +61,14 @@
     [Parameter] public ContainerInfo? Container { get; set; }
     [Parameter] public string BusyKey { get; set; } = "";
     [Parameter] public EventCallback OnCreate { get; set; }
+    [Parameter] public string CreateText { get; set; } = "Create container";
     [Parameter] public EventCallback OnUpdateImage { get; set; }
+    [Parameter] public EventCallback OnAddInstance { get; set; }
+    [Parameter] public string AddInstanceText { get; set; } = "New instance against another blackboard";
     [Parameter] public string? DeleteWarning { get; set; }
+
+    /// <summary>Builds the <c>docker run</c> command of this container; the button is hidden when null.</summary>
+    [Parameter] public Func<string>? RunCommand { get; set; }
 
     private bool Busy => Actions.IsBusyWith(BusyKey) || (Container is not null && Snapshot.IsBusy(Container.Id));
 
@@ -58,6 +76,8 @@
     private Task Stop() => RunAsync(ct => Modules.StopAsync(Container!.Id, ct), $"{Container!.Name} stopped.", $"Stopping {Container!.Name}", BusyKey);
     private Task Restart() => RunAsync(ct => Modules.RestartAsync(Container!.Id, ct), $"{Container!.Name} restarted.", $"Restarting {Container!.Name}", BusyKey);
     private Task ShowLogs() => LogsDialog.ShowAsync(Dialogs, Container!.Id, Container!.Name);
+
+    private Task CopyRunCommand() => CopyRunCommandAsync(RunCommand!);
 
     private async Task Delete()
     {

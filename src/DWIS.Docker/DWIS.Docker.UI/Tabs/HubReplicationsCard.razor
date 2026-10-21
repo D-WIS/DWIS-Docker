@@ -29,7 +29,7 @@
                 }
             </MudTd>
             <MudTd DataLabel="Actions">
-                <ContainerActions Container="context.Container" BusyKey="@("replication:" + context.Name)" />
+                <ContainerActions Container="context.Container" BusyKey="@("replication:" + context.Name)" RunCommand="@(() => HubContainers.RunCommand(context))" />
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>

@@ -12,6 +12,8 @@ public static class ModuleCatalog
 
     /// <summary>Env var every non-blackboard module reads to find the blackboard (same literal as the DWIS client library).</summary>
     public const string BlackboardIpEnvVar = "BLACKBOARD_IP";
+    /// <summary>Env var clients and advisors read for the blackboard's OPC UA port (same literal as the DWIS client library).</summary>
+    public const string BlackboardPortEnvVar = "BLACKBOARD_PORT";
     public const string DefaultBlackboardHostIp = "host.docker.internal";
     public const int DefaultBlackboardPort = 48030;
     public const int WebAppContainerPort = 8080;
@@ -116,6 +118,10 @@ public static class ModuleCatalog
         };
 
     public const string AdHocBlackboardId = "blackboard-adhoc";
+
+    /// <summary>Definition for one instance of a client or advisor: same module id, its own container name and host port.</summary>
+    public static ModuleDefinition Instance(ModuleDefinition module, string containerName, int? hostPort) =>
+        module with { ContainerName = containerName, HostPort = hostPort };
 
     private static ModuleDefinition Bridge(string slug, string displayName, string folderSuffix, Type? configType) => new(
         $"bridge-{slug}", displayName, ModuleCategory.Bridge,

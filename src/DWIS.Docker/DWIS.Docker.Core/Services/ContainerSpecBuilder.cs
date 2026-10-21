@@ -17,6 +17,9 @@ internal static class ContainerSpecBuilder
     public const string LabelPort = "dwis.port";
     public const string LabelHub = "dwis.hub";
     public const string LabelGroup = "dwis.group";
+    /// <summary>Container name of the blackboard a client or advisor instance is bound to.</summary>
+    public const string LabelBlackboard = "dwis.blackboard";
+    public const string LabelBlackboardPort = "dwis.blackboard.port";
 
     public const string KindBlackboard = "blackboard";
     public const string KindService = "service";
@@ -232,6 +235,10 @@ internal static class ContainerSpecBuilder
         return module.ContainerName;
     }
 
+    /// <summary>Default name of a client or advisor instance: the module's container name plus the blackboard's.</summary>
+    public static string InstanceContainerName(ModuleDefinition module, string blackboardContainerName) =>
+        $"{module.ContainerName}-{Slug(blackboardContainerName)}";
+
     public static CreateContainerParameters Build(ModuleDefinition module, RunContext ctx)
     {
         var labels = new Dictionary<string, string>
@@ -278,6 +285,12 @@ internal static class ContainerSpecBuilder
         p.Tty = true;
         p.OpenStdin = true;
         p.Env = [$"{ModuleCatalog.BlackboardIpEnvVar}={ctx.BlackboardHostIp}"];
+        if (ctx.Blackboard is { } target)
+        {
+            p.Env.Add($"{ModuleCatalog.BlackboardPortEnvVar}={target.Port}");
+            labels[LabelBlackboard] = target.ContainerName;
+            labels[LabelBlackboardPort] = target.Port.ToString();
+        }
 
         if (module.HostFolderName is not null)
         {
@@ -289,8 +302,36 @@ internal static class ContainerSpecBuilder
 
         if (module.ContainerPort is { } cp && module.HostPort is { } hp)
             AddPort(p, cp, hp);
+        // Web apps record the host port (empty = not published) so stopped containers, which Docker
+        // lists without ports, still show it.
+        if (module.IsWebApp)
+            labels[LabelPort] = module.HostPort?.ToString() ?? "";
 
         return p;
+    }
+
+    /// <summary>
+    /// Instance details of a non-blackboard container: the blackboard it was bound to and the port it
+    /// publishes, from our labels; a container without labels is legacy and reports what Docker shows.
+    /// </summary>
+    public static ModuleInstance ToModuleInstance(ContainerInfo c, ModuleDefinition module)
+    {
+        BlackboardTarget? target = null;
+        if (c.Labels.TryGetValue(LabelBlackboard, out var bb) && bb.Length > 0)
+        {
+            var port = c.Labels.TryGetValue(LabelBlackboardPort, out var ps) && int.TryParse(ps, out var pp) ? pp : ModuleCatalog.DefaultBlackboardPort;
+            target = new BlackboardTarget(bb, port);
+        }
+
+        int? hostPort = null;
+        if (module.ContainerPort is { } cp && c.PublishedPorts.FirstOrDefault(p => p.ContainerPort == cp) is { } published)
+            hostPort = published.HostPort;
+        else if (c.Labels.TryGetValue(LabelPort, out var hs))
+            hostPort = int.TryParse(hs, out var hp) ? hp : null;
+        else
+            hostPort = module.HostPort; // legacy, or created by this app before the port label existed
+
+        return new ModuleInstance(c, target, hostPort, IsLegacy: !IsManaged(c));
     }
 
     /// <summary>Module id this container belongs to, from our label or (legacy) from its image.</summary>

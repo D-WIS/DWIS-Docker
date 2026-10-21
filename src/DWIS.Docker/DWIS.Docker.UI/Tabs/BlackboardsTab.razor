@@ -55,6 +55,7 @@
         <MudTd DataLabel="Actions">
             <ContainerActions Container="context.Container" BusyKey="@context.Container.Id"
                               OnUpdateImage="@(() => UpdateImage(context))"
+                              RunCommand="@(() => Modules.RunCommand(context))"
                               DeleteWarning="@(context.IsReplicating ? "It will leave its hub group." : null)" />
         </MudTd>
     </RowTemplate>

@@ -21,6 +21,8 @@ public static class DwisIcons
     public const string ResetDefaults = Icons.Material.Outlined.SettingsBackupRestore;
     public const string Format = Icons.Material.Outlined.FormatAlignLeft;
     public const string Copy = Icons.Material.Outlined.ContentCopy;
+    public const string RunCommand = Icons.Material.Outlined.Terminal;
+    public const string AddInstance = Icons.Material.Outlined.LibraryAdd;
     public const string Add = Icons.Material.Filled.Add;
     public const string Remove = Icons.Material.Outlined.RemoveCircleOutline;
     public const string Cancel = Icons.Material.Filled.Close;

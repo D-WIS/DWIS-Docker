@@ -18,18 +18,18 @@
     @if (Selection.Count > 0)
     {
         <MudText Typo="Typo.body2" Class="mr-1">@Selection.Count selected</MudText>
-        <MudButton StartIcon="@DwisIcons.Create" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" OnClick="CreateMissing" Disabled="@(IsBusy || !Selection.Any(m => !m.Exists))">Create missing</MudButton>
-        <MudButton StartIcon="@DwisIcons.Start" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success" OnClick="@(() => Bulk(BulkAction.Start, m => m.Exists && !m.IsRunning, "started"))" Disabled="@(IsBusy || !Selection.Any(m => m.Exists && !m.IsRunning))">Start</MudButton>
-        <MudButton StartIcon="@DwisIcons.Stop" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => Bulk(BulkAction.Stop, m => m.IsRunning, "stopped"))" Disabled="@(IsBusy || !Selection.Any(m => m.IsRunning))">Stop</MudButton>
-        <MudButton StartIcon="@DwisIcons.Restart" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" OnClick="@(() => Bulk(BulkAction.Restart, m => m.IsRunning, "restarted"))" Disabled="@(IsBusy || !Selection.Any(m => m.IsRunning))">Restart</MudButton>
+        <MudButton StartIcon="@DwisIcons.Create" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" OnClick="CreateMissing" Disabled="@(IsBusy || !Selection.Any(r => !r.Exists))">Create missing</MudButton>
+        <MudButton StartIcon="@DwisIcons.Start" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success" OnClick="@(() => Bulk(BulkAction.Start, r => r.Exists && !r.IsRunning, "started"))" Disabled="@(IsBusy || !Selection.Any(r => r.Exists && !r.IsRunning))">Start</MudButton>
+        <MudButton StartIcon="@DwisIcons.Stop" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => Bulk(BulkAction.Stop, r => r.IsRunning, "stopped"))" Disabled="@(IsBusy || !Selection.Any(r => r.IsRunning))">Stop</MudButton>
+        <MudButton StartIcon="@DwisIcons.Restart" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" OnClick="@(() => Bulk(BulkAction.Restart, r => r.IsRunning, "restarted"))" Disabled="@(IsBusy || !Selection.Any(r => r.IsRunning))">Restart</MudButton>
         <MudButton StartIcon="@DwisIcons.Update" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info" OnClick="UpdateImages" Disabled="IsBusy">Update images</MudButton>
-        <MudButton StartIcon="@DwisIcons.Delete" Size="Size.Small" Variant="Variant.Outlined" OnClick="DeleteSelection" Disabled="@(IsBusy || !Selection.Any(m => m.Exists))">Delete</MudButton>
+        <MudButton StartIcon="@DwisIcons.Delete" Size="Size.Small" Variant="Variant.Outlined" OnClick="DeleteSelection" Disabled="@(IsBusy || !Selection.Any(r => r.Exists))">Delete</MudButton>
     }
 </MudStack>
 
 @code {
     [Parameter] public string? Title { get; set; }
-    [Parameter] public IReadOnlyCollection<ModuleStatus> Selection { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<ModuleRow> Selection { get; set; } = [];
     [Parameter] public EventCallback ClearSelection { get; set; }
 
     private Task Refresh() => Actions.QueryAsync(ct => Status.RefreshAsync(ct).ContinueWith(_ => true, ct));
@@ -38,7 +38,8 @@
 
     private async Task CreateMissing()
     {
-        var modules = Selection.Where(m => !m.Exists).Select(m => m.Module).ToList();
+        // Clients and advisors created this way are bound to the default blackboard.
+        var modules = Selection.Where(r => !r.Exists).Select(r => r.Module).Distinct().ToList();
         await RunAsync(async ct =>
         {
             var failures = await Modules.CreateMissingAsync(modules, Actions.Progress, ct);
@@ -47,9 +48,9 @@
         await ClearSelection.InvokeAsync();
     }
 
-    private async Task Bulk(BulkAction action, Func<ModuleStatus, bool> applies, string pastTense)
+    private async Task Bulk(BulkAction action, Func<ModuleRow, bool> applies, string pastTense)
     {
-        var containers = Selection.Where(applies).Select(m => m.Container!).ToList();
+        var containers = Selection.Where(applies).Select(r => r.Container!).ToList();
         await RunAsync(async ct =>
         {
             var failures = await Modules.BulkAsync(containers, action, ct);
@@ -60,17 +61,19 @@
     private async Task UpdateImages()
     {
         var steps = Selection
-            .Select(m => ($"Updating {m.Module.DisplayName}", (Func<CancellationToken, Task>)(ct => Modules.UpdateImageAsync(m.Module, Actions.Progress, ct))))
+            .Select(r => r.Instance is { } instance && r.Container!.Id != r.Status.Container?.Id
+                ? ($"Updating {r.Container.Name}", (Func<CancellationToken, Task>)(ct => Modules.UpdateInstanceImageAsync(instance, Actions.Progress, ct)))
+                : ($"Updating {r.Module.DisplayName}", (Func<CancellationToken, Task>)(ct => Modules.UpdateImageAsync(r.Module, Actions.Progress, ct))))
             .ToList();
         await Actions.RunManyAsync(steps, "Images updated.");
     }
 
     private async Task DeleteSelection()
     {
-        var targets = Selection.Where(m => m.Exists).ToList();
-        var names = string.Join("\n", targets.Select(m => " - " + m.Container!.Name));
+        var targets = Selection.Where(r => r.Exists).ToList();
+        var names = string.Join("\n", targets.Select(r => " - " + r.Container!.Name));
         if (!await ConfirmAsync("Delete containers", $"Delete {targets.Count} container(s)?\n{names}")) return;
-        await Bulk(BulkAction.Remove, m => m.Exists, "deleted");
+        await Bulk(BulkAction.Remove, r => r.Exists, "deleted");
         await ClearSelection.InvokeAsync();
     }
 }

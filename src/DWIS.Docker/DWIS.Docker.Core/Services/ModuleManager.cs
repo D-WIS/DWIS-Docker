@@ -11,13 +11,36 @@ public interface IModuleManager
 {
     RunContext BuildRunContext();
 
-    /// <summary>Writes the default config if missing, pulls the image if needed and creates the container (not started).</summary>
+    /// <summary>
+    /// Writes the default config if missing, pulls the image if needed and creates the container (not started).
+    /// A client or advisor is bound to the default blackboard (see <see cref="DefaultBlackboardTarget"/>).
+    /// </summary>
     Task CreateAsync(ModuleDefinition module, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
     Task CreateAndStartAsync(ModuleDefinition module, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
 
-    /// <summary>Stops, removes, re-pulls and recreates the module container. A running container is started again.</summary>
+    /// <summary>Stops, removes, re-pulls and recreates the module's primary container, keeping its name, blackboard and port. A running container is started again.</summary>
     Task UpdateImageAsync(ModuleDefinition module, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
+    /// <summary>Same as <see cref="UpdateImageAsync"/> for one instance of a module.</summary>
+    Task UpdateInstanceImageAsync(ModuleInstance instance, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
     Task UpdateBlackboardImageAsync(BlackboardInfo blackboard, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
+
+    // ---------------------------------------------------------------- client / advisor instances
+
+    /// <summary>The blackboard clients and advisors are bound to when no other is chosen: the catalog blackboard (existing or as it would be created).</summary>
+    BlackboardTarget DefaultBlackboardTarget();
+
+    /// <summary>A unique container name and a free host port for a new instance of the module against the blackboard.</summary>
+    InstanceSpec SuggestInstance(ModuleDefinition module, BlackboardTarget blackboard);
+
+    /// <summary>Creates one instance of a client or advisor against the chosen blackboard (BLACKBOARD_IP / BLACKBOARD_PORT).</summary>
+    Task CreateInstanceAsync(InstanceSpec spec, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
+
+    // ---------------------------------------------------------------- docker run commands
+
+    /// <summary>The <c>docker run</c> command equivalent to what the app creates for the module (its primary container, or a new one).</summary>
+    string RunCommand(ModuleDefinition module, ModuleInstance? instance = null);
+    string RunCommand(InstanceSpec spec);
+    string RunCommand(BlackboardInfo blackboard);
 
     Task<IReadOnlyList<OperationFailure>> CreateMissingAsync(IEnumerable<ModuleDefinition> modules, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
     Task<IReadOnlyList<OperationFailure>> BulkAsync(IEnumerable<ContainerInfo> containers, BulkAction action, CancellationToken ct = default);
@@ -84,38 +107,75 @@ public sealed class ModuleManager : IModuleManager
     // ---------------------------------------------------------------- create / update
 
     public Task CreateAsync(ModuleDefinition module, IProgress<PullProgress>? progress = null, CancellationToken ct = default) =>
-        WithModuleLock(module.Id, $"Creating {module.DisplayName}", async token =>
-        {
-            await _config.EnsureDefaultAsync(module, token).ConfigureAwait(false);
-            await _docker.CreateContainerAsync(module, BuildRunContext(), progress, token).ConfigureAwait(false);
-        }, ct);
+        CreateCoreAsync(module, start: false, progress, ct);
 
     public Task CreateAndStartAsync(ModuleDefinition module, IProgress<PullProgress>? progress = null, CancellationToken ct = default) =>
-        WithModuleLock(module.Id, $"Creating {module.DisplayName}", async token =>
+        CreateCoreAsync(module, start: true, progress, ct);
+
+    private Task CreateCoreAsync(ModuleDefinition module, bool start, IProgress<PullProgress>? progress, CancellationToken ct)
+    {
+        var (definition, ctx) = module.IsWebApp ? Resolve(SuggestInstance(module, DefaultBlackboardTarget())) : (module, BuildRunContext());
+        return WithModuleLock(module.Id, $"Creating {module.DisplayName}", async token =>
         {
-            await _config.EnsureDefaultAsync(module, token).ConfigureAwait(false);
-            var c = await _docker.CreateContainerAsync(module, BuildRunContext(), progress, token).ConfigureAwait(false);
-            await _docker.StartAsync(c.Id, token).ConfigureAwait(false);
+            await _config.EnsureDefaultAsync(definition, token).ConfigureAwait(false);
+            var c = await _docker.CreateContainerAsync(definition, ctx, progress, token).ConfigureAwait(false);
+            if (start) await _docker.StartAsync(c.Id, token).ConfigureAwait(false);
         }, ct);
+    }
 
     public Task UpdateImageAsync(ModuleDefinition module, IProgress<PullProgress>? progress = null, CancellationToken ct = default) =>
         WithModuleLock(module.Id, $"Updating {module.DisplayName}", async token =>
         {
             var current = _status.Current.Find(module.Id);
-            await RecreateAsync(module, BuildRunContext(), current?.Container, progress, token).ConfigureAwait(false);
+            var instance = current?.Instances.FirstOrDefault();
+            var (definition, ctx) = ForExisting(module, instance);
+            await RecreateAsync(definition, ctx, instance?.Container, progress, token).ConfigureAwait(false);
         }, ct);
+
+    public Task UpdateInstanceImageAsync(ModuleInstance instance, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
+    {
+        var c = instance.Container;
+        var module = ModuleOf(c);
+        var (definition, ctx) = ForExisting(module, instance);
+        return WithModuleLock(c.Id, $"Updating {c.Name}", token => RecreateAsync(definition, ctx, c, progress, token), ct);
+    }
+
+    /// <summary>Definition and context that recreate an existing container as it is: same name, blackboard and host port.</summary>
+    private (ModuleDefinition definition, RunContext ctx) ForExisting(ModuleDefinition module, ModuleInstance? instance)
+    {
+        var ctx = BuildRunContext();
+        if (instance is null || module.IsBlackboard) return (module, ctx);
+        if (!module.IsWebApp && instance.Blackboard is null) return (module, ctx);
+        var definition = ModuleCatalog.Instance(module, instance.Container.Name, instance.HostPort ?? module.HostPort);
+        return (definition, ctx with { Blackboard = instance.Blackboard });
+    }
+
+    private static ModuleDefinition ModuleOf(ContainerInfo c) =>
+        ContainerSpecBuilder.ResolveModuleId(c) is { } id && ModuleCatalog.Find(id) is { } module
+            ? module
+            : throw new DwisDockerException($"'{c.Name}' is not a container of a known module.");
 
     public Task UpdateBlackboardImageAsync(BlackboardInfo blackboard, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
     {
         var c = blackboard.Container;
+        var (module, ctx) = ForBlackboard(blackboard);
+        if (module.Id == ModuleCatalog.Blackboard.Id)
+            return UpdateImageAsync(ModuleCatalog.Blackboard, progress, ct);
+        return WithModuleLock(c.Id, $"Updating {c.Name}", token => RecreateAsync(module, ctx, c, progress, token), ct);
+    }
+
+    /// <summary>Definition and context that recreate a blackboard as it is: the catalog one from the settings, any other with its own name, port, hub and group.</summary>
+    private (ModuleDefinition module, RunContext ctx) ForBlackboard(BlackboardInfo blackboard)
+    {
+        var c = blackboard.Container;
         var isCatalog = c.Labels.TryGetValue(ContainerSpecBuilder.LabelModule, out var id) && id == ModuleCatalog.Blackboard.Id;
         var status = isCatalog ? _status.Current.Find(ModuleCatalog.Blackboard.Id) : null;
+        var baseCtx = BuildRunContext();
         if (status?.Container?.Id == c.Id)
-            return UpdateImageAsync(ModuleCatalog.Blackboard, progress, ct);
+            return (ModuleCatalog.Blackboard, baseCtx);
 
         // Ad hoc or legacy: keep its own name, port, hub and group.
         var module = ModuleCatalog.AdHocBlackboard(c.Name, blackboard.Port);
-        var baseCtx = BuildRunContext();
         var s = _settings.Current;
         ReplicationTarget? replication = null;
         if (blackboard.IsReplicating)
@@ -124,8 +184,7 @@ public sealed class ModuleManager : IModuleManager
                             && blackboard.Group == s.ReplicationGroup;
             replication = new ReplicationTarget(blackboard.HubUrl!, blackboard.Group ?? "default", samePlace ? s.ReplicationGroupPassword : null);
         }
-        var ctx = baseCtx with { Replication = replication };
-        return WithModuleLock(c.Id, $"Updating {c.Name}", token => RecreateAsync(module, ctx, c, progress, token), ct);
+        return (module, baseCtx with { Replication = replication });
     }
 
     private async Task RecreateAsync(ModuleDefinition module, RunContext ctx, ContainerInfo? existing, IProgress<PullProgress>? progress, CancellationToken ct)
@@ -254,6 +313,105 @@ public sealed class ModuleManager : IModuleManager
         var samePlace = effectiveHub == s.ReplicationHubId && effectiveGroup == s.ReplicationGroup;
         return new BlackboardSpec(name, port, effectiveHub, effectiveHub is null ? null : effectiveGroup,
             samePlace ? s.ReplicationGroupPassword : null, StartAfterCreate: true);
+    }
+
+    // ---------------------------------------------------------------- client / advisor instances
+
+    public BlackboardTarget DefaultBlackboardTarget()
+    {
+        var status = _status.Current.Find(ModuleCatalog.Blackboard.Id);
+        if (status?.Blackboard is { } existing)
+            return new BlackboardTarget(existing.Container.Name, existing.Port);
+        var ctx = BuildRunContext();
+        return new BlackboardTarget(ContainerSpecBuilder.ContainerNameFor(ModuleCatalog.Blackboard, ctx), ModuleCatalog.Blackboard.HostPort ?? ModuleCatalog.DefaultBlackboardPort);
+    }
+
+    public InstanceSpec SuggestInstance(ModuleDefinition module, BlackboardTarget blackboard)
+    {
+        var snapshot = _status.Current;
+        var names = snapshot.Modules.SelectMany(m => m.Instances).Select(i => i.Container.Name)
+            .Concat(snapshot.Blackboards.Select(b => b.Container.Name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var baseName = ContainerSpecBuilder.InstanceContainerName(module, blackboard.ContainerName);
+        var name = baseName;
+        for (var i = 2; names.Contains(name); i++) name = $"{baseName}-{i}";
+
+        int? port = null;
+        if (module.HostPort is { } start)
+        {
+            var used = UsedHostPorts(snapshot);
+            port = start;
+            while (used.Contains(port.Value)) port++;
+        }
+        return new InstanceSpec(module.Id, name, blackboard, port, StartAfterCreate: true);
+    }
+
+    private static HashSet<int> UsedHostPorts(StatusSnapshot snapshot)
+    {
+        var used = new HashSet<int>();
+        foreach (var m in snapshot.Modules)
+            foreach (var i in m.Instances)
+            {
+                if (i.HostPort is { } hp) used.Add(hp);
+                foreach (var p in i.Container.PublishedPorts) used.Add(p.HostPort);
+            }
+        foreach (var b in snapshot.Blackboards) used.Add(b.Port);
+        foreach (var h in snapshot.LocalHubs) used.Add(h.HostPort);
+        return used;
+    }
+
+    public Task CreateInstanceAsync(InstanceSpec spec, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
+    {
+        var (definition, ctx) = Resolve(spec);
+        var snapshot = _status.Current;
+        if (snapshot.Modules.SelectMany(m => m.Instances).Any(i => i.Container.Name.Equals(definition.ContainerName, StringComparison.OrdinalIgnoreCase)))
+            throw new ContainerConflictException($"A container named '{definition.ContainerName}' already exists.");
+        if (spec.HostPort is { } port && UsedHostPorts(snapshot).Contains(port))
+            throw new PortInUseException($"Port {port} is already used by another container.");
+
+        return WithModuleLock(definition.ContainerName, $"Creating {definition.DisplayName} for {spec.Blackboard.ContainerName}", async token =>
+        {
+            await _config.EnsureDefaultAsync(definition, token).ConfigureAwait(false);
+            var c = await _docker.CreateContainerAsync(definition, ctx, progress, token).ConfigureAwait(false);
+            if (spec.StartAfterCreate)
+                await _docker.StartAsync(c.Id, token).ConfigureAwait(false);
+        }, ct);
+    }
+
+    /// <summary>Validates an instance request and turns it into the definition and context the create path needs.</summary>
+    private (ModuleDefinition definition, RunContext ctx) Resolve(InstanceSpec spec)
+    {
+        var module = ModuleCatalog.Find(spec.ModuleId) ?? throw new DwisDockerException($"Unknown module '{spec.ModuleId}'.");
+        var name = spec.ContainerName.Trim();
+        if (name.Length == 0) throw new DwisDockerException("Container name must not be empty.");
+        if (string.IsNullOrWhiteSpace(spec.Blackboard.ContainerName)) throw new DwisDockerException("Choose a blackboard.");
+        if (spec.Blackboard.Port is < 1 or > 65535) throw new DwisDockerException("The blackboard port is not valid.");
+        if (spec.HostPort is { } port && port is < 1 or > 65535) throw new DwisDockerException("Port must be between 1 and 65535.");
+        var definition = ModuleCatalog.Instance(module, name, spec.HostPort);
+        return (definition, BuildRunContext() with { Blackboard = spec.Blackboard });
+    }
+
+    // ---------------------------------------------------------------- docker run commands
+
+    public string RunCommand(ModuleDefinition module, ModuleInstance? instance = null)
+    {
+        instance ??= _status.Current.Find(module.Id)?.Instances.FirstOrDefault();
+        if (instance is null && module.IsWebApp)
+            return RunCommand(SuggestInstance(module, DefaultBlackboardTarget()));
+        var (definition, ctx) = ForExisting(module, instance);
+        return DockerRunCommandFormatter.Format(ContainerSpecBuilder.Build(definition, ctx));
+    }
+
+    public string RunCommand(InstanceSpec spec)
+    {
+        var (definition, ctx) = Resolve(spec);
+        return DockerRunCommandFormatter.Format(ContainerSpecBuilder.Build(definition, ctx));
+    }
+
+    public string RunCommand(BlackboardInfo blackboard)
+    {
+        var (module, ctx) = ForBlackboard(blackboard);
+        return DockerRunCommandFormatter.Format(ContainerSpecBuilder.Build(module, ctx));
     }
 
     // ---------------------------------------------------------------- self update
