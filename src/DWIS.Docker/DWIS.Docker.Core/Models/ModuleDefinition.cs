@@ -57,16 +57,30 @@ public sealed record ModuleDefinition(
 /// <summary>Where blackboards replicate to.</summary>
 public sealed record ReplicationTarget(string HubUrl, string Group, string? WritePassword);
 
+/// <summary>The blackboard a client or advisor container talks to, identified by its container name and OPC UA port.</summary>
+public sealed record BlackboardTarget(string ContainerName, int Port);
+
 /// <summary>Everything the create path needs besides the module definition.</summary>
 /// <param name="BlackboardHostIp">Value of the BLACKBOARD_IP env var given to non-blackboard modules.</param>
 /// <param name="HostVolumesRoot">Host-side root of the module folders, used as bind-mount source.</param>
 /// <param name="Replication">Null = blackboards run without a hub.</param>
 /// <param name="AddHostGatewayAlias">Add <c>host.docker.internal:host-gateway</c> (needed on Linux engines).</param>
+/// <param name="Blackboard">The blackboard a client or advisor instance is bound to (BLACKBOARD_PORT and the <c>dwis.blackboard</c> labels). Null = not bound.</param>
 public sealed record RunContext(
     string BlackboardHostIp,
     string HostVolumesRoot,
     ReplicationTarget? Replication,
-    bool AddHostGatewayAlias);
+    bool AddHostGatewayAlias,
+    BlackboardTarget? Blackboard = null);
+
+/// <summary>Request to create one instance of a client or advisor module against a chosen blackboard.</summary>
+/// <param name="HostPort">Host port the web app is published on. Null = not published.</param>
+public sealed record InstanceSpec(
+    string ModuleId,
+    string ContainerName,
+    BlackboardTarget Blackboard,
+    int? HostPort,
+    bool StartAfterCreate);
 
 /// <summary>Request to create a blackboard container from the Blackboards tab.</summary>
 public sealed record BlackboardSpec(

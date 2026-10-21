@@ -68,6 +68,13 @@ public abstract class DwisComponentBase : ComponentBase, IDisposable
         Actions.Notify(ok ? $"{what} to clipboard." : "Could not copy to the clipboard.", ok ? Severity.Success : Severity.Warning);
     }
 
+    /// <summary>Builds a <c>docker run</c> command (errors become snackbars) and copies it.</summary>
+    protected async Task CopyRunCommandAsync(Func<string?> build)
+    {
+        var command = await Actions.QueryAsync(_ => Task.FromResult(build()));
+        if (command is not null) await CopyAsync(command, "Command copied");
+    }
+
     public virtual void Dispose()
     {
         if (_disposed) return;

@@ -78,7 +78,9 @@ A few things to know about this setup:
 - **Blackboards** — all blackboard containers on the engine, with their replication hub, group and OPC UA port. Create extra blackboards here.
 - **Recording** — record what a hub group streams into a folder under `C:\Volumes\Recordings\<name>`, and replay a recording into a hub group later. Each recording shows its duration, size and whether a recorder or player container is running. The recorder and player images are set in the settings.
 - **DWIS modules** — scheduler, microstates, composer and the ADCS bridges, each with an inline editor for its `config.json`.
-- **Clients** and **Advisors** — the web applications and advisor services, with a link to each app's port.
+- **Clients** and **Advisors** — the web applications and advisor services. Each can run several times, one container per blackboard: when you create one you pick the blackboard it talks to (identified by its container name, with its OPC UA port shown next to it), and the container gets `BLACKBOARD_IP` and `BLACKBOARD_PORT` accordingly. The table shows one row per container with its blackboard, the blackboard port and a link to the app's own host port (the next free port from the module's default). The **new instance** button on a row creates another container of the same application against another blackboard.
+
+Every container row has a **copy docker run command** button (terminal icon). It copies the `docker run` line equivalent to what the app creates for that container (image, name, ports, environment variables, bind mounts, labels and arguments), so the same container can be started by hand or in a script.
 
 The bottom bar shows the Docker endpoint in use and the replication target. The gear opens the settings (Docker API endpoint, host volumes root, blackboard host IP, polling interval). **Update application** pulls the latest `dwis-docker` image and recreates this container.
 
@@ -89,7 +91,7 @@ This test launches a **Blackboard** that replicates to the **Blackboard Hub** ho
 1. Open the **Replication** tab. The NORCE hub is preconfigured and connects automatically. Make sure **Replicate** is on, the hub is **NORCE** and the group is `default`, then **Save** if you changed anything.
 2. Open the **Standard setup** tab. In the **Blackboards** group, click the **create** button of the *Default Blackboard* row. The image is pulled if needed and the container is created and started. Give it a minute to warm up. The row now shows *Running* and `NORCE / default` on port 48030.
 3. Back on the **Replication** tab, the `default` group now lists your blackboard among its connections.
-4. Open the **Clients** tab and create **Log view** and **Blackboard explorer**. Docker images will be downloaded, which can take a few minutes.
+4. Open the **Clients** tab and create **Log view** and **Blackboard explorer**. A dialog asks which blackboard each should use; keep the default blackboard. Docker images will be downloaded, which can take a few minutes.
 5. Click the port links (`localhost:5276` and `localhost:5277`) to open the applications:
    - **Log view**: some standard drilling logs
    - **Blackboard explorer**: a simple view of the contents of the blackboard

@@ -113,6 +113,9 @@
                 <MudTooltip Text="Copy folder path">
                     <MudIconButton Icon="@DwisIcons.Copy" Size="Size.Small" OnClick="@(() => CopyAsync(context.HostFolder, "Folder path copied"))" />
                 </MudTooltip>
+                <MudTooltip Text="@(RunCommandTarget(context) == context.Player ? "Copy the docker run command of the player" : "Copy the docker run command of the recorder")">
+                    <MudIconButton Icon="@DwisIcons.RunCommand" Size="Size.Small" OnClick="@(() => CopyRunCommandAsync(() => RunCommandOf(context)))" Disabled="@(context.Recorder is null && context.Player is null && context.HubUrl is null)" />
+                </MudTooltip>
                 <MudTooltip Text="Delete recording and its containers">
                     <MudIconButton Icon="@DwisIcons.Delete" Size="Size.Small" OnClick="@(() => Delete(context))" Disabled="IsBusy" />
                 </MudTooltip>
@@ -205,9 +208,16 @@
 
     private Task ShowLogs(RecordingInfo r)
     {
-        var c = r.State == RecordingState.Replaying ? r.Player : (r.Recorder ?? r.Player);
+        var c = RunCommandTarget(r);
         return LogsDialog.ShowAsync(Dialogs, c!.Id, c.Name);
     }
+
+    /// <summary>The container the Logs and Copy command buttons act on: the player while replaying, else the recorder.</summary>
+    private static ContainerInfo? RunCommandTarget(RecordingInfo r) =>
+        r.State == RecordingState.Replaying ? r.Player : (r.Recorder ?? r.Player);
+
+    private string? RunCommandOf(RecordingInfo r) =>
+        RunCommandTarget(r) == r.Player && r.Player is not null ? Recordings.PlayerRunCommand(r) : Recordings.RecorderRunCommand(r);
 
     private async Task Delete(RecordingInfo r)
     {

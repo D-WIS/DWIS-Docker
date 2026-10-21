@@ -78,6 +78,7 @@ public class ContainerSpecBuilderTests
 
         Assert.Equal("webapp", p.Labels[ContainerSpecBuilder.LabelKind]);
         Assert.Equal("5276", p.HostConfig.PortBindings["8080/tcp"][0].HostPort);
+        Assert.Equal("5276", p.Labels[ContainerSpecBuilder.LabelPort]);
         Assert.Null(p.HostConfig.Binds);
     }
 
@@ -87,6 +88,7 @@ public class ContainerSpecBuilderTests
         var wob = ModuleCatalog.Advisors.Single(a => a.Id == "advisor-wob-correction");
         var p = ContainerSpecBuilder.Build(wob, Local);
         Assert.Null(p.HostConfig.PortBindings);
+        Assert.Equal("", p.Labels[ContainerSpecBuilder.LabelPort]);
     }
 
     [Fact]

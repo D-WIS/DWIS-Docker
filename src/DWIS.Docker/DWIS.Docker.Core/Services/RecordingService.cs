@@ -21,6 +21,12 @@ public interface IRecordingManager
 
     /// <summary>Removes the recorder and player containers of the recording and deletes its folder.</summary>
     Task DeleteRecordingAsync(string name, CancellationToken ct = default);
+
+    /// <summary>The <c>docker run</c> command equivalent to the recording's recorder container (or the one that would record it).</summary>
+    string RecorderRunCommand(RecordingInfo recording);
+
+    /// <summary>The <c>docker run</c> command equivalent to the recording's player container. Null when the recording was never replayed.</summary>
+    string? PlayerRunCommand(RecordingInfo recording);
 }
 
 /// <summary>Knows where recordings live and lists them. Used by the monitor (per poll) and by <see cref="RecordingService"/>.</summary>
@@ -168,6 +174,31 @@ public sealed class RecordingService : IRecordingManager
         var name = baseName;
         for (var i = 2; existing.Contains(name); i++) name = $"{baseName}-{i}";
         return name;
+    }
+
+    // ---------------------------------------------------------------- docker run commands
+
+    public string RecorderRunCommand(RecordingInfo recording)
+    {
+        var c = recording.Recorder;
+        var hubUrl = c?.Labels.GetValueOrDefault(ContainerSpecBuilder.LabelHub) ?? recording.HubUrl
+                     ?? throw new DwisDockerException($"The hub '{recording.Name}' was recorded from is not known.");
+        var group = c?.Labels.GetValueOrDefault(ContainerSpecBuilder.LabelGroup) ?? recording.Group ?? "default";
+        var image = c?.ImageRef ?? _settings.Current.RecorderImage;
+        var p = ContainerSpecBuilder.BuildRecorder(recording.Name, image, hubUrl, group, recording.HostFolder, LinuxEngine);
+        if (c is not null) p.Name = c.Name;
+        return DockerRunCommandFormatter.Format(p);
+    }
+
+    public string? PlayerRunCommand(RecordingInfo recording)
+    {
+        var c = recording.Player;
+        if (c is null) return null;
+        var hubUrl = c.Labels.GetValueOrDefault(ContainerSpecBuilder.LabelHub) ?? recording.HubUrl ?? "";
+        var group = c.Labels.GetValueOrDefault(ContainerSpecBuilder.LabelGroup) ?? recording.Group ?? "default";
+        var p = ContainerSpecBuilder.BuildPlayer(recording.Name, c.ImageRef, hubUrl, group, recording.HostFolder, LinuxEngine);
+        p.Name = c.Name;
+        return DockerRunCommandFormatter.Format(p);
     }
 
     // ---------------------------------------------------------------- actions

@@ -24,6 +24,12 @@ public interface IHubContainerManager
 
     Task CreateReplicationAsync(HubReplicationSpec spec, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
     Task DeleteReplicationAsync(string name, CancellationToken ct = default);
+
+    /// <summary>The <c>docker run</c> command equivalent to what the app created for the local hub.</summary>
+    string RunCommand(LocalHubInfo hub);
+
+    /// <summary>The <c>docker run</c> command equivalent to what the app created for the replicator.</summary>
+    string RunCommand(HubReplicationInfo replication);
 }
 
 public sealed class HubContainerService : IHubContainerManager
@@ -145,6 +151,24 @@ public sealed class HubContainerService : IHubContainerManager
                       ?? throw new NotFoundException($"Unknown replication '{name}'.");
             await RemoveContainerAsync(rep.Container, token).ConfigureAwait(false);
         }, ct);
+
+    // ---------------------------------------------------------------- docker run commands
+
+    public string RunCommand(LocalHubInfo hub)
+    {
+        var name = hub.Container.Labels.GetValueOrDefault(ContainerSpecBuilder.LabelName, hub.Container.Name);
+        var spec = new LocalHubSpec(name, hub.HostPort, hub.PathBase, hub.Sources, hub.Destinations);
+        var p = ContainerSpecBuilder.BuildLocalHub(spec, hub.Container.ImageRef, hub.HubId, LinuxEngine);
+        p.Name = hub.Container.Name;
+        return DockerRunCommandFormatter.Format(p);
+    }
+
+    public string RunCommand(HubReplicationInfo replication)
+    {
+        var p = ContainerSpecBuilder.BuildHubReplication(new HubReplicationSpec(replication.Name, replication.Routes), replication.Container.ImageRef, LinuxEngine);
+        p.Name = replication.Container.Name;
+        return DockerRunCommandFormatter.Format(p);
+    }
 
     // ---------------------------------------------------------------- helpers
 

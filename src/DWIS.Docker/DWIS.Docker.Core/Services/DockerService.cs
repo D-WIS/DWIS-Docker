@@ -458,7 +458,13 @@ public sealed class DockerService : IDockerService, IDisposable
         c.Image,
         c.ImageID,
         new Dictionary<string, string>(c.Labels ?? new Dictionary<string, string>()),
-        new DateTimeOffset(c.Created, TimeSpan.Zero));
+        new DateTimeOffset(c.Created, TimeSpan.Zero),
+        (c.Ports ?? [])
+            .Where(p => p.PublicPort > 0 && string.Equals(p.Type, "tcp", StringComparison.OrdinalIgnoreCase))
+            .Select(p => new PublishedPort(p.PrivatePort, p.PublicPort))
+            .Distinct()
+            .OrderBy(p => p.ContainerPort)
+            .ToList());
 
     private static ContainerInfo ToInfo(ContainerInspectResponse c) => new(
         c.ID,
@@ -468,7 +474,23 @@ public sealed class DockerService : IDockerService, IDisposable
         c.Config?.Image ?? c.Image,
         c.Image,
         new Dictionary<string, string>(c.Config?.Labels ?? new Dictionary<string, string>()),
-        c.Created);
+        c.Created,
+        PublishedPorts(c.NetworkSettings?.Ports ?? c.HostConfig?.PortBindings));
+
+    private static List<PublishedPort> PublishedPorts(IDictionary<string, IList<PortBinding>>? bindings)
+    {
+        var result = new List<PublishedPort>();
+        if (bindings is null) return result;
+        foreach (var (key, list) in bindings)
+        {
+            if (list is null || !key.EndsWith("/tcp", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!int.TryParse(key[..^4], out var containerPort)) continue;
+            foreach (var b in list)
+                if (int.TryParse(b.HostPort, out var hostPort) && hostPort > 0)
+                    result.Add(new PublishedPort(containerPort, hostPort));
+        }
+        return result.Distinct().OrderBy(p => p.ContainerPort).ToList();
+    }
 
     private static ContainerState ParseState(string? s) => s?.ToLowerInvariant() switch
     {

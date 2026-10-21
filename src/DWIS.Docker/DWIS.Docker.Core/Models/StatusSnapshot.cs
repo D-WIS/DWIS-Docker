@@ -4,6 +4,9 @@ public enum ContainerState { Created, Running, Paused, Restarting, Exited, Dead,
 
 public enum ImageStatus { NotPulled, UpToDate, UpdateAvailable, Unknown }
 
+/// <summary>One published port: container port mapped to a host port.</summary>
+public sealed record PublishedPort(int ContainerPort, int HostPort);
+
 public sealed record ContainerInfo(
     string Id,
     string Name,
@@ -12,10 +15,12 @@ public sealed record ContainerInfo(
     string ImageRef,
     string ImageId,
     IReadOnlyDictionary<string, string> Labels,
-    DateTimeOffset CreatedAt)
+    DateTimeOffset CreatedAt,
+    IReadOnlyList<PublishedPort>? Ports = null)
 {
     public bool IsRunning => State == ContainerState.Running;
     public string ShortId => Id.Length > 12 ? Id[..12] : Id;
+    public IReadOnlyList<PublishedPort> PublishedPorts => Ports ?? [];
 }
 
 public sealed record LocalImageInfo(
@@ -35,6 +40,21 @@ public sealed record BlackboardInfo(
     public bool IsReplicating => !string.IsNullOrEmpty(HubUrl);
 }
 
+/// <summary>One container of a module. Clients and advisors can have several, each bound to a blackboard.</summary>
+/// <param name="Blackboard">The blackboard the container was created for (from its labels). Null for containers created without one.</param>
+/// <param name="HostPort">Host port the container publishes, if any.</param>
+/// <param name="IsLegacy">Created by a previous version (no labels), recognised by its image.</param>
+public sealed record ModuleInstance(
+    ContainerInfo Container,
+    BlackboardTarget? Blackboard,
+    int? HostPort,
+    bool IsLegacy)
+{
+    public bool IsRunning => Container.IsRunning;
+}
+
+/// <param name="Container">The primary container of the module (the first of <paramref name="Instances"/>), kept for views that show one row per module.</param>
+/// <param name="Instances">Every container of the module, oldest first. Several only for clients and advisors (or duplicates left by an older version).</param>
 public sealed record ModuleStatus(
     ModuleDefinition Module,
     ContainerInfo? Container,
@@ -43,10 +63,11 @@ public sealed record ModuleStatus(
     bool? ConfigFileExists,
     BlackboardInfo? Blackboard,
     bool ReplicationMismatch,
-    int DuplicateContainers)
+    IReadOnlyList<ModuleInstance> Instances)
 {
     public bool Exists => Container is not null;
     public bool IsRunning => Container?.IsRunning == true;
+    public int DuplicateContainers => Math.Max(0, Instances.Count - 1);
 }
 
 public sealed record EngineStatus(bool Reachable, string? Version, string? OsType, string? Error)

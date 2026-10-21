@@ -260,10 +260,9 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
         var modules = new List<ModuleStatus>(ModuleCatalog.All.Count);
         foreach (var module in ModuleCatalog.All)
         {
-            ContainerInfo? container = null;
             BlackboardInfo? blackboard = null;
-            var duplicates = 0;
             var mismatch = false;
+            var instances = new List<ModuleInstance>();
 
             if (module.IsBlackboard)
             {
@@ -277,16 +276,19 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
                     .ThenBy(b => b.Container.CreatedAt)
                     .ToList();
                 blackboard = mine.FirstOrDefault();
-                container = blackboard?.Container;
-                duplicates = Math.Max(0, mine.Count - 1);
+                instances.AddRange(mine.Select(b => new ModuleInstance(b.Container, null, b.Port, b.IsLegacy)));
                 if (blackboard is not null)
                     mismatch = !string.Equals(blackboard.HubUrl?.TrimEnd('/'), expectedHub?.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)
                                || !string.Equals(blackboard.Group, expectedGroup, StringComparison.Ordinal);
             }
             else if (byModule.TryGetValue(module.Id, out var list))
             {
-                container = list[0];
-                duplicates = list.Count - 1;
+                // Clients and advisors can run several times, each bound to its own blackboard; the one
+                // carrying the module's plain container name (or the oldest) is the primary instance.
+                instances.AddRange(list
+                    .OrderBy(c => c.Name.Equals(module.ContainerName, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                    .ThenBy(c => c.CreatedAt)
+                    .Select(c => ContainerSpecBuilder.ToModuleInstance(c, module)));
             }
 
             imagesByTag.TryGetValue(module.ImageRef, out var local);
@@ -294,13 +296,13 @@ public sealed class ContainerMonitor : IStatusService, IHostedService, IDisposab
 
             modules.Add(new ModuleStatus(
                 module,
-                container,
+                instances.FirstOrDefault()?.Container,
                 local is not null,
                 imageStatus,
                 module.HasConfig ? _config.Exists(module) : null,
                 blackboard,
                 mismatch,
-                duplicates));
+                instances));
         }
 
         if (ModuleCatalog.All.Any(m => !_registry.IsFresh(m.ImageRef)))

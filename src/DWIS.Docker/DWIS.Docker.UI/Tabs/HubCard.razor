@@ -38,7 +38,7 @@
                     {
                         <MudTooltip Text="@("Destination: " + d.Url)"><MudChip T="string" Icon="@DwisIcons.Destination" Variant="Variant.Text" Size="Size.Small" Class="dwis-chip">@d.Describe()</MudChip></MudTooltip>
                     }
-                    <ContainerActions Container="local.Container" BusyKey="@("hub:" + Hub.Hub.Id)" />
+                    <ContainerActions Container="local.Container" BusyKey="@("hub:" + Hub.Hub.Id)" RunCommand="@(() => HubContainers.RunCommand(local))" />
                 </MudStack>
             }
         </CardHeaderContent>
