@@ -90,7 +90,7 @@ public sealed class HubContainerService : IHubContainerManager
         return Track("hub:" + hubId, $"Launching hub {name}", async token =>
         {
             var image = settings.LocalHubImage;
-            var p = ContainerSpecBuilder.BuildLocalHub(spec, image, hubId, LinuxEngine);
+            var p = ContainerSpecBuilder.BuildLocalHub(spec, image, hubId, LinuxEngine, _settings.Current.CaCertificateFile);
             var id = await CreateAsync(p, image, progress, token).ConfigureAwait(false);
             await _docker.StartAsync(id, token).ConfigureAwait(false);
 
@@ -138,7 +138,7 @@ public sealed class HubContainerService : IHubContainerManager
         return Track("replication:" + name, $"Starting replication {name}", async token =>
         {
             var image = _settings.Current.HubReplicationImage;
-            var p = ContainerSpecBuilder.BuildHubReplication(spec with { Name = name }, image, LinuxEngine);
+            var p = ContainerSpecBuilder.BuildHubReplication(spec with { Name = name }, image, LinuxEngine, _settings.Current.CaCertificateFile);
             var id = await CreateAsync(p, image, progress, token).ConfigureAwait(false);
             await _docker.StartAsync(id, token).ConfigureAwait(false);
         }, ct);
@@ -158,14 +158,14 @@ public sealed class HubContainerService : IHubContainerManager
     {
         var name = hub.Container.Labels.GetValueOrDefault(ContainerSpecBuilder.LabelName, hub.Container.Name);
         var spec = new LocalHubSpec(name, hub.HostPort, hub.PathBase, hub.Sources, hub.Destinations);
-        var p = ContainerSpecBuilder.BuildLocalHub(spec, hub.Container.ImageRef, hub.HubId, LinuxEngine);
+        var p = ContainerSpecBuilder.BuildLocalHub(spec, hub.Container.ImageRef, hub.HubId, LinuxEngine, _settings.Current.CaCertificateFile);
         p.Name = hub.Container.Name;
         return DockerRunCommandFormatter.Format(p);
     }
 
     public string RunCommand(HubReplicationInfo replication)
     {
-        var p = ContainerSpecBuilder.BuildHubReplication(new HubReplicationSpec(replication.Name, replication.Routes), replication.Container.ImageRef, LinuxEngine);
+        var p = ContainerSpecBuilder.BuildHubReplication(new HubReplicationSpec(replication.Name, replication.Routes), replication.Container.ImageRef, LinuxEngine, _settings.Current.CaCertificateFile);
         p.Name = replication.Container.Name;
         return DockerRunCommandFormatter.Format(p);
     }

@@ -81,6 +81,7 @@ public static class DwisIcons
     public const string Docker = Icons.Material.Outlined.Dns;
     public const string Blackboard = Icons.Material.Outlined.Dashboard;
     public const string Folder = Icons.Material.Outlined.Folder;
+    public const string Certificate = Icons.Material.Outlined.VerifiedUser;
 
     // tabs
     public const string TabReplication = Hub;

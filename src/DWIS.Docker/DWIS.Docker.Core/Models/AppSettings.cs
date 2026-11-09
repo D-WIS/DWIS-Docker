@@ -16,6 +16,12 @@ public sealed class AppSettings
     /// <summary>Value of BLACKBOARD_IP given to modules so they can reach the blackboard.</summary>
     public string BlackboardHostIp { get; set; } = "host.docker.internal";
 
+    /// <summary>
+    /// Host path of a PEM file (one or more certificates) that the containers connecting to a hub must trust
+    /// in addition to the public CAs, for a hub behind HTTPS with a certificate from a private CA. Null = none.
+    /// </summary>
+    public string? CaCertificateFile { get; set; }
+
     public List<HubDefinition> Hubs { get; set; } = [HubDefinition.Norce];
 
     public bool ReplicationEnabled { get; set; } = true;
@@ -52,6 +58,7 @@ public sealed class AppSettings
         DockerEndpoint = DockerEndpoint,
         HostVolumesRoot = HostVolumesRoot,
         BlackboardHostIp = BlackboardHostIp,
+        CaCertificateFile = CaCertificateFile,
         Hubs = Hubs.ToList(),
         ReplicationEnabled = ReplicationEnabled,
         ReplicationHubId = ReplicationHubId,
@@ -68,7 +75,11 @@ public sealed class AppSettings
     };
 
     /// <summary>Returns a list of problems; empty when the settings are usable.</summary>
-    public IReadOnlyList<string> Validate()
+    /// <param name="fileExists">
+    /// Tells whether a host file exists; the CA certificate file is checked with it when given. Null skips the
+    /// check (the file is a host path, which this process cannot always see).
+    /// </param>
+    public IReadOnlyList<string> Validate(Func<string, bool>? fileExists = null)
     {
         var errors = new List<string>();
 
@@ -77,6 +88,14 @@ public sealed class AppSettings
 
         if (string.IsNullOrWhiteSpace(BlackboardHostIp))
             errors.Add("Blackboard host IP must not be empty.");
+
+        if (CaCertificateFile is not null)
+        {
+            if (string.IsNullOrWhiteSpace(CaCertificateFile) || CaCertificateFile.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+                errors.Add("CA certificate file must be a file path, or empty.");
+            else if (fileExists is not null && !fileExists(CaCertificateFile))
+                errors.Add($"CA certificate file '{CaCertificateFile}' does not exist.");
+        }
 
         if (PollingInterval < TimeSpan.FromSeconds(1) || PollingInterval > TimeSpan.FromMinutes(5))
             errors.Add("Polling interval must be between 1 second and 5 minutes.");

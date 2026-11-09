@@ -80,9 +80,11 @@ A few things to know about this setup:
 - **DWIS modules** — scheduler, microstates, composer and the ADCS bridges, each with an inline editor for its `config.json`.
 - **Clients** and **Advisors** — the web applications and advisor services. Each can run several times, one container per blackboard: when you create one you pick the blackboard it talks to (identified by its container name, with its OPC UA port shown next to it), and the container gets `BLACKBOARD_IP` and `BLACKBOARD_PORT` accordingly. The table shows one row per container with its blackboard, the blackboard port and a link to the app's own host port (the next free port from the module's default). The **new instance** button on a row creates another container of the same application against another blackboard.
 
+**Hubs with a certificate from a company CA.** When a hub is served over HTTPS with a certificate issued by a private CA (for example an internal corporate CA), the blackboards, recorders, players and hub containers fail to connect with a certificate chain error, even when Windows itself trusts that CA, because the Linux containers have their own list of trusted CAs. Set the **Extra CA certificate file** setting (gear icon) to the host path of a PEM file holding the certificates to trust; every container that connects to a hub then gets it mounted as `/certs/extra-ca.pem` with `SSL_CERT_FILE` pointing at it. The PEM can be the root CA exported from the Windows certificate store as *Base-64 encoded X.509 (.CER)* and renamed to `.pem`, or the server's full chain. Leave the setting empty for hubs with a public certificate.
+
 Every container row has a **copy docker run command** button (terminal icon). It copies the `docker run` line equivalent to what the app creates for that container (image, name, ports, environment variables, bind mounts, labels and arguments), so the same container can be started by hand or in a script.
 
-The bottom bar shows the Docker endpoint in use and the replication target. The gear opens the settings (Docker API endpoint, host volumes root, blackboard host IP, polling interval). **Update application** pulls the latest `dwis-docker` image and recreates this container.
+The bottom bar shows the Docker endpoint in use and the replication target. The gear opens the settings (Docker API endpoint, host volumes root, blackboard host IP, extra CA certificate file, polling interval). **Update application** pulls the latest `dwis-docker` image and recreates this container.
 
 ## 3. First test
 

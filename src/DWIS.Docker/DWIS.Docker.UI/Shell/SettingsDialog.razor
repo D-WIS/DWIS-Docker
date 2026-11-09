@@ -24,6 +24,11 @@
             <MudTextField @bind-Value="_edit.BlackboardHostIp" Label="Blackboard host IP" Variant="Variant.Outlined"
                           HelperText="Given to modules as BLACKBOARD_IP so they can reach the blackboard. host.docker.internal works with Docker Desktop." />
 
+            <MudTextField @bind-Value="_edit.CaCertificateFile" Label="Extra CA certificate file" Variant="Variant.Outlined"
+                          Placeholder="leave empty unless a hub uses a certificate from a private CA"
+                          Adornment="Adornment.Start" AdornmentIcon="@DwisIcons.Certificate"
+                          HelperText="@CaFileHelp" />
+
             <MudStack Row Spacing="3">
                 <MudNumericField T="int" Value="_pollSeconds" ValueChanged="@(v => _pollSeconds = v)" Label="Polling interval (s)" Min="1" Max="300" Variant="Variant.Outlined" />
                 <MudNumericField T="int" @bind-Value="_edit.LogTailLines" Label="Default log lines" Min="10" Max="100000" Variant="Variant.Outlined" />
@@ -69,6 +74,21 @@
     private bool _saving;
     private IReadOnlyList<string> _errors = [];
 
+    private string CaFileHelp => "PEM file on the HOST (one or more certificates) mounted into blackboards, recorders, players and hub containers as /certs/extra-ca.pem with SSL_CERT_FILE set, so they trust a hub whose HTTPS certificate comes from a company CA."
+        + (Env.IsInContainer ? " Only files under the host volumes root can be checked from here." : "");
+
+    /// <summary>Whether a host file exists, as far as this process can tell. In the container only the volumes root is visible.</summary>
+    private bool HostFileExists(string hostPath)
+    {
+        if (!Env.IsInContainer) return File.Exists(hostPath);
+        var hostRoot = string.IsNullOrWhiteSpace(_edit.HostVolumesRoot) ? Env.DefaultHostVolumesRoot : _edit.HostVolumesRoot;
+        if (string.IsNullOrWhiteSpace(hostRoot)) return true;
+        var root = hostRoot.TrimEnd('\\', '/');
+        if (!hostPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) || hostPath.Length <= root.Length) return true;
+        var relative = hostPath[root.Length..].TrimStart('\\', '/').Replace('\\', '/');
+        return File.Exists(Path.Combine(Env.LocalVolumesRoot(hostRoot), relative));
+    }
+
     private string HostRootHelp => Env.IsInContainer
         ? "Folder on the HOST that is mounted on /home of this container (bind-mount source for module config folders). Detected: " + (Env.HostVolumesRootIsKnown ? Env.DefaultHostVolumesRoot : "nothing")
         : "Folder that holds one sub-folder per module with its config.json. Default: " + Env.DefaultHostVolumesRoot;
@@ -84,7 +104,8 @@
         _edit.PollingInterval = TimeSpan.FromSeconds(Math.Clamp(_pollSeconds, 1, 300));
         _edit.DockerEndpoint = string.IsNullOrWhiteSpace(_edit.DockerEndpoint) ? null : _edit.DockerEndpoint.Trim();
         _edit.HostVolumesRoot = string.IsNullOrWhiteSpace(_edit.HostVolumesRoot) ? null : _edit.HostVolumesRoot.Trim();
-        _errors = _edit.Validate();
+        _edit.CaCertificateFile = string.IsNullOrWhiteSpace(_edit.CaCertificateFile) ? null : _edit.CaCertificateFile.Trim();
+        _errors = _edit.Validate(HostFileExists);
         if (_errors.Count > 0) return;
 
         _saving = true;

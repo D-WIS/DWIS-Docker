@@ -185,7 +185,7 @@ public sealed class RecordingService : IRecordingManager
                      ?? throw new DwisDockerException($"The hub '{recording.Name}' was recorded from is not known.");
         var group = c?.Labels.GetValueOrDefault(ContainerSpecBuilder.LabelGroup) ?? recording.Group ?? "default";
         var image = c?.ImageRef ?? _settings.Current.RecorderImage;
-        var p = ContainerSpecBuilder.BuildRecorder(recording.Name, image, hubUrl, group, recording.HostFolder, LinuxEngine);
+        var p = ContainerSpecBuilder.BuildRecorder(recording.Name, image, hubUrl, group, recording.HostFolder, LinuxEngine, _settings.Current.CaCertificateFile);
         if (c is not null) p.Name = c.Name;
         return DockerRunCommandFormatter.Format(p);
     }
@@ -196,7 +196,7 @@ public sealed class RecordingService : IRecordingManager
         if (c is null) return null;
         var hubUrl = c.Labels.GetValueOrDefault(ContainerSpecBuilder.LabelHub) ?? recording.HubUrl ?? "";
         var group = c.Labels.GetValueOrDefault(ContainerSpecBuilder.LabelGroup) ?? recording.Group ?? "default";
-        var p = ContainerSpecBuilder.BuildPlayer(recording.Name, c.ImageRef, hubUrl, group, recording.HostFolder, LinuxEngine);
+        var p = ContainerSpecBuilder.BuildPlayer(recording.Name, c.ImageRef, hubUrl, group, recording.HostFolder, LinuxEngine, _settings.Current.CaCertificateFile);
         p.Name = c.Name;
         return DockerRunCommandFormatter.Format(p);
     }
@@ -222,7 +222,7 @@ public sealed class RecordingService : IRecordingManager
             try
             {
                 var image = _settings.Current.RecorderImage;
-                var p = ContainerSpecBuilder.BuildRecorder(name, image, hub.UrlForContainers, group, _scanner.HostFolder(name), LinuxEngine);
+                var p = ContainerSpecBuilder.BuildRecorder(name, image, hub.UrlForContainers, group, _scanner.HostFolder(name), LinuxEngine, _settings.Current.CaCertificateFile);
                 var id = await CreateAsync(p, image, progress, token).ConfigureAwait(false);
                 await _docker.StartAsync(id, token).ConfigureAwait(false);
             }
@@ -256,7 +256,7 @@ public sealed class RecordingService : IRecordingManager
             if (rec.Player is not null)
                 await RemoveContainerAsync(rec.Player, token).ConfigureAwait(false);
             var image = _settings.Current.PlayerImage;
-            var p = ContainerSpecBuilder.BuildPlayer(name, image, hub.UrlForContainers, group, _scanner.HostFolder(name), LinuxEngine);
+            var p = ContainerSpecBuilder.BuildPlayer(name, image, hub.UrlForContainers, group, _scanner.HostFolder(name), LinuxEngine, _settings.Current.CaCertificateFile);
             var id = await CreateAsync(p, image, progress, token).ConfigureAwait(false);
             await _docker.StartAsync(id, token).ConfigureAwait(false);
         }, ct);

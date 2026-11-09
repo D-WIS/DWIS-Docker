@@ -101,7 +101,7 @@ public sealed class ModuleManager : IModuleManager
         var root = string.IsNullOrWhiteSpace(s.HostVolumesRoot) ? _env.DefaultHostVolumesRoot : s.HostVolumesRoot!;
         var engine = _status.Current.Engine;
         var linuxEngine = string.Equals(engine.OsType, "linux", StringComparison.OrdinalIgnoreCase);
-        return new RunContext(s.BlackboardHostIp, root, replication, linuxEngine);
+        return new RunContext(s.BlackboardHostIp, root, replication, linuxEngine, CaCertificateFile: s.CaCertificateFile);
     }
 
     // ---------------------------------------------------------------- create / update

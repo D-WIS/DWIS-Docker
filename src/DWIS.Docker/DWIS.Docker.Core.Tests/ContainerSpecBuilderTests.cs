@@ -163,6 +163,83 @@ public class ContainerSpecBuilderTests
         Assert.Equal("g", info.Group);
     }
 
+    private const string CaFile = @"C:\repos\D-WIS\Replay-Yggdsrasil\docker\tls\norce-chain.pem";
+    private const string CaBind = CaFile + ":/certs/extra-ca.pem:ro";
+    private const string CaEnv = "SSL_CERT_FILE=/certs/extra-ca.pem";
+
+    [Fact]
+    public void Replicating_blackboard_with_ca_file_gets_mount_and_env()
+    {
+        var p = ContainerSpecBuilder.Build(ModuleCatalog.Blackboard, Replicating with { CaCertificateFile = CaFile });
+
+        Assert.Equal([CaBind], p.HostConfig.Binds);
+        Assert.Equal([CaEnv], p.Env);
+        // The rest of the spec is unchanged.
+        Assert.Equal(["--useHub", "--hubURL", Norce.HubUrl, "--hubGroup", "default", "--port", "48030", "--hubPWD", "secret"], p.Cmd);
+        Assert.Contains("host.docker.internal:host-gateway", p.HostConfig.ExtraHosts);
+    }
+
+    [Fact]
+    public void Blackboard_without_replication_ignores_ca_file()
+    {
+        var p = ContainerSpecBuilder.Build(ModuleCatalog.Blackboard, Local with { CaCertificateFile = CaFile });
+        Assert.Null(p.HostConfig.Binds);
+        Assert.Null(p.Env);
+    }
+
+    [Fact]
+    public void Blackboard_without_ca_file_has_no_mount_or_env()
+    {
+        foreach (var ca in new[] { null, "", "  " })
+        {
+            var p = ContainerSpecBuilder.Build(ModuleCatalog.Blackboard, Replicating with { CaCertificateFile = ca });
+            Assert.Null(p.HostConfig.Binds);
+            Assert.Null(p.Env);
+        }
+    }
+
+    [Fact]
+    public void Non_blackboard_module_does_not_get_ca_file()
+    {
+        var p = ContainerSpecBuilder.Build(ModuleCatalog.Composer, Replicating with { CaCertificateFile = CaFile });
+        Assert.Equal(["BLACKBOARD_IP=host.docker.internal"], p.Env);
+        Assert.Equal([@"C:\Volumes\DWISAdviceComposerService:/home"], p.HostConfig.Binds);
+    }
+
+    [Fact]
+    public void Recorder_and_player_keep_recording_bind_and_add_ca_file()
+    {
+        var r = ContainerSpecBuilder.BuildRecorder("rec1", "digiwells/blackboardrecorder:latest", Norce.HubUrl, "default", @"C:\Volumes\Recordings\rec1", true, CaFile);
+        Assert.Equal([@"C:\Volumes\Recordings\rec1:/recording", CaBind], r.HostConfig.Binds);
+        Assert.Equal([CaEnv], r.Env);
+
+        var pl = ContainerSpecBuilder.BuildPlayer("rec1", "digiwells/blackboardplayer:latest", Norce.HubUrl, "default", @"C:\Volumes\Recordings\rec1", false, CaFile);
+        Assert.Equal([@"C:\Volumes\Recordings\rec1:/recording", CaBind], pl.HostConfig.Binds);
+        Assert.Equal([CaEnv], pl.Env);
+
+        var plain = ContainerSpecBuilder.BuildRecorder("rec1", "digiwells/blackboardrecorder:latest", Norce.HubUrl, "default", @"C:\Volumes\Recordings\rec1", true);
+        Assert.Equal([@"C:\Volumes\Recordings\rec1:/recording"], plain.HostConfig.Binds);
+        Assert.Null(plain.Env);
+    }
+
+    [Fact]
+    public void Local_hub_and_hub_replication_get_ca_file()
+    {
+        var hubSpec = new LocalHubSpec("rig", 8081, "/blackboard/applications", [], []);
+        var hub = ContainerSpecBuilder.BuildLocalHub(hubSpec, "digiwells/dwissignalr:latest", "local-rig", true, CaFile);
+        Assert.Equal([CaBind], hub.HostConfig.Binds);
+        Assert.Equal([CaEnv], hub.Env);
+        Assert.Equal("8081", hub.HostConfig.PortBindings["8080/tcp"][0].HostPort);
+
+        var repSpec = new HubReplicationSpec("copy", [new ReplicationRouteInfo("http://a/hub", "g1", "https://b/hub", "g2")]);
+        var rep = ContainerSpecBuilder.BuildHubReplication(repSpec, "digiwells/dwishubreplication:latest", false, CaFile);
+        Assert.Equal([CaBind], rep.HostConfig.Binds);
+        Assert.Equal([CaEnv], rep.Env);
+
+        Assert.Null(ContainerSpecBuilder.BuildLocalHub(hubSpec, "digiwells/dwissignalr:latest", "local-rig", true).HostConfig.Binds);
+        Assert.Null(ContainerSpecBuilder.BuildHubReplication(repSpec, "digiwells/dwishubreplication:latest", false).Env);
+    }
+
     [Fact]
     public void Image_repo_strips_tag_and_digest()
     {

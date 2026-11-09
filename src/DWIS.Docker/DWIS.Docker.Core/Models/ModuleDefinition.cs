@@ -66,12 +66,14 @@ public sealed record BlackboardTarget(string ContainerName, int Port);
 /// <param name="Replication">Null = blackboards run without a hub.</param>
 /// <param name="AddHostGatewayAlias">Add <c>host.docker.internal:host-gateway</c> (needed on Linux engines).</param>
 /// <param name="Blackboard">The blackboard a client or advisor instance is bound to (BLACKBOARD_PORT and the <c>dwis.blackboard</c> labels). Null = not bound.</param>
+/// <param name="CaCertificateFile">Host path of a PEM file mounted into containers that connect to a hub, so they trust a private CA. Null = none.</param>
 public sealed record RunContext(
     string BlackboardHostIp,
     string HostVolumesRoot,
     ReplicationTarget? Replication,
     bool AddHostGatewayAlias,
-    BlackboardTarget? Blackboard = null);
+    BlackboardTarget? Blackboard = null,
+    string? CaCertificateFile = null);
 
 /// <summary>Request to create one instance of a client or advisor module against a chosen blackboard.</summary>
 /// <param name="HostPort">Host port the web app is published on. Null = not published.</param>
