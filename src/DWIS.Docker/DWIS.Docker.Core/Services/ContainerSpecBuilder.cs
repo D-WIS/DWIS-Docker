@@ -33,18 +33,23 @@ internal static class ContainerSpecBuilder
 
     public const string HostGatewayAlias = "host.docker.internal:host-gateway";
 
+    /// <summary>Where the extra CA certificate file is mounted in containers that connect to a hub.</summary>
+    public const string CaCertificateContainerPath = "/certs/extra-ca.pem";
+    /// <summary>Read by OpenSSL, and so by .NET on Linux, as the CA bundle to trust.</summary>
+    public const string CaCertificateEnvVar = "SSL_CERT_FILE";
+
     public static string RecorderContainerName(string recording) => $"recorder-{Slug(recording)}";
     public static string PlayerContainerName(string recording) => $"player-{Slug(recording)}";
 
     /// <summary>Recorder: listens to a hub group and writes chunk files into the mounted recording folder.</summary>
-    public static CreateContainerParameters BuildRecorder(string recording, string imageRef, string hubUrl, string group, string hostFolder, bool addHostGatewayAlias) =>
-        BuildRecordingTool(KindRecorder, RecorderContainerName(recording), recording, imageRef, hubUrl, group, hostFolder, "--output-folder", addHostGatewayAlias);
+    public static CreateContainerParameters BuildRecorder(string recording, string imageRef, string hubUrl, string group, string hostFolder, bool addHostGatewayAlias, string? caCertificateFile = null) =>
+        BuildRecordingTool(KindRecorder, RecorderContainerName(recording), recording, imageRef, hubUrl, group, hostFolder, "--output-folder", addHostGatewayAlias, caCertificateFile);
 
     /// <summary>Player: replays the chunk files of the mounted recording folder into a hub group.</summary>
-    public static CreateContainerParameters BuildPlayer(string recording, string imageRef, string hubUrl, string group, string hostFolder, bool addHostGatewayAlias) =>
-        BuildRecordingTool(KindPlayer, PlayerContainerName(recording), recording, imageRef, hubUrl, group, hostFolder, "--input-folder", addHostGatewayAlias);
+    public static CreateContainerParameters BuildPlayer(string recording, string imageRef, string hubUrl, string group, string hostFolder, bool addHostGatewayAlias, string? caCertificateFile = null) =>
+        BuildRecordingTool(KindPlayer, PlayerContainerName(recording), recording, imageRef, hubUrl, group, hostFolder, "--input-folder", addHostGatewayAlias, caCertificateFile);
 
-    private static CreateContainerParameters BuildRecordingTool(string kind, string name, string recording, string imageRef, string hubUrl, string group, string hostFolder, string folderOption, bool addHostGatewayAlias)
+    private static CreateContainerParameters BuildRecordingTool(string kind, string name, string recording, string imageRef, string hubUrl, string group, string hostFolder, string folderOption, bool addHostGatewayAlias, string? caCertificateFile)
     {
         if (string.IsNullOrWhiteSpace(hostFolder))
             throw new DwisDockerException("The host volumes root is not known. Set it in the settings before recording or replaying.");
@@ -72,6 +77,7 @@ internal static class ContainerSpecBuilder
         };
         if (addHostGatewayAlias)
             p.HostConfig.ExtraHosts = [HostGatewayAlias];
+        AddCaCertificate(p, caCertificateFile);
         return p;
     }
 
@@ -93,7 +99,7 @@ internal static class ContainerSpecBuilder
     public static string LocalHubId(string name) => $"local-{Slug(name).ToLowerInvariant()}";
 
     /// <summary>The SignalR hub server (DWIS.Server.SignalRHub): <c>--path</c>, <c>--source-hubs</c>, <c>--destination-hubs</c>, port 8080.</summary>
-    public static CreateContainerParameters BuildLocalHub(LocalHubSpec spec, string imageRef, string hubId, bool addHostGatewayAlias)
+    public static CreateContainerParameters BuildLocalHub(LocalHubSpec spec, string imageRef, string hubId, bool addHostGatewayAlias, string? caCertificateFile = null)
     {
         var path = NormalizePath(spec.PathBase);
         var cmd = new List<string> { "--path", path.Length == 0 ? "." : path };
@@ -121,11 +127,12 @@ internal static class ContainerSpecBuilder
         };
         AddPort(p, HubContainerPort, spec.HostPort);
         if (addHostGatewayAlias) p.HostConfig.ExtraHosts = [HostGatewayAlias];
+        AddCaCertificate(p, caCertificateFile);
         return p;
     }
 
     /// <summary>The standalone replicator (DWIS.Hub.HubReplication): <c>--routes</c>.</summary>
-    public static CreateContainerParameters BuildHubReplication(HubReplicationSpec spec, string imageRef, bool addHostGatewayAlias)
+    public static CreateContainerParameters BuildHubReplication(HubReplicationSpec spec, string imageRef, bool addHostGatewayAlias, string? caCertificateFile = null)
     {
         if (spec.Routes.Count == 0) throw new DwisDockerException("At least one route is needed.");
         var routes = FormatRoutes(spec.Routes);
@@ -145,7 +152,22 @@ internal static class ContainerSpecBuilder
             HostConfig = new HostConfig()
         };
         if (addHostGatewayAlias) p.HostConfig.ExtraHosts = [HostGatewayAlias];
+        AddCaCertificate(p, caCertificateFile);
         return p;
+    }
+
+    /// <summary>
+    /// Mounts the extra CA certificate file read-only and points SSL_CERT_FILE at it, so a container that
+    /// connects to a hub over HTTPS trusts a private CA. Appends to the existing binds and env; no-op when unset.
+    /// </summary>
+    private static void AddCaCertificate(CreateContainerParameters p, string? caCertificateFile)
+    {
+        if (string.IsNullOrWhiteSpace(caCertificateFile)) return;
+        p.HostConfig ??= new HostConfig();
+        p.HostConfig.Binds ??= [];
+        p.HostConfig.Binds.Add($"{caCertificateFile.Trim()}:{CaCertificateContainerPath}:ro");
+        p.Env ??= [];
+        p.Env.Add($"{CaCertificateEnvVar}={CaCertificateContainerPath}");
     }
 
     public static string FormatHubLinks(IEnumerable<HubLink> links) =>
@@ -278,6 +300,8 @@ internal static class ContainerSpecBuilder
             p.Cmd = cmd;
 
             AddPort(p, port, module.HostPort ?? port);
+            if (ctx.Replication is not null)
+                AddCaCertificate(p, ctx.CaCertificateFile);
             return p;
         }
 
