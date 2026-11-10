@@ -33,11 +33,18 @@ public sealed class AppSettings
     public TimeSpan RegistryCheckInterval { get; set; } = TimeSpan.FromMinutes(30);
     public int LogTailLines { get; set; } = 500;
 
+    public const string DefaultRecorderImage = "digiwells/dwis-blackboard-recorder:latest";
+    public const string DefaultPlayerImage = "digiwells/dwis-blackboard-player:latest";
+
+    /// <summary>Defaults of earlier versions: names that were never published on Docker Hub.</summary>
+    public const string LegacyRecorderImage = "digiwells/blackboardrecorder:latest";
+    public const string LegacyPlayerImage = "digiwells/blackboardplayer:latest";
+
     /// <summary>Image of the blackboard recorder (listens to a hub group and writes chunk files).</summary>
-    public string RecorderImage { get; set; } = "digiwells/blackboardrecorder:latest";
+    public string RecorderImage { get; set; } = DefaultRecorderImage;
 
     /// <summary>Image of the blackboard player (replays chunk files into a hub group).</summary>
-    public string PlayerImage { get; set; } = "digiwells/blackboardplayer:latest";
+    public string PlayerImage { get; set; } = DefaultPlayerImage;
 
     /// <summary>Sub-folder of the volumes root that holds one folder per recording.</summary>
     public string RecordingsFolderName { get; set; } = "Recordings";
@@ -51,6 +58,26 @@ public sealed class AppSettings
     [JsonIgnore]
     public HubDefinition? ReplicationHub =>
         ReplicationHubId is null ? null : Hubs.FirstOrDefault(h => h.Id == ReplicationHubId);
+
+    /// <summary>
+    /// Replaces recorder/player image names that are still the defaults of earlier versions by the published names.
+    /// A name the user chose is left alone. Returns true when something changed.
+    /// </summary>
+    public bool MigrateLegacyImageNames()
+    {
+        var changed = false;
+        if (string.Equals(RecorderImage?.Trim(), LegacyRecorderImage, StringComparison.OrdinalIgnoreCase))
+        {
+            RecorderImage = DefaultRecorderImage;
+            changed = true;
+        }
+        if (string.Equals(PlayerImage?.Trim(), LegacyPlayerImage, StringComparison.OrdinalIgnoreCase))
+        {
+            PlayerImage = DefaultPlayerImage;
+            changed = true;
+        }
+        return changed;
+    }
 
     public AppSettings Clone() => new()
     {

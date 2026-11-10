@@ -9,12 +9,38 @@ public class RecordingTests
     private const string Hub = "https://dwis.digiwells.no/blackboard/applications";
 
     [Fact]
+    public void Default_recording_images_are_the_published_names()
+    {
+        var s = new AppSettings();
+
+        Assert.Equal("digiwells/dwis-blackboard-recorder:latest", s.RecorderImage);
+        Assert.Equal("digiwells/dwis-blackboard-player:latest", s.PlayerImage);
+        Assert.False(s.MigrateLegacyImageNames());
+    }
+
+    [Fact]
+    public void Legacy_default_image_names_are_migrated_but_custom_names_are_kept()
+    {
+        var legacy = new AppSettings { RecorderImage = "digiwells/blackboardrecorder:latest", PlayerImage = " digiwells/BlackboardPlayer:latest " };
+
+        Assert.True(legacy.MigrateLegacyImageNames());
+        Assert.Equal(AppSettings.DefaultRecorderImage, legacy.RecorderImage);
+        Assert.Equal(AppSettings.DefaultPlayerImage, legacy.PlayerImage);
+
+        var custom = new AppSettings { RecorderImage = "myregistry/recorder:1.2", PlayerImage = "digiwells/blackboardplayer:latest" };
+
+        Assert.True(custom.MigrateLegacyImageNames());
+        Assert.Equal("myregistry/recorder:1.2", custom.RecorderImage);
+        Assert.Equal(AppSettings.DefaultPlayerImage, custom.PlayerImage);
+    }
+
+    [Fact]
     public void Recorder_spec_mounts_folder_and_passes_hub_arguments()
     {
-        var p = ContainerSpecBuilder.BuildRecorder("rig1-20261014-0900", "digiwells/blackboardrecorder:latest", Hub, "rig1", @"C:\Volumes\Recordings\rig1-20261014-0900", addHostGatewayAlias: false);
+        var p = ContainerSpecBuilder.BuildRecorder("rig1-20261014-0900", "digiwells/dwis-blackboard-recorder:latest", Hub, "rig1", @"C:\Volumes\Recordings\rig1-20261014-0900", addHostGatewayAlias: false);
 
         Assert.Equal("recorder-rig1-20261014-0900", p.Name);
-        Assert.Equal("digiwells/blackboardrecorder:latest", p.Image);
+        Assert.Equal("digiwells/dwis-blackboard-recorder:latest", p.Image);
         Assert.True(p.Tty);
         Assert.True(p.OpenStdin);
         Assert.Equal(["--hubURL", Hub, "--hubGroup", "rig1", "--output-folder", "/recording"], p.Cmd);
@@ -28,7 +54,7 @@ public class RecordingTests
     [Fact]
     public void Player_spec_uses_input_folder()
     {
-        var p = ContainerSpecBuilder.BuildPlayer("demo", "digiwells/blackboardplayer:latest", Hub, "replay", "/run/desktop/mnt/host/c/Volumes/Recordings/demo", addHostGatewayAlias: true);
+        var p = ContainerSpecBuilder.BuildPlayer("demo", "digiwells/dwis-blackboard-player:latest", Hub, "replay", "/run/desktop/mnt/host/c/Volumes/Recordings/demo", addHostGatewayAlias: true);
 
         Assert.Equal("player-demo", p.Name);
         Assert.Equal(["--hubURL", Hub, "--hubGroup", "replay", "--input-folder", "/recording"], p.Cmd);

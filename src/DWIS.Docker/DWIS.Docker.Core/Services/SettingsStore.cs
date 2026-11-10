@@ -116,6 +116,8 @@ public sealed class JsonSettingsStore : SettingsStoreBase
             var json = File.ReadAllText(FilePath!);
             var loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
             if (loaded.Hubs.Count == 0) loaded.Hubs.Add(HubDefinition.Norce);
+            if (loaded.MigrateLegacyImageNames())
+                _logger.LogInformation("Recorder/player image names updated to the published ones ({Recorder}, {Player})", loaded.RecorderImage, loaded.PlayerImage);
             var errors = loaded.Validate();
             if (errors.Count > 0)
                 _logger.LogWarning("Settings file has problems: {Errors}", string.Join(" ", errors));

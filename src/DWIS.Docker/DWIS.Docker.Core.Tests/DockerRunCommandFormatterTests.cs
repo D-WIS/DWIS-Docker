@@ -51,11 +51,11 @@ public class DockerRunCommandFormatterTests
     [Fact]
     public void Recorder_renders_bind_and_arguments()
     {
-        var p = ContainerSpecBuilder.BuildRecorder("rig1-20260101", "digiwells/blackboardrecorder:latest", Norce, "rig1", @"C:\Volumes\Recordings\rig1-20260101", false);
+        var p = ContainerSpecBuilder.BuildRecorder("rig1-20260101", "digiwells/dwis-blackboard-recorder:latest", Norce, "rig1", @"C:\Volumes\Recordings\rig1-20260101", false);
         var command = DockerRunCommandFormatter.Format(p);
 
         Assert.StartsWith("docker run -d --name recorder-rig1-20260101 -it -v C:\\Volumes\\Recordings\\rig1-20260101:/recording ", command);
-        Assert.EndsWith("digiwells/blackboardrecorder:latest --hubURL " + Norce + " --hubGroup rig1 --output-folder /recording", command);
+        Assert.EndsWith("digiwells/dwis-blackboard-recorder:latest --hubURL " + Norce + " --hubGroup rig1 --output-folder /recording", command);
     }
 
     [Fact]
