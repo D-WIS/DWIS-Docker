@@ -209,15 +209,15 @@ public class ContainerSpecBuilderTests
     [Fact]
     public void Recorder_and_player_keep_recording_bind_and_add_ca_file()
     {
-        var r = ContainerSpecBuilder.BuildRecorder("rec1", "digiwells/blackboardrecorder:latest", Norce.HubUrl, "default", @"C:\Volumes\Recordings\rec1", true, CaFile);
+        var r = ContainerSpecBuilder.BuildRecorder("rec1", "digiwells/dwis-blackboard-recorder:latest", Norce.HubUrl, "default", @"C:\Volumes\Recordings\rec1", true, CaFile);
         Assert.Equal([@"C:\Volumes\Recordings\rec1:/recording", CaBind], r.HostConfig.Binds);
         Assert.Equal([CaEnv], r.Env);
 
-        var pl = ContainerSpecBuilder.BuildPlayer("rec1", "digiwells/blackboardplayer:latest", Norce.HubUrl, "default", @"C:\Volumes\Recordings\rec1", false, CaFile);
+        var pl = ContainerSpecBuilder.BuildPlayer("rec1", "digiwells/dwis-blackboard-player:latest", Norce.HubUrl, "default", @"C:\Volumes\Recordings\rec1", false, CaFile);
         Assert.Equal([@"C:\Volumes\Recordings\rec1:/recording", CaBind], pl.HostConfig.Binds);
         Assert.Equal([CaEnv], pl.Env);
 
-        var plain = ContainerSpecBuilder.BuildRecorder("rec1", "digiwells/blackboardrecorder:latest", Norce.HubUrl, "default", @"C:\Volumes\Recordings\rec1", true);
+        var plain = ContainerSpecBuilder.BuildRecorder("rec1", "digiwells/dwis-blackboard-recorder:latest", Norce.HubUrl, "default", @"C:\Volumes\Recordings\rec1", true);
         Assert.Equal([@"C:\Volumes\Recordings\rec1:/recording"], plain.HostConfig.Binds);
         Assert.Null(plain.Env);
     }
