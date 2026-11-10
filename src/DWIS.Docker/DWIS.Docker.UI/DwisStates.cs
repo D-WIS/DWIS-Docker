@@ -19,6 +19,11 @@ public static class DwisStates
         _ => new(DwisIcons.Stopped, Color.Warning, "Stopped", c.StatusText)
     };
 
+    /// <summary>Shown next to a stopped container whose host port is held by running containers, so it cannot start.</summary>
+    public static StateLook PortInUse(int port, IReadOnlyList<string> holders) =>
+        new(DwisIcons.Mismatch, Color.Warning, "Port in use",
+            $"Port {port} is used by {string.Join(", ", holders)}. Stop that container before starting this one.");
+
     public static StateLook Image(ImageStatus s, bool present) => s switch
     {
         ImageStatus.UpToDate => new(DwisIcons.UpToDate, Color.Success, "Up to date", "Local image matches the registry"),

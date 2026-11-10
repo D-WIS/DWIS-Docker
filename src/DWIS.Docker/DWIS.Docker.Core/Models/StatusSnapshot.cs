@@ -103,6 +103,29 @@ public sealed record StatusSnapshot(
     public ModuleStatus? Find(string moduleId) => Modules.FirstOrDefault(m => m.Module.Id == moduleId);
 
     public bool IsBusy(string key) => Operations.Any(o => o.Key == key);
+
+    /// <summary>
+    /// Names of the containers that claim the host port (blackboards, module instances, local hubs), sorted.
+    /// Only containers this app knows; a port taken by another program on the machine is not seen here.
+    /// </summary>
+    /// <param name="exceptContainerId">A container to leave out (the one asking).</param>
+    /// <param name="runningOnly">True lists only the containers that hold the port right now.</param>
+    public IReadOnlyList<string> ContainersOnHostPort(int port, string? exceptContainerId = null, bool runningOnly = false)
+    {
+        var users = new Dictionary<string, ContainerInfo>();
+        foreach (var b in Blackboards)
+            if (b.Port == port) users[b.Container.Id] = b.Container;
+        foreach (var i in Modules.SelectMany(m => m.Instances))
+            if (i.HostPort == port || i.Container.PublishedPorts.Any(p => p.HostPort == port)) users[i.Container.Id] = i.Container;
+        foreach (var h in LocalHubs)
+            if (h.HostPort == port) users[h.Container.Id] = h.Container;
+
+        return users.Values
+            .Where(c => c.Id != exceptContainerId && (!runningOnly || c.IsRunning))
+            .Select(c => c.Name)
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
 }
 
 public sealed record PullProgress(

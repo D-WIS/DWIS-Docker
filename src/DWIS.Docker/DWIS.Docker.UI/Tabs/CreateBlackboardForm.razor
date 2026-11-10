@@ -8,8 +8,7 @@
                           Validation="@((string s) => NameValid(s) ? null : "Letters, digits, '-', '_' and '.' only")" />
         </MudItem>
         <MudItem xs="6" md="2">
-            <MudNumericField @bind-Value="_port" Label="Port" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1024" Max="65535"
-                             Validation="@((int p) => PortFree(p) ? null : "Used by another blackboard")" />
+            <MudNumericField @bind-Value="_port" Label="Port" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1024" Max="65535" />
         </MudItem>
         <MudItem xs="6" md="2">
             <MudSwitch T="bool" @bind-Value="_replicate" Label="Replicate" Color="Color.Primary" />
@@ -39,6 +38,14 @@
                               InputType="@(_showPwd ? InputType.Text : InputType.Password)"
                               Adornment="Adornment.End" AdornmentIcon="@(_showPwd ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
                               OnAdornmentClick="@(() => _showPwd = !_showPwd)" />
+            </MudItem>
+        }
+        @if (PortUsers is { Count: > 0 } users)
+        {
+            <MudItem xs="12">
+                <MudAlert Severity="Severity.Warning" Dense Icon="@DwisIcons.Mismatch">
+                    Port @_port is already used by @string.Join(", ", users). You can still create this blackboard, but it cannot run at the same time as that container.
+                </MudAlert>
             </MudItem>
         }
     </MudGrid>
@@ -78,7 +85,8 @@
     private static bool NameValid(string s) =>
         !string.IsNullOrWhiteSpace(s) && System.Text.RegularExpressions.Regex.IsMatch(s, "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$");
 
-    private bool PortFree(int p) => Snapshot.Blackboards.All(b => b.Port != p);
+    /// <summary>Containers that already claim the chosen port. A warning only: the blackboard can still be created.</summary>
+    private IReadOnlyList<string> PortUsers => Snapshot.ContainersOnHostPort(_port);
 
     private Task<IEnumerable<string>> SearchGroups(string value, CancellationToken ct)
     {
@@ -95,11 +103,15 @@
         }
         var spec = new BlackboardSpec(_name.Trim(), _port, _replicate ? _hubId : null, _replicate ? _group : null,
             _replicate ? _password : null, _start);
-        var ok = await RunAsync(ct => Modules.CreateBlackboardAsync(spec, Actions.Progress, ct), $"Blackboard '{spec.ContainerName}' created.", $"Creating blackboard {spec.ContainerName}", spec.ContainerName);
-        if (ok)
-        {
-            Suggest();
-            await Created.InvokeAsync();
-        }
+        BlackboardCreateResult? result = null;
+        var ok = await RunAsync(async ct => { result = await Modules.CreateBlackboardAsync(spec, Actions.Progress, ct); },
+            busyMessage: $"Creating blackboard {spec.ContainerName}", busyKey: spec.ContainerName);
+        if (!ok || result is null) return;
+
+        // A taken port does not fail the creation: the blackboard exists, stopped, and the warning says why.
+        if (result.Warning is { } warning) Actions.Warn(warning);
+        else Actions.Notify($"Blackboard '{spec.ContainerName}' created.", Severity.Success);
+        Suggest();
+        await Created.InvokeAsync();
     }
 }

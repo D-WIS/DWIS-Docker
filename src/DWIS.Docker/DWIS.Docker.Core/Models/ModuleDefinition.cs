@@ -92,3 +92,8 @@ public sealed record BlackboardSpec(
     string? Group,
     string? WritePassword,
     bool StartAfterCreate);
+
+/// <summary>Outcome of creating a blackboard. The container exists in every case.</summary>
+/// <param name="Started">True when the container was started.</param>
+/// <param name="Warning">Set when start was asked for but the port is taken: the container was created and left stopped. Says who holds the port.</param>
+public sealed record BlackboardCreateResult(string ContainerName, bool Started, string? Warning);

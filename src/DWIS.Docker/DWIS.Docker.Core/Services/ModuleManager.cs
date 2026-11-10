@@ -51,7 +51,11 @@ public interface IModuleManager
     Task DeleteAsync(string containerId, CancellationToken ct = default);
     Task<string> GetLogsAsync(string containerId, int? tailLines = null, CancellationToken ct = default);
 
-    Task CreateBlackboardAsync(BlackboardSpec spec, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
+    /// <summary>
+    /// Creates a blackboard container and starts it when asked. A port that is already in use does not prevent the creation:
+    /// if Docker cannot start the container because of it, the container is kept (stopped) and the result carries a warning.
+    /// </summary>
+    Task<BlackboardCreateResult> CreateBlackboardAsync(BlackboardSpec spec, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
     BlackboardSpec SuggestBlackboard(string? hubId, string? group);
 
     Task UpdateApplicationAsync(CancellationToken ct = default);
@@ -269,12 +273,10 @@ public sealed class ModuleManager : IModuleManager
 
     // ---------------------------------------------------------------- blackboards
 
-    public Task CreateBlackboardAsync(BlackboardSpec spec, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
+    public async Task<BlackboardCreateResult> CreateBlackboardAsync(BlackboardSpec spec, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
     {
         var name = spec.ContainerName.Trim();
         if (name.Length == 0) throw new DwisDockerException("Container name must not be empty.");
-        if (_status.Current.Blackboards.Any(b => b.Port == spec.Port))
-            throw new PortInUseException($"Port {spec.Port} is already used by another blackboard.");
 
         var s = _settings.Current;
         ReplicationTarget? replication = null;
@@ -287,12 +289,33 @@ public sealed class ModuleManager : IModuleManager
 
         var module = ModuleCatalog.AdHocBlackboard(name, spec.Port);
         var ctx = BuildRunContext() with { Replication = replication };
-        return WithModuleLock(name, $"Creating blackboard {name}", async token =>
+        var result = new BlackboardCreateResult(name, Started: false, Warning: null);
+        await WithModuleLock(name, $"Creating blackboard {name}", async token =>
         {
             var c = await _docker.CreateContainerAsync(module, ctx, progress, token).ConfigureAwait(false);
-            if (spec.StartAfterCreate)
+            if (!spec.StartAfterCreate) return;
+            try
+            {
                 await _docker.StartAsync(c.Id, token).ConfigureAwait(false);
-        }, ct);
+                result = result with { Started = true };
+            }
+            catch (PortInUseException ex)
+            {
+                // A taken port must not cost the user the blackboard: keep the container, it can be started once the port is free.
+                _logger.LogWarning("Blackboard {Name} created but not started, port {Port} is in use: {Message}", name, spec.Port, ex.UserMessage);
+                var holders = _status.Current.ContainersOnHostPort(spec.Port, c.Id);
+                result = result with { Warning = PortInUseWarning(name, spec.Port, holders) };
+            }
+        }, ct).ConfigureAwait(false);
+        return result;
+    }
+
+    internal static string PortInUseWarning(string name, int port, IReadOnlyList<string> holders)
+    {
+        var who = holders.Count == 0
+            ? "another program on this machine"
+            : string.Join(", ", holders.Select(h => $"'{h}'"));
+        return $"Blackboard '{name}' was created but could not be started: port {port} is used by {who}. Free the port, then start '{name}' from the list.";
     }
 
     public BlackboardSpec SuggestBlackboard(string? hubId, string? group)

@@ -145,6 +145,9 @@ public sealed class UiActionRunner : IDisposable
 
     public void Notify(string message, Severity severity = Severity.Info) => _snackbar.Add(message, severity);
 
+    /// <summary>A warning the user must read: the action went through, but not all the way. Stays until dismissed.</summary>
+    public void Warn(string message) => _snackbar.Add(message, Severity.Warning, o => o.RequireInteraction = true);
+
     private bool Begin(string? busyMessage, string? busyKey)
     {
         if (IsBusy)

@@ -406,8 +406,7 @@ public sealed class DockerService : IDockerService, IDisposable
                 var body = Clean(api.ResponseBody) ?? api.Message;
                 if (api.StatusCode == HttpStatusCode.Conflict)
                     return new ContainerConflictException(prefix + body, ex);
-                if (body.Contains("port is already allocated", StringComparison.OrdinalIgnoreCase)
-                    || body.Contains("address already in use", StringComparison.OrdinalIgnoreCase))
+                if (IsPortInUse(body))
                     return new PortInUseException(prefix + body, ex);
                 return new DwisDockerException(prefix + body, ex);
             case HttpRequestException or SocketException or TimeoutException or IOException:
@@ -419,6 +418,16 @@ public sealed class DockerService : IDockerService, IDisposable
                 return new DwisDockerException(prefix + Root(ex).Message, ex);
         }
     }
+
+    /// <summary>
+    /// True when a Docker error says the host port is taken: by another container ("port is already allocated"),
+    /// or by another program ("address already in use" on Linux, "ports are not available" on Docker Desktop).
+    /// </summary>
+    internal static bool IsPortInUse(string message) =>
+        message.Contains("port is already allocated", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("address already in use", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("ports are not available", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("Only one usage of each socket address", StringComparison.OrdinalIgnoreCase);
 
     private static Exception Root(Exception ex)
     {
