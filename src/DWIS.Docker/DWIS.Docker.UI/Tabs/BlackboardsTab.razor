@@ -38,6 +38,10 @@
         </MudTd>
         <MudTd DataLabel="State">
             <StateChip Look="DwisStates.Container(context.Container)" />
+            @if (PortHolders(context) is { Count: > 0 } holders)
+            {
+                <StateChip Look="DwisStates.PortInUse(context.Port, holders)" />
+            }
             @if (context.IsLegacy)
             {
                 <StateChip Look="@(new StateLook(DwisIcons.Legacy, Color.Default, "Old format", "Created by a previous version. Update the image to migrate it."))" />
@@ -66,6 +70,10 @@
 
 @code {
     private bool _createOpen;
+
+    /// <summary>For a blackboard that is not running: the running containers that hold its port (the reason it cannot start).</summary>
+    private IReadOnlyList<string> PortHolders(BlackboardInfo bb) =>
+        bb.Container.IsRunning ? [] : Snapshot.ContainersOnHostPort(bb.Port, bb.Container.Id, runningOnly: true);
 
     private Task Refresh() => Actions.QueryAsync(async ct => { await Status.RefreshAsync(ct); return true; });
 

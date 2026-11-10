@@ -34,11 +34,35 @@ Then open your browser and navigate to:
 http://localhost:5272
 ```
 
+> **Hub with a company certificate?** If one of your hubs is served over HTTPS with a certificate issued by a company CA, the command above needs one more line. See [Hubs with a certificate from a company CA](#hubs-with-a-certificate-from-a-company-ca) below.
+
 What ends up in `C:\Volumes`:
 
-- `dwis-docker\settings.json` — the app settings (Docker endpoint, hubs, replication target, …). They survive updates of the app.
+- `dwis-docker\settings.json` — the app settings (Docker endpoint, hubs, replication target, …). They survive updates of the app. This folder is also the place for the certificate file of a hub with a company certificate (see below).
 - `<Module>\config.json` — one folder per module that has a configuration, for example `DWISAdviceComposerService\config.json`. The folder is mounted into the module container as `/home`.
 - `Recordings\<name>\` — one folder per recording made from the Recording tab (chunk files plus an `rtData` index).
+
+### Hubs with a certificate from a company CA
+
+When a hub is served over HTTPS with a certificate issued by a private CA (for example an internal corporate CA), connections to it fail with a certificate chain error, even when Windows itself trusts that CA. The app and the containers it launches are Linux containers, and each of them has its own list of trusted CAs. So the certificate must be given in two places: to the app itself (for its own connection to the hub in the Replication tab) and to the containers the app launches (blackboards, recorders, players, hubs).
+
+1. **Get the certificate as a PEM file.** Either export the root CA from the Windows certificate store as *Base-64 encoded X.509 (.CER)* and rename the file to `.pem`, or use the server's full chain. The file holds public certificates only, never a private key.
+2. **Copy the file into the app's folder**, for example `C:\Volumes\dwis-docker\company-ca.pem`. The app sees this folder as `/home/dwis-docker`.
+3. **Start the app with `SSL_CERT_FILE` pointing at the file.** This is the command above with one more line (the `-e` line):
+
+   ```bash
+   docker run --name dwis-docker --user root -P \
+     -p 5272:8080/tcp \
+     -v /var/run/docker.sock:/var/run/docker.sock \
+     -v C:\Volumes:/home \
+     -e SSL_CERT_FILE=/home/dwis-docker/company-ca.pem \
+     -dit digiwells/dwis-docker:stable
+   ```
+
+   If the `dwis-docker` container already exists, remove it first with `docker rm -f dwis-docker`: a variable cannot be added to an existing container. The settings are not lost, they are in `C:\Volumes\dwis-docker`. **Update application** keeps the variable.
+4. **Set the *Extra CA certificate file* setting** (gear icon) to the path of the same file **on the host**, here `C:\Volumes\dwis-docker\company-ca.pem`. Every container the app creates that connects to a hub then gets the file mounted as `/certs/extra-ca.pem` with `SSL_CERT_FILE` pointing at it. Containers created before the setting was changed do not have it: delete and create them again, or use **update image**.
+
+The certificates in the file are trusted in addition to the public CAs. Hubs with a public certificate need none of this: use the plain command and leave the setting empty. The Windows desktop version (section 5) uses the Windows certificate store for its own connection, so only steps 1, 2 and 4 apply to it.
 
 ### Running on a remote machine
 
@@ -69,18 +93,19 @@ A few things to know about this setup:
 - Links to module web apps (Log view, Blackboard explorer, …) point to `localhost:<port>`. To open them from your PC, forward their ports too, for example `-L 5276:localhost:5276 -L 5277:localhost:5277` on the same `ssh` command.
 - The OPC-UA endpoint of a blackboard (`opc.tcp://localhost:48030`) can be forwarded the same way with `-L 48030:localhost:48030`.
 - On a Linux host, the **Blackboard host IP** setting (default `host.docker.internal`) may have to be changed to the host's IP on the Docker bridge, usually `172.17.0.1`, so that modules can reach the blackboard.
+- For a hub with a company certificate, follow [the steps above](#hubs-with-a-certificate-from-a-company-ca) with the file in `~/Volumes/dwis-docker/`. The extra `-e SSL_CERT_FILE=/home/dwis-docker/company-ca.pem` line is the same, and the *Extra CA certificate file* setting is the full path on the remote machine, for example `/home/<user>/Volumes/dwis-docker/company-ca.pem`.
 - Do not expose the Docker API itself (port 2375) to the network as a shortcut. The app has no TLS settings, and an open Docker API gives root access to the machine.
 
 ## 2. The tabs
 
 - **Replication** — the SignalR hubs the blackboards can replicate to. Add or remove hubs, connect, see the groups and how many blackboards are connected to each, create groups, set a group write password, clear a group's manifests, and pick the hub and group the standard setup replicates to. You can also **launch a hub locally** (a `digiwells/dwissignalr` container on a port of your choice, optionally pulling data from or pushing data to groups of other hubs) and start **hub-to-hub replications** (a standalone container that copies one hub group to another).
 - **Standard setup** — every predefined container in one table, grouped by category. Each row shows whether the container exists, whether it runs, whether the image is up to date, and whether its configuration file exists. Select rows for bulk actions (create missing, start, stop, restart, update images, delete).
-- **Blackboards** — all blackboard containers on the engine, with their replication hub, group and OPC UA port. Create extra blackboards here.
+- **Blackboards** — all blackboard containers on the engine, with their replication hub, group and OPC UA port. Create extra blackboards here. A port that is already in use does not block the creation: the form shows a warning, and if the port is still taken when the blackboard should start, the container is created but left stopped (with a *Port in use* mark in the list) so you can free the port and start it later.
 - **Recording** — record what a hub group streams into a folder under `C:\Volumes\Recordings\<name>`, and replay a recording into a hub group later. Each recording shows its duration, size and whether a recorder or player container is running. The recorder and player images are set in the settings.
 - **DWIS modules** — scheduler, microstates, composer and the ADCS bridges, each with an inline editor for its `config.json`.
 - **Clients** and **Advisors** — the web applications and advisor services. Each can run several times, one container per blackboard: when you create one you pick the blackboard it talks to (identified by its container name, with its OPC UA port shown next to it), and the container gets `BLACKBOARD_IP` and `BLACKBOARD_PORT` accordingly. The table shows one row per container with its blackboard, the blackboard port and a link to the app's own host port (the next free port from the module's default). The **new instance** button on a row creates another container of the same application against another blackboard.
 
-**Hubs with a certificate from a company CA.** When a hub is served over HTTPS with a certificate issued by a private CA (for example an internal corporate CA), the blackboards, recorders, players and hub containers fail to connect with a certificate chain error, even when Windows itself trusts that CA, because the Linux containers have their own list of trusted CAs. Set the **Extra CA certificate file** setting (gear icon) to the host path of a PEM file holding the certificates to trust; every container that connects to a hub then gets it mounted as `/certs/extra-ca.pem` with `SSL_CERT_FILE` pointing at it. The PEM can be the root CA exported from the Windows certificate store as *Base-64 encoded X.509 (.CER)* and renamed to `.pem`, or the server's full chain. Leave the setting empty for hubs with a public certificate.
+**Hubs with a certificate from a company CA** need two extra things: one more line in the `docker run` command of the app, and the **Extra CA certificate file** setting (gear icon) for the containers the app launches. The steps are in [section 1](#hubs-with-a-certificate-from-a-company-ca).
 
 Every container row has a **copy docker run command** button (terminal icon). It copies the `docker run` line equivalent to what the app creates for that container (image, name, ports, environment variables, bind mounts, labels and arguments), so the same container can be started by hand or in a script.
 
